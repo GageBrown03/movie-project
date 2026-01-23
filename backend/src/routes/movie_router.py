@@ -56,6 +56,6 @@ def update_movie(movie_id: int):
 @movie_router.delete('/<int:movie_id>')
 def delete_movie(movie_id: int):
     existing_movie = movie.query.get_or_404(movie_id)
-    db.session.remove(existing_movie)
+    db.session.delete(existing_movie)
     db.session.commit()
     return jsonify(existing_movie.to_dict())

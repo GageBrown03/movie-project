@@ -1,16 +1,9 @@
 import os
 
+class DBConfig:
+    URI = os.getenv('DATABASE_URL')
 
 class Config:
+    DB = DBConfig()
 
-    def __init__(self) -> None:
-        self.DB = self.DBConfig()
-
-    class DBConfig:
-
-        def __init__(self) -> None:
-            self.URI = os.getenv('DATABASE_URL')
-
-
-# Initialize config singleton
 cfg = Config()
