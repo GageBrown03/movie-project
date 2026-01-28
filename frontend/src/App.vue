@@ -1,78 +1,112 @@
 <template>
-  <h1>{{ title }}</h1> 
-
-  <ul>
-    <li v-for="(movie, index) in movies" :key="index" @click="openModal(movie)">
-      {{ movie.title }}
-    </li>
-  </ul>
-
-  <button @click="toggleModal">Add Movie</button>
-
-  <div v-if="showModal">  
-    <movieModal v-if="currentMovie" :movie="currentMovie" @close="toggleModal" />
-    <div v-else>
-      <form @submit.prevent="addMovie">
-        <input v-model="newMovie.title" placeholder="Title" required />
-        <input v-model="newMovie.description" placeholder="Description" required />
-        <input v-model="newMovie.director" placeholder="Director" required />
-        <input type="file" @change="uploadImage" required />
-        <button type="submit">Add</button>
-      </form>
-    </div>
-  </div>
+  <v-app>
+    <v-app-bar app color="primary" dark>
+      <v-toolbar-title>My Movie Diary</v-toolbar-title>
+      <v-spacer></v-spacer>
+      
+      <!-- Dark mode toggle button (always visible) -->
+      <v-btn icon @click="toggleTheme" class="mr-2">
+        <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
+      </v-btn>
+      
+      <!-- Show these buttons only when logged in -->
+      <template v-if="isLoggedIn">
+        <v-btn to="/">Home</v-btn>
+        <v-btn to="/movies">All Movies</v-btn>
+        <v-btn @click="handleLogout">
+          <v-icon left>mdi-logout</v-icon>
+          Logout
+        </v-btn>
+      </template>
+      
+      <!-- Show these buttons only when NOT logged in -->
+      <template v-else>
+        <v-btn to="/login">Login</v-btn>
+        <v-btn to="/register">Register</v-btn>
+      </template>
+    </v-app-bar>
+    
+    <v-main>
+      <v-container>
+        <router-view />
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
-import movieModal from './components/movieModal.vue'
+import { authAPI } from '@/services/api';
+import { useTheme } from 'vuetify';
 
 export default {
   name: 'App',
-  components: { movieModal },
+  
   data() {
     return {
-      title: "Movie Rating app",
-      showModal: false,
-      movies: [],
-      newMovie: { title: '', description: '', director: '', image: null },
-      currentMovie: null
+      isLoggedIn: false
+    };
+  },
+  
+  setup() {
+    const theme = useTheme();
+    return { theme };
+  },
+  
+  computed: {
+    isDark() {
+      return this.theme.global.name.value === 'dark';
     }
   },
+  
+  created() {
+    // Check if user is logged in when app loads
+    this.checkAuth();
+    
+    // Load theme preference from localStorage
+    this.loadTheme();
+    
+    // Listen for route changes to update auth state
+    this.$watch(
+      () => this.$route.path,
+      () => {
+        this.checkAuth();
+      }
+    );
+  },
+  
   methods: {
-    toggleModal() {
-      this.showModal = !this.showModal;
-      this.currentMovie = null;
+    checkAuth() {
+      const token = localStorage.getItem('token');
+      this.isLoggedIn = !!token;
     },
-    openModal(movie) {
-      this.showModal = true;
-      this.currentMovie = movie;
+    
+    handleLogout() {
+      authAPI.logout();
+      this.isLoggedIn = false;
+      this.$router.push('/login');
     },
-    addMovie() {
-      this.movies.push({ ...this.newMovie });
-      this.newMovie = { title: '', description: '', director: '', image: null };
-      this.toggleModal();
+    
+    loadTheme() {
+      // Load saved theme preference (default to light)
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      this.theme.global.name.value = savedTheme;
     },
-    uploadImage(event) {
-      this.newMovie.image = event.target.files[0];
+    
+    toggleTheme() {
+      // Toggle between light and dark
+      const newTheme = this.isDark ? 'light' : 'dark';
+      this.theme.global.name.value = newTheme;
+      
+      // Save preference to localStorage
+      localStorage.setItem('theme', newTheme);
     }
   }
 }
 </script>
 
-
 <style>
-#app {
-  font-family: Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-
-h1 {
-  border-bottom: 1px solid #ddd;
-  display: inline-block;
-  padding-bottom: 10px;
+/* Smooth transition when switching themes */
+.v-application {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 </style>
