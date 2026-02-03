@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import { authAPI } from '@/services/api';
+import { authAPI } from '@/services/api-production';
 import { useTheme } from 'vuetify';
 
 export default {

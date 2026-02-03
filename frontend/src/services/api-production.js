@@ -1,7 +1,8 @@
 // src/services/api.js
 // This file centralizes all API calls to your Flask backend
 
-const API_BASE = 'http://localhost:5000';
+// Use environment variable in production, localhost in development
+const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
 
 // Helper function to get auth token
 function getAuthHeaders() {
@@ -66,7 +67,7 @@ export const authAPI = {
 export const movieAPI = {
   async getAll() {
     const res = await fetch(`${API_BASE}/movies`, {
-      headers: getAuthHeaders()  // NOW includes auth token
+      headers: getAuthHeaders()
     });
     
     if (!res.ok) throw new Error('Failed to fetch movies');
@@ -75,7 +76,7 @@ export const movieAPI = {
   
   async getOne(id) {
     const res = await fetch(`${API_BASE}/movies/${id}`, {
-      headers: getAuthHeaders()  // NOW includes auth token
+      headers: getAuthHeaders()
     });
     
     if (!res.ok) throw new Error('Movie not found');
@@ -85,7 +86,7 @@ export const movieAPI = {
   async create(movieData) {
     const res = await fetch(`${API_BASE}/movies`, {
       method: 'POST',
-      headers: getAuthHeaders(),  // NOW includes auth token
+      headers: getAuthHeaders(),
       body: JSON.stringify(movieData)
     });
     
@@ -100,7 +101,7 @@ export const movieAPI = {
   async update(id, movieData) {
     const res = await fetch(`${API_BASE}/movies/${id}`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),  // NOW includes auth token
+      headers: getAuthHeaders(),
       body: JSON.stringify(movieData)
     });
     
@@ -111,7 +112,7 @@ export const movieAPI = {
   async delete(id) {
     const res = await fetch(`${API_BASE}/movies/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()  // NOW includes auth token
+      headers: getAuthHeaders()
     });
     
     if (!res.ok) throw new Error('Failed to delete movie');

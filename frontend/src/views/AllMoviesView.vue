@@ -36,7 +36,7 @@
 
 <script>
 // NEW: Import the API service
-import { movieAPI } from '@/services/api';
+import { movieAPI } from '@/services/api-production';
 
 export default {
   name: 'AllMoviesView',

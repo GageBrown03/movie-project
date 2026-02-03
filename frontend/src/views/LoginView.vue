@@ -53,7 +53,7 @@
 </template>
 
 <script>
-import { authAPI } from '@/services/api';
+import { authAPI } from '@/services/api-production';
 
 export default {
   name: 'LoginView',
