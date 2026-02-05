@@ -37,8 +37,8 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        # Create access token
-        access_token = create_access_token(identity=new_user.user_id)
+        # Create access token / revised for cloud prod
+        create_access_token(identity=str(new_user.user_id))
         
         return jsonify({
             'message': 'User registered successfully',
@@ -69,8 +69,8 @@ def login():
         if not user or not user.check_password(password):
             return jsonify({'error': 'Invalid username or password'}), 401
         
-        # Create access token
-        access_token = create_access_token(identity=user.user_id)
+        # Create access token / revised for cloud prod
+        access_token = create_access_token(identity=str(user.user_id))
         
         return jsonify({
             'message': 'Login successful',

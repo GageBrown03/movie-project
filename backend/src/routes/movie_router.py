@@ -9,7 +9,7 @@ movie_router = Blueprint('movies', __name__, url_prefix='/movies')
 @jwt_required()  # NEW: Must be logged in
 def get_all_movies():
     """Get all movies for the current user"""
-    user_id = get_jwt_identity()  # NEW: Get current user's ID
+    user_id = int(get_jwt_identity())  # NEW: Get current user's ID
     movies = Movie.query.filter_by(user_id=user_id).all()  # NEW: Filter by user
     return jsonify([m.to_dict() for m in movies])
 
@@ -18,7 +18,7 @@ def get_all_movies():
 @jwt_required()  # NEW: Must be logged in
 def get_single_movie(movie_id: int):
     """Get a single movie (only if it belongs to current user)"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     movie = Movie.query.filter_by(movie_id=movie_id, user_id=user_id).first()  # NEW: Check ownership
     
     if not movie:
@@ -32,7 +32,7 @@ def get_single_movie(movie_id: int):
 def create_movie():
     """Create a new movie for the current user"""
     try:
-        user_id = get_jwt_identity()  # NEW: Get current user's ID
+        user_id = int(get_jwt_identity())  # NEW: Get current user's ID
         data = request.get_json()
         
         # Validate required fields
@@ -76,7 +76,7 @@ def create_movie():
 @jwt_required()  # NEW: Must be logged in
 def update_movie(movie_id: int):
     """Update a movie (only if it belongs to current user)"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     movie_obj = Movie.query.filter_by(movie_id=movie_id, user_id=user_id).first()  # NEW: Check ownership
     
     if not movie_obj:
@@ -106,7 +106,7 @@ def update_movie(movie_id: int):
 @jwt_required()  # NEW: Must be logged in
 def delete_movie(movie_id: int):
     """Delete a movie (only if it belongs to current user)"""
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     existing_movie = Movie.query.filter_by(movie_id=movie_id, user_id=user_id).first()  # NEW: Check ownership
     
     if not existing_movie:
