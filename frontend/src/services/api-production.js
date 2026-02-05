@@ -3,7 +3,8 @@
 
 // Use environment variable in production, localhost in development
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
+
 
 
 // Helper function to get auth token
