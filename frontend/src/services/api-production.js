@@ -2,7 +2,9 @@
 // This file centralizes all API calls to your Flask backend
 
 // Use environment variable in production, localhost in development
-const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 
 // Helper function to get auth token
 function getAuthHeaders() {
