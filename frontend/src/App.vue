@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app color="primary" dark>
-      <v-toolbar-title>My Movie Diary</v-toolbar-title>
+      <v-toolbar-title>iMovies</v-toolbar-title>
       <v-spacer></v-spacer>
       
       <!-- Dark mode toggle button (always visible) -->
