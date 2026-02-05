@@ -26,7 +26,14 @@ bcrypt.init_app(app)
 jwt = JWTManager(app)
 
 # Apply CORS header middleware for cross-origin requests
-CORS(app)
+CORS(
+    app,
+    # Revised CORS structure to allow resources
+    resources={r"/*": {"origins": [
+        "https://movie-project-six-eta.vercel.app"
+    ]}},
+    supports_credentials=True
+)
 
 # Register routers
 app.register_blueprint(movie_router)
