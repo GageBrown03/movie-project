@@ -73,7 +73,8 @@ export const movieAPI = {
       headers: getAuthHeaders()
     });
     
-    if (!res.ok) throw new Error('Failed to fetch movies');
+    const error = await res.json();
+    throw new Error(error.error || JSON.stringify(error));
     return res.json();
   },
   
