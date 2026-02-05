@@ -1,11 +1,8 @@
-// src/services/api.js
+// src/services/api-production.js
 // This file centralizes all API calls to your Flask backend
 
 // Use environment variable in production, localhost in development
-const API_BASE =
-  process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
-
-
+const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
 
 // Helper function to get auth token
 function getAuthHeaders() {
@@ -73,8 +70,12 @@ export const movieAPI = {
       headers: getAuthHeaders()
     });
     
-    const error = await res.json();
-    throw new Error(error.error || JSON.stringify(error));
+    // FIXED: Was always throwing error before
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to fetch movies');
+    }
+    
     return res.json();
   },
   

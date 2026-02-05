@@ -38,7 +38,7 @@ def register():
         db.session.commit()
         
         # Create access token / revised for cloud prod
-        create_access_token(identity=str(new_user.user_id))
+        access_token = create_access_token(identity=str(new_user.user_id))
         
         return jsonify({
             'message': 'User registered successfully',

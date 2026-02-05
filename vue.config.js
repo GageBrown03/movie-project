@@ -4,6 +4,11 @@ const path = require('path')
 module.exports = defineConfig({
   transpileDependencies: true,
   
+  // Production optimizations
+  publicPath: '/',
+  lintOnSave: false,
+  productionSourceMap: false,
+  
   // Tell Vue CLI where to find the source files
   pages: {
     index: {
