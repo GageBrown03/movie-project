@@ -1,7 +1,10 @@
+# init_db.py
+import os
 from app import app, db
 
-# Create all database tables
+# Optional: Print to verify we are targeting the right DB
+print(f"Creating tables in: {os.environ.get('DATABASE_URL')}")
+
 with app.app_context():
     db.create_all()
-    print("✅ Database tables created successfully!")
-    print(f"Database location: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print("Tables created successfully!")
