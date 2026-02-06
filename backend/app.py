@@ -7,6 +7,7 @@ from src.models import db, bcrypt
 from src.routes.movie_router import movie_router
 from src.routes.auth_router import auth_router  # NEW: Import auth router
 from sqlalchemy import text
+from src.routes.tmdb_router import tmdb_router  # NEW
 
 # Load local environment variables before anything else
 load_dotenv()
@@ -39,6 +40,7 @@ jwt = JWTManager(app)
 # Register routers
 app.register_blueprint(movie_router)
 app.register_blueprint(auth_router)  # NEW: Register auth routes
+app.register_blueprint(tmdb_router)  # NEW: Register TMDB routes
 
 
 @app.get('/health')

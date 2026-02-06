@@ -63,6 +63,35 @@ export const authAPI = {
   }
 };
 
+// TMDB API (NEW)
+export const tmdbAPI = {
+  async search(query) {
+    const res = await fetch(`${API_BASE}/tmdb/search?query=${encodeURIComponent(query)}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'TMDB search failed');
+    }
+    
+    return res.json();
+  },
+  
+  async getMovieDetails(tmdbId) {
+    const res = await fetch(`${API_BASE}/tmdb/movie/${tmdbId}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to get movie details');
+    }
+    
+    return res.json();
+  }
+};
+
 // Movie API (now with authentication)
 export const movieAPI = {
   async getAll() {
@@ -70,7 +99,6 @@ export const movieAPI = {
       headers: getAuthHeaders()
     });
     
-    // FIXED: Was always throwing error before
     if (!res.ok) {
       const error = await res.json();
       throw new Error(error.error || 'Failed to fetch movies');

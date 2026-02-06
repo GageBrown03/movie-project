@@ -9,10 +9,6 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     
     # Database
-    # Change this line:
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///movies.db')
-
-    # To this:
     uri = os.getenv('DATABASE_URL', 'sqlite:///movies.db')
     if uri and uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
@@ -21,11 +17,14 @@ class Config:
     
     # JWT Configuration
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)  # Token valid for 24 hours
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
+    
+    # TMDB API (NEW)
+    TMDB_API_KEY = os.getenv('TMDB_API_KEY')
     
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:8080').split(',')
     
-    # File uploads (for images later)
+    # File uploads
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
