@@ -1,6 +1,6 @@
 <template>
   <div class="home">
-    <h1>Welcome to Your Movie Diary</h1>  <!-- UPDATED: Better title -->
+    <h1>Welcome to Your Movie Library</h1>  <!-- UPDATED: Better title -->
     <p class="mt-3">Track and rate your favorite movies in this personal movie journal!</p>  <!-- UPDATED: Better description -->
     
     <!-- NEW: Add quick action buttons -->
