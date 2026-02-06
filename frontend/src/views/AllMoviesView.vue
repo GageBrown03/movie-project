@@ -176,7 +176,7 @@
 
               <v-divider />
 
-              <v-card-actions class="bg-grey-lighten-4">
+              <v-card-actions class="bg-surface-variant">
                 <v-btn icon="mdi-pencil" size="small" variant="text" @click.stop="goToEdit(movie.movieId)" />
                 <v-btn icon="mdi-delete" size="small" color="error" variant="text" @click.stop="confirmDelete(movie)" />
                 <v-spacer />
