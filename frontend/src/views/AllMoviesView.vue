@@ -21,7 +21,7 @@
             <v-text-field
               v-model="searchQuery"
               prepend-inner-icon="mdi-magnify"
-              label="Search movies..."
+              label="Search your movies..."
               variant="outlined"
               density="comfortable"
               clearable

@@ -9,7 +9,7 @@
         Add New Movie
       </v-btn>
       <v-btn color="secondary" size="large" to="/movies" class="ml-2">
-        View All Movies
+        View Your Movies
       </v-btn>
     </div>
     

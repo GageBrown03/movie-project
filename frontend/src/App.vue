@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar app color="primary" dark>
-      <v-toolbar-title>iMovies</v-toolbar-title>
+      <v-toolbar-title>myMDB</v-toolbar-title>
       <v-spacer></v-spacer>
       
       <!-- Dark mode toggle button (always visible) -->
@@ -12,7 +12,7 @@
       <!-- Show these buttons only when logged in -->
       <template v-if="isLoggedIn">
         <v-btn to="/">Home</v-btn>
-        <v-btn to="/movies">All Movies</v-btn>
+        <v-btn to="/movies">Your Movies</v-btn>
         <v-btn @click="handleLogout">
           <v-icon left>mdi-logout</v-icon>
           Logout
