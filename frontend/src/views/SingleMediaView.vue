@@ -35,24 +35,36 @@
                 @click="$router.push('/movies')"
                 class="back-button"
               />
+              
+              <!-- Type Badge - Consistent with AllMediaView -->
               <v-chip 
-                :color="media.mediaType === 'movie' ? 'primary' : 'secondary'" 
+                :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
                 size="small" 
-                class="mb-2"
+                class="mb-2 text-white font-weight-black"
+                variant="flat"
+                label
               >
-                {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV SHOW' }}
+                {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
               </v-chip>
+              
               <h1 class="text-h3 text-white mb-2">{{ media.title }}</h1>
+              
               <div class="hero-meta">
                 <v-chip v-if="media.releaseYear" size="small" color="white" variant="flat" class="mr-2">
                   {{ media.releaseYear }}
                 </v-chip>
-                <v-chip v-if="media.runtime" size="small" color="white" variant="flat" class="mr-2">
+                
+                <!-- Movie-specific: Runtime -->
+                <v-chip v-if="media.mediaType === 'movie' && media.runtime" size="small" color="white" variant="flat" class="mr-2">
                   {{ media.runtime }} min
                 </v-chip>
-                <v-chip v-if="media.numberOfSeasons" size="small" color="white" variant="flat" class="mr-2">
+                
+                <!-- TV-specific: Seasons -->
+                <v-chip v-if="media.mediaType === 'tv' && media.numberOfSeasons" size="small" color="white" variant="flat" class="mr-2">
                   {{ media.numberOfSeasons }} {{ media.numberOfSeasons === 1 ? 'Season' : 'Seasons' }}
                 </v-chip>
+                
+                <!-- Director/Creator -->
                 <v-chip v-if="media.director" size="small" color="white" variant="flat">
                   {{ media.mediaType === 'tv' ? media.director : `Dir: ${media.director}` }}
                 </v-chip>
@@ -69,24 +81,36 @@
               @click="$router.push('/movies')"
               class="back-button mb-4"
             />
+            
+            <!-- Type Badge - Consistent with AllMediaView -->
             <v-chip 
-              :color="media.mediaType === 'movie' ? 'primary' : 'secondary'" 
+              :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
               size="small" 
-              class="mb-2"
+              class="mb-2 text-white font-weight-black"
+              variant="flat"
+              label
             >
-              {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV SHOW' }}
+              {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
             </v-chip>
+            
             <h1 class="text-h3 mb-2">{{ media.title }}</h1>
+            
             <div class="hero-meta">
               <v-chip v-if="media.releaseYear" size="small" class="mr-2">
                 {{ media.releaseYear }}
               </v-chip>
-              <v-chip v-if="media.runtime" size="small" class="mr-2">
+              
+              <!-- Movie-specific: Runtime -->
+              <v-chip v-if="media.mediaType === 'movie' && media.runtime" size="small" class="mr-2">
                 {{ media.runtime }} min
               </v-chip>
-              <v-chip v-if="media.numberOfSeasons" size="small" class="mr-2">
+              
+              <!-- TV-specific: Seasons -->
+              <v-chip v-if="media.mediaType === 'tv' && media.numberOfSeasons" size="small" class="mr-2">
                 {{ media.numberOfSeasons }} {{ media.numberOfSeasons === 1 ? 'Season' : 'Seasons' }}
               </v-chip>
+              
+              <!-- Director/Creator -->
               <v-chip v-if="media.director" size="small">
                 {{ media.director }}
               </v-chip>
@@ -404,7 +428,7 @@ export default {
 
   computed: {
     mediaId() {
-      return this.$route.params.movieId; // Keep using movieId for route compatibility
+      return this.$route.params.movieId;
     }
   },
 
