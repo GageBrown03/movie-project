@@ -150,30 +150,6 @@
             @mouseenter="startHover(media)"
             @mouseleave="cancelHover"
           >
-            <!-- 
-              CARD DESIGN CUSTOMIZATION NOTES:
-              
-              To move rating badge next to title (right-aligned):
-              1. Remove the rating-badge from poster-container below
-              2. Add this to v-card-title section:
-                 <v-row class="align-center">
-                   <v-col>{{ media.title }}</v-col>
-                   <v-col cols="auto">
-                     <v-chip color="primary" size="small">
-                       <v-icon start size="small">mdi-star</v-icon>
-                       {{ media.rating }}/5
-                     </v-chip>
-                   </v-col>
-                 </v-row>
-              
-              Current design: Type badge (top-left), Rating badge (top-right)
-              Alternative layouts:
-              - Both badges on bottom overlay
-              - Type badge on poster, rating below with title
-              - No badges on poster, all info in card text area
-            -->
-            
-            <!-- Movie Poster with Badges -->
             <div class="poster-container">
               <v-img
                 v-if="media.posterUrl"
@@ -182,63 +158,56 @@
                 cover
                 class="poster-image"
               >
+                <div class="poster-scrim"></div>
+
                 <template v-slot:placeholder>
                   <v-row class="fill-height ma-0 align-center justify-center">
                     <v-progress-circular indeterminate color="grey-lighten-5" />
                   </v-row>
                 </template>
               </v-img>
+              
               <div v-else class="poster-placeholder">
                 <v-icon size="64" color="grey-lighten-1">mdi-movie-outline</v-icon>
                 <p class="text-caption mt-2">No poster</p>
               </div>
               
-              <!-- Type Badge (top-left) -->
-              <v-chip
-                class="type-badge"
-                :color="media.mediaType === 'movie' ? 'primary' : 'secondary'"
-                size="x-small"
-                label
-              >
-                {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
-              </v-chip>
+              <div class="badge-wrapper left">
+                <v-chip
+                  :color="media.mediaType === 'movie' ? 'blue-darken-2' : 'purple-darken-2'"
+                  size="x-small"
+                  class="type-chip"
+                  variant="flat"
+                >
+                  {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+                </v-chip>
+              </div>
               
-              <!-- Rating Badge (top-right) - only for watched items -->
-              <v-chip
-                v-if="media.rating"
-                class="rating-badge"
-                color="amber"
-                size="small"
-                label
-              >
-                <v-icon start size="small">mdi-star</v-icon>
-                {{ media.rating }}/5
-              </v-chip>
-              
-              <!-- Watchlist Badge (if not rated) -->
-              <v-chip
-                v-else
-                class="rating-badge"
-                color="info"
-                size="small"
-                label
-              >
-                <v-icon start size="small">mdi-bookmark</v-icon>
-                Watchlist
-              </v-chip>
+              <div v-if="!media.rating" class="badge-wrapper right">
+                <v-chip
+                  color="surface"
+                  size="x-small"
+                  class="watchlist-chip"
+                  variant="flat"
+                >
+                  <v-icon start size="10">mdi-bookmark</v-icon>
+                  WATCHLIST
+                </v-chip>
+              </div>
             </div>
 
-            <v-card-title class="text-subtitle-1">
-              {{ media.title }}
-            </v-card-title>
-
-            <!-- Cast Display (top 3 actors) -->
-            <v-card-subtitle v-if="media.cast && media.cast.length > 0">
-              {{ media.cast.slice(0, 3).map(c => c.name).join(', ') }}
-            </v-card-subtitle>
-            <v-card-subtitle v-else-if="media.director">
-              {{ media.director }}
-            </v-card-subtitle>
+            <v-card-text class="pa-3">
+              <div class="d-flex justify-space-between align-start">
+                <div class="text-subtitle-1 font-weight-bold text-truncate pr-2" style="flex: 1;">
+                  {{ media.title }}
+                </div>
+                
+                <div v-if="media.rating" class="d-flex align-center pt-1" style="white-space: nowrap;">
+                  <v-icon color="amber-darken-1" size="small" class="mr-1">mdi-star</v-icon>
+                  <span class="text-body-2 font-weight-black">{{ media.rating }}</span>
+                </div>
+              </div>
+            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
@@ -667,16 +636,51 @@ export default {
 .media-card {
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+  border-radius: 12px;
 }
 
 .media-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px);
 }
 
 .poster-container {
   position: relative;
   aspect-ratio: 2/3;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #1a1a1a;
+  overflow: hidden;
+}
+
+/* Subtle dark gradient at the top to ensure badges are visible on light posters */
+.poster-scrim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+  z-index: 1;
+}
+
+.badge-wrapper {
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+}
+
+.badge-wrapper.left { left: 8px; }
+.badge-wrapper.right { right: 8px; }
+
+/* Glassmorphism/Flat style for chips to make them feel modern */
+.type-chip, .watchlist-chip {
+  font-weight: 800 !important;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.watchlist-chip {
+  background: rgba(var(--v-theme-surface), 0.8) !important;
+  backdrop-filter: blur(4px);
 }
 
 .poster-placeholder {
@@ -686,33 +690,10 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.05);
-}
-
-/* Type badge on top-left */
-.type-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  font-weight: bold;
-  z-index: 1;
-}
-
-/* Rating badge on top-right */
-.rating-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-weight: bold;
-  z-index: 1;
 }
 
 .poster-image {
   width: 100%;
   height: 100%;
-}
-
-.hover-preview {
-  user-select: none;
 }
 </style>
