@@ -61,12 +61,6 @@
       </template>
     </v-empty-state>
 
-    <v-empty-state v-else-if="filteredMedia.length === 0" icon="mdi-movie-search-outline" title="No results found" text="Try adjusting your search or filters">
-      <template v-slot:actions>
-        <v-btn @click="clearFilters" variant="text">Clear Filters</v-btn>
-      </template>
-    </v-empty-state>
-    
     <div v-else>
       <v-row class="mb-4 align-center">
         <v-col>
@@ -143,8 +137,13 @@
       transition="scale-transition"
       persistent
       @click:outside="closeHoverModalImmediately"
+      class="hover-dialog-clean"
     >
-      <div @mouseenter="clearCloseTimeout" @mouseleave="startCloseTimeout">
+      <div 
+        class="modal-capture-area"
+        @mouseenter="clearCloseTimeout" 
+        @mouseleave="startCloseTimeout"
+      >
         <v-card v-if="hoveredMedia" class="hover-preview-large" @click="goToMedia(hoveredMedia.mediaId)">
           <v-img
             :src="hoveredMedia.backdropUrl || hoveredMedia.posterUrl"
@@ -183,10 +182,6 @@
               <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
                 <div class="text-overline text-grey-darken-1 mb-2">Cast</div>
                 <div class="text-body-1 mb-6">{{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}</div>
-                <div v-if="hoveredMedia.mediaType === 'tv'">
-                  <div class="text-overline text-grey-darken-1 mb-2">Series Info</div>
-                  <div class="text-body-1">{{ hoveredMedia.numberOfSeasons }} Seasons</div>
-                </div>
               </v-col>
             </v-row>
           </v-card-text>
@@ -194,7 +189,6 @@
           <v-divider></v-divider>
           <v-card-actions class="pa-6">
             <v-btn variant="text" color="grey" @click.stop="goToEdit(hoveredMedia.mediaId)"><v-icon start>mdi-pencil</v-icon> Edit</v-btn>
-            <v-btn variant="text" color="error" @click.stop="confirmDelete(hoveredMedia)"><v-icon start>mdi-delete</v-icon> Delete</v-btn>
             <v-spacer />
             <v-btn color="primary" variant="flat" size="large">Full Details <v-icon end>mdi-chevron-right</v-icon></v-btn>
           </v-card-actions>
@@ -234,7 +228,7 @@ export default {
       typeOptions: [{ title: 'Movies', value: 'movie' }, { title: 'TV Shows', value: 'tv' }],
       statusOptions: [{ title: 'Watched', value: 'watched' }, { title: 'Watchlist', value: 'want_to_watch' }, { title: 'Watching', value: 'watching' }],
       ratingOptions: [5, 4, 3, 2, 1].map(r => ({ title: `${r} Stars`, value: r })),
-      sortOptions: [{ title: 'Recently Added', value: 'dateAdded' }, { title: 'Title (A-Z)', value: 'titleAsc' }, { title: 'Title (Z-A)', value: 'titleDesc' }, { title: 'Rating (High to Low)', value: 'ratingDesc' }],
+      sortOptions: [{ title: 'Recently Added', value: 'dateAdded' }, { title: 'Title (A-Z)', value: 'titleAsc' }, { title: 'Rating (High to Low)', value: 'ratingDesc' }],
     };
   },
   computed: {
@@ -242,7 +236,7 @@ export default {
       let result = [...this.mediaList];
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
-        result = result.filter(m => m.title.toLowerCase().includes(query) || (m.cast && m.cast.some(c => c.name.toLowerCase().includes(query))));
+        result = result.filter(m => m.title.toLowerCase().includes(query));
       }
       if (this.filterType) result = result.filter(m => m.mediaType === this.filterType);
       if (this.filterStatus) result = result.filter(m => m.status === this.filterStatus);
@@ -277,6 +271,7 @@ export default {
       if (this.hoverTimeout) { clearTimeout(this.hoverTimeout); this.hoverTimeout = null; }
     },
     startCloseTimeout() {
+      // 250ms Grace Period
       this.closeTimeout = setTimeout(() => { this.showHoverModal = false; }, 250);
     },
     clearCloseTimeout() {
@@ -313,18 +308,34 @@ export default {
 </script>
 
 <style scoped>
+/* Scoped deep selectors for Vuetify dialog cleanup */
+:deep(.v-overlay__content) {
+  margin: 0 !important;
+  pointer-events: auto !important;
+}
+
+.modal-capture-area {
+  padding: 30px; /* Invisible buffer zone */
+  margin: -30px; /* Offset to keep card centered */
+  display: block;
+}
+
 .all-media { max-width: 1600px; margin: 0 auto; }
 .media-card { cursor: pointer; transition: transform 0.3s ease; background: transparent !important; }
 .media-card:hover { transform: translateY(-8px); }
 .poster-container { position: relative; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
 .top-scrim { position: absolute; top: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); z-index: 1; }
 .overlay-content { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
-.type-label { box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-.rating-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
 .gold-text { color: #FFC107 !important; }
-.hover-preview-large { cursor: pointer; border-radius: 20px !important; background-color: #121212 !important; transition: transform 0.2s ease; overflow: hidden; }
+.rating-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
 
-/* Zoom Animation */
+.hover-preview-large { 
+  border-radius: 20px !important; 
+  background-color: #121212 !important; 
+  overflow: hidden; 
+}
+
+/* Cinematic Zoom Animation */
 .zoom-animation {
   animation: scaleBackground 12s linear infinite;
   transform-origin: center;
