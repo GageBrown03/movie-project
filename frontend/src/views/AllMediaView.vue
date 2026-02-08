@@ -164,9 +164,6 @@
                 </div>
               </v-img>
             </div>
-            <v-card-text class="px-1 py-3 text-center">
-              <div class="text-subtitle-1 font-weight-bold text-truncate">{{ media.title }}</div>
-            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
