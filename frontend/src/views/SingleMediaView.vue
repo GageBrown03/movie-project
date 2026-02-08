@@ -9,7 +9,7 @@
     <v-alert v-else-if="error" type="error" variant="tonal" class="mb-4">
       {{ error }}
       <template v-slot:append>
-        <v-btn to="/movies" variant="text">Back to Collection</v-btn>
+        <v-btn to="/media" variant="text">Back to Collection</v-btn>
       </template>
     </v-alert>
 
@@ -32,7 +32,7 @@
                 variant="text"
                 color="white"
                 size="small"
-                @click="$router.push('/movies')"
+                @click="$router.push('/media')"
                 class="back-button"
               />
               
@@ -78,7 +78,7 @@
               icon="mdi-arrow-left"
               variant="text"
               size="small"
-              @click="$router.push('/movies')"
+              @click="$router.push('/media')"
               class="back-button mb-4"
             />
             
@@ -712,7 +712,7 @@ export default {
       
       try {
         await mediaAPI.delete(this.mediaId);
-        this.$router.push('/movies');
+        this.$router.push('/media');
       } catch (err) {
         console.error('Error deleting:', err);
         this.error = 'Failed to delete. Please try again.';
