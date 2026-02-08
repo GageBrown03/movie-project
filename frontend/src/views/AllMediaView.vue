@@ -145,10 +145,8 @@
         >
           <v-card
             class="media-card"
-            hover
+            flat
             @click="goToMedia(media.mediaId)"
-            @mouseenter="startHover(media)"
-            @mouseleave="cancelHover"
           >
             <div class="poster-container">
               <v-img
@@ -158,7 +156,43 @@
                 cover
                 class="poster-image"
               >
-                <div class="poster-scrim"></div>
+                <div class="top-scrim"></div>
+
+                <div class="overlay-content pa-2">
+                  <div class="d-flex justify-space-between align-center">
+                    
+                    <v-chip
+                      size="x-small"
+                      :color="media.mediaType === 'movie' ? 'blue-darken-2' : 'purple-darken-2'"
+                      class="glass-chip font-weight-black"
+                      variant="flat"
+                    >
+                      {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+                    </v-chip>
+
+                    <v-chip
+                      v-if="media.rating"
+                      size="small"
+                      color="amber-darken-2"
+                      class="glass-chip font-weight-black"
+                      variant="flat"
+                    >
+                      <v-icon start size="14">mdi-star</v-icon>
+                      {{ media.rating }}/5
+                    </v-chip>
+                    
+                    <v-chip
+                      v-else
+                      size="small"
+                      color="grey-darken-3"
+                      class="glass-chip font-weight-black"
+                      variant="flat"
+                    >
+                      <v-icon start size="14">mdi-bookmark</v-icon>
+                      WATCH
+                    </v-chip>
+                  </div>
+                </div>
 
                 <template v-slot:placeholder>
                   <v-row class="fill-height ma-0 align-center justify-center">
@@ -166,46 +200,11 @@
                   </v-row>
                 </template>
               </v-img>
-              
-              <div v-else class="poster-placeholder">
-                <v-icon size="64" color="grey-lighten-1">mdi-movie-outline</v-icon>
-                <p class="text-caption mt-2">No poster</p>
-              </div>
-              
-              <div class="badge-wrapper left">
-                <v-chip
-                  :color="media.mediaType === 'movie' ? 'blue-darken-2' : 'purple-darken-2'"
-                  size="x-small"
-                  class="type-chip"
-                  variant="flat"
-                >
-                  {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
-                </v-chip>
-              </div>
-              
-              <div v-if="!media.rating" class="badge-wrapper right">
-                <v-chip
-                  color="surface"
-                  size="x-small"
-                  class="watchlist-chip"
-                  variant="flat"
-                >
-                  <v-icon start size="10">mdi-bookmark</v-icon>
-                  WATCHLIST
-                </v-chip>
-              </div>
             </div>
 
-            <v-card-text class="pa-3">
-              <div class="d-flex justify-space-between align-start">
-                <div class="text-subtitle-1 font-weight-bold text-truncate pr-2" style="flex: 1;">
-                  {{ media.title }}
-                </div>
-                
-                <div v-if="media.rating" class="d-flex align-center pt-1" style="white-space: nowrap;">
-                  <v-icon color="amber-darken-1" size="small" class="mr-1">mdi-star</v-icon>
-                  <span class="text-body-2 font-weight-black">{{ media.rating }}</span>
-                </div>
+            <v-card-text class="px-1 py-3">
+              <div class="text-subtitle-1 font-weight-bold text-truncate text-center">
+                {{ media.title }}
               </div>
             </v-card-text>
           </v-card>
@@ -265,125 +264,95 @@
 
     <!-- Hover Preview Modal -->
     <v-dialog
-      v-model="showHoverModal"
-      max-width="600"
-      :scrim="false"
-      persistent
-      @click:outside="closeHoverModal"
+  v-model="showHoverModal"
+  max-width="900" 
+  :scrim="true"
+  transition="scale-transition"
+  @click:outside="closeHoverModal"
+>
+  <v-card 
+    v-if="hoveredMedia" 
+    class="hover-preview-large"
+    @click="goToMedia(hoveredMedia.mediaId)"
+  >
+    <v-img
+      :src="hoveredMedia.backdropUrl || hoveredMedia.posterUrl"
+      height="450"
+      cover
+      class="align-end"
+      gradient="to top, rgba(18,18,18,1) 0%, rgba(18,18,18,0.7) 20%, rgba(18,18,18,0) 100%"
     >
-      <v-card v-if="hoveredMedia" class="hover-preview">
-        <v-img
-          v-if="hoveredMedia.backdropUrl"
-          :src="hoveredMedia.backdropUrl"
-          height="200"
-          cover
-          gradient="to bottom, rgba(0,0,0,.3), rgba(0,0,0,.7)"
-        >
-          <v-card-title class="text-h5 text-white">
-            {{ hoveredMedia.title }}
-            <span v-if="hoveredMedia.releaseYear" class="text-h6 ml-2">
-              ({{ hoveredMedia.releaseYear }})
-            </span>
-            <v-chip 
-              :color="hoveredMedia.mediaType === 'movie' ? 'primary' : 'secondary'" 
-              size="small" 
-              class="ml-2"
-            >
-              {{ hoveredMedia.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
-            </v-chip>
-          </v-card-title>
-        </v-img>
-        <v-card-title v-else>
-          {{ hoveredMedia.title }}
-          <span v-if="hoveredMedia.releaseYear" class="text-subtitle-1 ml-2">
-            ({{ hoveredMedia.releaseYear }})
-          </span>
+      <div class="pa-6">
+        <div class="d-flex align-center mb-2">
           <v-chip 
-            :color="hoveredMedia.mediaType === 'movie' ? 'primary' : 'secondary'" 
             size="small" 
-            class="ml-2"
+            :color="hoveredMedia.mediaType === 'movie' ? 'blue-darken-2' : 'purple-darken-2'" 
+            class="glass-chip mr-2"
           >
-            {{ hoveredMedia.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+            {{ hoveredMedia.mediaType.toUpperCase() }}
           </v-chip>
-        </v-card-title>
+          <span v-if="hoveredMedia.releaseYear" class="text-h6 text-grey-lighten-1">
+            {{ hoveredMedia.releaseYear }}
+          </span>
+        </div>
+        <h2 class="text-h3 font-weight-black text-white mb-2">{{ hoveredMedia.title }}</h2>
+      </div>
+    </v-img>
 
-        <v-card-text>
-          <div class="mb-3">
-            <v-chip v-if="hoveredMedia.rating" size="small" class="mr-2" color="amber">
-              <v-icon start size="small">mdi-star</v-icon>
-              {{ hoveredMedia.rating }}/5 (You)
+    <v-card-text class="pa-6 bg-surface">
+      <v-row>
+        <v-col cols="12" md="8">
+          <div class="d-flex align-center mb-4">
+            <v-chip v-if="hoveredMedia.rating" color="amber-darken-2" class="mr-3 glass-chip" size="large">
+              <v-icon start>mdi-star</v-icon> {{ hoveredMedia.rating }}/5
             </v-chip>
-            <v-chip v-else size="small" class="mr-2" color="info">
-              <v-icon start size="small">mdi-bookmark</v-icon>
-              Watchlist
+            <v-chip v-else color="grey-darken-3" class="mr-3 glass-chip" size="large">
+              <v-icon start>mdi-bookmark</v-icon> WATCHLIST
             </v-chip>
-            <v-chip v-if="hoveredMedia.tmdbRating" size="small" class="mr-2">
-              {{ hoveredMedia.tmdbRating.toFixed(1) }} TMDB
-            </v-chip>
-            <v-chip v-if="hoveredMedia.imdbRating" size="small" class="mr-2">
-              {{ hoveredMedia.imdbRating.toFixed(1) }} IMDb
+            
+            <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">
+              TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}
             </v-chip>
           </div>
 
-          <!-- Cast -->
-          <p v-if="hoveredMedia.cast && hoveredMedia.cast.length > 0" class="text-subtitle-2 mb-2">
-            <strong>Cast:</strong> {{ hoveredMedia.cast.slice(0, 3).map(c => c.name).join(', ') }}
-          </p>
-          <p v-else-if="hoveredMedia.director" class="text-subtitle-2 mb-2">
-            <strong>{{ hoveredMedia.mediaType === 'tv' ? 'Created by' : 'Director' }}:</strong> {{ hoveredMedia.director }}
+          <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-4" style="line-height: 1.6;">
+            {{ hoveredMedia.plot || 'No description available.' }}
           </p>
 
-          <!-- TV-specific info -->
-          <p v-if="hoveredMedia.mediaType === 'tv' && hoveredMedia.numberOfSeasons" class="text-subtitle-2 mb-2">
-            <strong>Seasons:</strong> {{ hoveredMedia.numberOfSeasons }}
-            <span v-if="hoveredMedia.seasonsWatched"> (Watched {{ hoveredMedia.seasonsWatched }})</span>
-          </p>
-
-          <div v-if="hoveredMedia.genres && hoveredMedia.genres.length > 0" class="mb-3">
-            <v-chip
-              v-for="genre in hoveredMedia.genres"
-              :key="genre"
-              size="small"
-              variant="outlined"
-              class="mr-1"
-            >
+          <div v-if="hoveredMedia.genres" class="d-flex flex-wrap gap-2">
+            <v-chip v-for="genre in hoveredMedia.genres" :key="genre" size="small" variant="tonal" class="mr-1">
               {{ genre }}
             </v-chip>
           </div>
+        </v-col>
 
-          <p v-if="hoveredMedia.plot" class="text-body-2">
-            {{ truncateText(hoveredMedia.plot, 200) }}
-          </p>
-        </v-card-text>
+        <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
+          <div class="text-subtitle-2 text-grey-darken-1 mb-1">STARRING</div>
+          <div class="text-body-2 mb-4">
+            {{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}
+          </div>
 
-        <v-card-actions>
-          <v-btn
-            variant="text"
-            color="primary"
-            @click.stop="goToEdit(hoveredMedia.mediaId)"
-          >
-            <v-icon start>mdi-pencil</v-icon>
-            Edit
-          </v-btn>
-          <v-btn
-            variant="text"
-            color="error"
-            @click.stop="confirmDelete(hoveredMedia)"
-          >
-            <v-icon start>mdi-delete</v-icon>
-            Delete
-          </v-btn>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            @click.stop="goToMedia(hoveredMedia.mediaId)"
-          >
-            Full Details
-            <v-icon end>mdi-arrow-right</v-icon>
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          <div v-if="hoveredMedia.mediaType === 'tv'" class="mb-4">
+            <div class="text-subtitle-2 text-grey-darken-1 mb-1">SEASONS</div>
+            <div class="text-body-2">{{ hoveredMedia.numberOfSeasons }} Seasons</div>
+          </div>
+        </v-col>
+      </v-row>
+    </v-card-text>
+
+    <v-divider></v-divider>
+
+    <v-card-actions class="pa-4">
+      <v-btn variant="text" color="grey" @click.stop="goToEdit(hoveredMedia.mediaId)">
+        <v-icon start>mdi-pencil</v-icon> Edit Entry
+      </v-btn>
+      <v-spacer />
+      <v-btn color="primary" variant="flat" size="large" @click.stop="goToMedia(hoveredMedia.mediaId)">
+        View Full Page <v-icon end>mdi-chevron-right</v-icon>
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
 
     <!-- Delete Confirmation -->
     <delete-confirm-dialog
@@ -555,7 +524,7 @@ export default {
       this.hoverTimeout = setTimeout(() => {
         this.hoveredMedia = media;
         this.showHoverModal = true;
-      }, 300);
+      }, 450);
     },
     
     cancelHover() {
@@ -628,72 +597,73 @@ export default {
 </script>
 
 <style scoped>
-.all-media {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
 .media-card {
+  background: transparent !important;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  overflow: hidden;
-  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .media-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-8px);
+}
+
+.media-card:hover .poster-image {
+  box-shadow: 0 12px 20px rgba(0,0,0,0.5);
 }
 
 .poster-container {
   position: relative;
-  aspect-ratio: 2/3;
-  background: #1a1a1a;
+  border-radius: 12px;
   overflow: hidden;
+  aspect-ratio: 2/3;
+  background-color: #121212;
 }
 
-/* Subtle dark gradient at the top to ensure badges are visible on light posters */
-.poster-scrim {
+.poster-image {
+  transition: transform 0.5s ease;
+}
+
+/* Dark gradient at the top */
+.top-scrim {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 40%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%);
+  height: 60px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
   z-index: 1;
 }
 
-.badge-wrapper {
+.overlay-content {
   position: absolute;
-  top: 8px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 2;
 }
 
-.badge-wrapper.left { left: 8px; }
-.badge-wrapper.right { right: 8px; }
-
-/* Glassmorphism/Flat style for chips to make them feel modern */
-.type-chip, .watchlist-chip {
-  font-weight: 800 !important;
+/* Glassmorphism effect */
+.glass-chip {
+  backdrop-filter: blur(8px) saturate(1.2);
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   letter-spacing: 0.5px;
-  opacity: 0.9;
+  font-weight: 700;
+}
+.hover-preview-large {
+  cursor: pointer; /* Makes the whole card feel interactive */
+  overflow: hidden;
+  border-radius: 16px !important;
+  background-color: #121212 !important; /* Force deep dark theme */
+  transition: transform 0.2s ease;
 }
 
-.watchlist-chip {
-  background: rgba(var(--v-theme-surface), 0.8) !important;
-  backdrop-filter: blur(4px);
+.hover-preview-large:hover {
+  /* Subtle lift when hovering over the modal itself */
+  transform: scale(1.01);
 }
 
-.poster-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.poster-image {
-  width: 100%;
-  height: 100%;
+.gap-2 {
+  gap: 8px;
 }
 </style>
