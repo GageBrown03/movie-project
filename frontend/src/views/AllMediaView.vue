@@ -164,6 +164,9 @@
                 </div>
               </v-img>
             </div>
+            <!--vrd-text class="px-1 py-3 text-center"> COMMENTED OUT TO REMOVE MEDIA TITLES FROM GRID VIEW
+              <div class="text-subtitle-1 font-weight-bold text-truncate">{{ media.title }}</div>
+            < rd-text>-->
           </v-card>
         </v-col>
       </v-row>
@@ -199,77 +202,74 @@
       </v-list>
     </div>
 
-    <!-- Hover Modal - FIXED: Removed Edit button -->
+    <!-- FIXED Hover Modal - Better close behavior -->
     <v-dialog
       v-model="showHoverModal"
       max-width="900"
       :scrim="false"
       transition="scale-transition"
-      persistent
-      @click:outside="closeHoverModalImmediately"
-      class="hover-dialog-clean"
+      @click:outside="closeHoverModal"
     >
-      <div 
-        class="modal-capture-area"
-        @mouseenter="clearCloseTimeout" 
+      <!-- REMOVED modal-capture-area wrapper that was causing sticky behavior -->
+      <v-card 
+        v-if="hoveredMedia" 
+        class="hover-preview-large" 
+        @click="goToMedia(hoveredMedia.mediaId)"
+        @mouseenter="keepModalOpen"
         @mouseleave="startCloseTimeout"
       >
-        <v-card v-if="hoveredMedia" class="hover-preview-large" @click="goToMedia(hoveredMedia.mediaId)">
-          <v-img
-            :src="hoveredMedia.backdropUrl || hoveredMedia.posterUrl"
-            height="450"
-            cover
-            class="align-end"
-            :image-props="{ class: 'zoom-animation' }"
-            gradient="to top, rgba(18,18,18,1) 0%, rgba(18,18,18,0.7) 20%, rgba(18,18,18,0) 100%"
-          >
-            <div class="pa-8">
-              <div class="d-flex align-center mb-2">
-                <v-chip size="small" :color="hoveredMedia.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" class="mr-3 text-white font-weight-black" label>
-                  {{ hoveredMedia.mediaType.toUpperCase() }}
-                </v-chip>
-                <span v-if="hoveredMedia.releaseYear" class="text-h5 text-grey-lighten-1">{{ hoveredMedia.releaseYear }}</span>
-              </div>
-              <h2 class="text-h2 font-weight-black text-white mb-2">{{ hoveredMedia.title }}</h2>
+        <v-img
+          :src="hoveredMedia.backdropUrl || hoveredMedia.posterUrl"
+          height="450"
+          cover
+          class="align-end"
+          :image-props="{ class: 'zoom-animation' }"
+          gradient="to top, rgba(18,18,18,1) 0%, rgba(18,18,18,0.7) 20%, rgba(18,18,18,0) 100%"
+        >
+          <div class="pa-8">
+            <div class="d-flex align-center mb-2">
+              <v-chip size="small" :color="hoveredMedia.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" class="mr-3 text-white font-weight-black" label>
+                {{ hoveredMedia.mediaType.toUpperCase() }}
+              </v-chip>
+              <span v-if="hoveredMedia.releaseYear" class="text-h5 text-grey-lighten-1">{{ hoveredMedia.releaseYear }}</span>
             </div>
-          </v-img>
+            <h2 class="text-h2 font-weight-black text-white mb-2">{{ hoveredMedia.title }}</h2>
+          </div>
+        </v-img>
 
-          <v-card-text class="pa-8 bg-surface">
-            <v-row>
-              <v-col cols="12" md="8">
-                <div class="d-flex align-center mb-6">
-                  <v-chip v-if="hoveredMedia.rating" color="#121212" class="mr-4 rating-label" size="large" variant="flat">
-                    <v-icon start color="#FFC107">mdi-star</v-icon>
-                    <span class="gold-text font-weight-black text-h6">{{ hoveredMedia.rating }}/5</span>
-                  </v-chip>
-                  <v-chip v-else color="info" class="mr-4 watchlist-label" size="large" variant="flat">
-                    <v-icon start>mdi-bookmark</v-icon>
-                    <span class="font-weight-bold">Watchlist</span>
-                  </v-chip>
-                  <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}</v-chip>
-                </div>
-                <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-6" style="line-height: 1.6;">{{ hoveredMedia.plot || 'No plot description available.' }}</p>
-                <div class="d-flex flex-wrap gap-2">
-                  <v-chip v-for="genre in hoveredMedia.genres" :key="genre" size="small" variant="tonal" class="mr-2">{{ genre }}</v-chip>
-                </div>
-              </v-col>
-              <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
-                <div class="text-overline text-grey-darken-1 mb-2">Cast</div>
-                <div class="text-body-1 mb-6">{{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}</div>
-              </v-col>
-            </v-row>
-          </v-card-text>
+        <v-card-text class="pa-8 bg-surface">
+          <v-row>
+            <v-col cols="12" md="8">
+              <div class="d-flex align-center mb-6">
+                <v-chip v-if="hoveredMedia.rating" color="#121212" class="mr-4 rating-label" size="large" variant="flat">
+                  <v-icon start color="#FFC107">mdi-star</v-icon>
+                  <span class="gold-text font-weight-black text-h6">{{ hoveredMedia.rating }}/5</span>
+                </v-chip>
+                <v-chip v-else color="info" class="mr-4 watchlist-label" size="large" variant="flat">
+                  <v-icon start>mdi-bookmark</v-icon>
+                  <span class="font-weight-bold">Watchlist</span>
+                </v-chip>
+                <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}</v-chip>
+              </div>
+              <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-6" style="line-height: 1.6;">{{ hoveredMedia.plot || 'No plot description available.' }}</p>
+              <div class="d-flex flex-wrap gap-2">
+                <v-chip v-for="genre in hoveredMedia.genres" :key="genre" size="small" variant="tonal" class="mr-2">{{ genre }}</v-chip>
+              </div>
+            </v-col>
+            <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
+              <div class="text-overline text-grey-darken-1 mb-2">Cast</div>
+              <div class="text-body-1 mb-6">{{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}</div>
+            </v-col>
+          </v-row>
+        </v-card-text>
 
-          <v-divider></v-divider>
-          <v-card-actions class="pa-6 justify-center">
-            <!-- REMOVED: Edit button (no longer needed since inline edit exists) -->
-            <!-- Just show Full Details button -->
-            <v-btn color="primary" variant="flat" size="large" block>
-              View Full Details <v-icon end>mdi-chevron-right</v-icon>
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </div>
+        <v-divider></v-divider>
+        <v-card-actions class="pa-6 justify-center">
+          <v-btn color="primary" variant="flat" size="large" block>
+            View Full Details <v-icon end>mdi-chevron-right</v-icon>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
 
     <delete-confirm-dialog :show="showDeleteDialog" :movie-title="mediaToDelete?.title || ''" :deleting="isDeleting" @cancel="cancelDelete" @confirm="handleDelete" />
@@ -336,6 +336,8 @@ export default {
       catch (err) { this.error = 'Failed to load media.'; } 
       finally { this.loading = false; }
     },
+    
+    // FIXED: Better hover behavior
     startHover(media) {
       if (this.isMobile) return;
       this.clearCloseTimeout();
@@ -343,15 +345,51 @@ export default {
       this.hoverTimeout = setTimeout(() => {
         this.hoveredMedia = media;
         this.showHoverModal = true;
-      }, 450);
+      }, 400);  // Slightly longer delay for intentional hovers
     },
-    cancelHover() { if (this.hoverTimeout) { clearTimeout(this.hoverTimeout); this.hoverTimeout = null; } },
-    startCloseTimeout() { this.closeTimeout = setTimeout(() => { this.showHoverModal = false; }, 250); },
-    clearCloseTimeout() { if (this.closeTimeout) { clearTimeout(this.closeTimeout); this.closeTimeout = null; } },
-    closeHoverModalImmediately() { this.showHoverModal = false; this.clearCloseTimeout(); },
-    goToMedia(mediaId) { this.closeHoverModalImmediately(); this.$router.push(`/movies/${mediaId}`); },
+    
+    cancelHover() { 
+      if (this.hoverTimeout) { 
+        clearTimeout(this.hoverTimeout); 
+        this.hoverTimeout = null; 
+      } 
+    },
+    
+    // FIXED: Faster close, no sticky behavior
+    startCloseTimeout() { 
+      this.closeTimeout = setTimeout(() => { 
+        this.showHoverModal = false;
+        this.hoveredMedia = null;
+      }, 150);  // Reduced from 250ms to 150ms for faster close
+    },
+    
+    keepModalOpen() {
+      // When mouse enters modal card, cancel any pending close
+      this.clearCloseTimeout();
+    },
+    
+    clearCloseTimeout() { 
+      if (this.closeTimeout) { 
+        clearTimeout(this.closeTimeout); 
+        this.closeTimeout = null; 
+      } 
+    },
+    
+    closeHoverModal() {
+      // Immediate close on outside click
+      this.showHoverModal = false;
+      this.hoveredMedia = null;
+      this.clearCloseTimeout();
+    },
+    
+    goToMedia(mediaId) { 
+      this.closeHoverModal(); 
+      this.$router.push(`/movies/${mediaId}`); 
+    },
+    
     confirmDelete(media) { this.mediaToDelete = media; this.showDeleteDialog = true; },
     cancelDelete() { this.showDeleteDialog = false; this.mediaToDelete = null; },
+    
     async handleDelete() {
       if (!this.mediaToDelete) return;
       this.isDeleting = true;
@@ -359,9 +397,10 @@ export default {
         await mediaAPI.delete(this.mediaToDelete.mediaId);
         this.mediaList = this.mediaList.filter(m => m.mediaId !== this.mediaToDelete.mediaId);
         this.showDeleteDialog = false;
-        this.closeHoverModalImmediately();
+        this.closeHoverModal();
       } finally { this.isDeleting = false; }
     },
+    
     clearFilters() { 
       this.searchQuery = ''; 
       this.filterType = null; 
@@ -379,7 +418,6 @@ export default {
   pointer-events: auto !important;
 }
 
-.modal-capture-area { padding: 30px; margin: -30px; display: block; }
 .all-media { max-width: 1600px; margin: 0 auto; padding-top: 16px; }
 .gap-3 { gap: 12px; }
 

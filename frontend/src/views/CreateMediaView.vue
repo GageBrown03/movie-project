@@ -380,6 +380,10 @@ export default {
     };
   },
   
+  // ============================================
+  // COMPLETE METHODS SECTION FOR CreateMediaView.vue
+  // ============================================
+
   methods: {
     async searchTMDB() {
       if (!this.searchQuery.trim()) return;
@@ -401,74 +405,34 @@ export default {
         this.searching = false;
       }
     },
-    // NEW METHOD: Check if media already exists
-  async checkForDuplicate(tmdbId, mediaType) {
-    try {
-      // Fetch all user's media
-      const allMedia = await mediaAPI.getAll();
-      
-      // Check if this TMDB ID already exists for this user
-      const duplicate = allMedia.find(m => 
-        m.tmdbId === tmdbId && m.mediaType === mediaType
-      );
-      
-      return duplicate || null;
-    } catch (err) {
-      console.error('Error checking for duplicates:', err);
-      return null;  // Continue anyway if check fails
-    }
-  },
-  
-  // MODIFIED: selectMedia method (add duplicate check)
-  async selectMedia(result) {
-    // First, check for duplicate
-    const duplicate = await this.checkForDuplicate(result.tmdbId, result.mediaType);
     
-    if (duplicate) {
-      // Found duplicate! Store both for dialog
-      this.duplicateMedia = duplicate;
-      this.pendingMedia = result;
-      this.showDuplicateDialog = true;
-      return;  // Stop here, let user decide
-    }
-    
-    // No duplicate, proceed as normal
-    try {
-      if (result.mediaType === 'movie') {
-        this.selectedMedia = await tmdbAPI.getMovieDetails(result.tmdbId);
-      } else {
-        this.selectedMedia = await tmdbAPI.getTVDetails(result.tmdbId);
+    // Duplicate detection
+    async checkForDuplicate(tmdbId, mediaType) {
+      try {
+        const allMedia = await mediaAPI.getAll();
+        const duplicate = allMedia.find(m => 
+          m.tmdbId === tmdbId && m.mediaType === mediaType
+        );
+        return duplicate || null;
+      } catch (err) {
+        console.error('Error checking for duplicates:', err);
+        return null;
       }
-    } catch (err) {
-      console.error('Error fetching details:', err);
-      this.selectedMedia = result;
-    }
-  },
-  
-  // NEW METHOD: User chose to view existing media
-  goToExistingMedia() {
-    this.showDuplicateDialog = false;
-    this.$router.push(`/movies/${this.duplicateMedia.mediaId}`);
-  },
-  
-  // NEW METHOD: User chose to add duplicate anyway (override)
-  async addDuplicateAnyway() {
-    this.showDuplicateDialog = false;
+    },
     
-    // Fetch full details and proceed
-    try {
-      if (this.pendingMedia.mediaType === 'movie') {
-        this.selectedMedia = await tmdbAPI.getMovieDetails(this.pendingMedia.tmdbId);
-      } else {
-        this.selectedMedia = await tmdbAPI.getTVDetails(this.pendingMedia.tmdbId);
-      }
-    } catch (err) {
-      console.error('Error fetching details:', err);
-      this.selectedMedia = this.pendingMedia;
-    }
-  },
+    // ONLY ONE selectMedia method - with duplicate check
     async selectMedia(result) {
-      // Fetch full details based on type
+      // Check for duplicate FIRST
+      const duplicate = await this.checkForDuplicate(result.tmdbId, result.mediaType);
+      
+      if (duplicate) {
+        this.duplicateMedia = duplicate;
+        this.pendingMedia = result;
+        this.showDuplicateDialog = true;
+        return;  // Stop here
+      }
+      
+      // No duplicate, proceed
       try {
         if (result.mediaType === 'movie') {
           this.selectedMedia = await tmdbAPI.getMovieDetails(result.tmdbId);
@@ -477,10 +441,32 @@ export default {
         }
       } catch (err) {
         console.error('Error fetching details:', err);
-        this.selectedMedia = result; // Fall back to search result
+        this.selectedMedia = result;
       }
     },
     
+    // Duplicate dialog actions
+    goToExistingMedia() {
+      this.showDuplicateDialog = false;
+      this.$router.push(`/movies/${this.duplicateMedia.mediaId}`);
+    },
+    
+    async addDuplicateAnyway() {
+      this.showDuplicateDialog = false;
+      
+      try {
+        if (this.pendingMedia.mediaType === 'movie') {
+          this.selectedMedia = await tmdbAPI.getMovieDetails(this.pendingMedia.tmdbId);
+        } else {
+          this.selectedMedia = await tmdbAPI.getTVDetails(this.pendingMedia.tmdbId);
+        }
+      } catch (err) {
+        console.error('Error fetching details:', err);
+        this.selectedMedia = this.pendingMedia;
+      }
+    },
+    
+    // Watchlist/Watched actions
     async addToWatchlist() {
       this.saving = true;
       this.error = null;
@@ -490,12 +476,11 @@ export default {
           title: this.selectedMedia.title,
           media_type: this.selectedMedia.mediaType,
           status: 'want_to_watch',
-          // No rating for watchlist items
           ...this.buildMediaData()
         };
         
-        const created = await mediaAPI.create(mediaData);
-        this.$router.push('/movies'); // Redirect to media list
+        await mediaAPI.create(mediaData);
+        this.$router.push('/movies');
         
       } catch (err) {
         console.error('Save error:', err);
@@ -524,7 +509,6 @@ export default {
           ...this.buildMediaData()
         };
         
-        // Add TV-specific fields
         if (this.selectedMedia.mediaType === 'tv' && this.seasonsWatched) {
           mediaData.seasons_watched = this.seasonsWatched;
         }
@@ -541,7 +525,6 @@ export default {
     },
     
     buildMediaData() {
-      // Common fields for both movies and TV
       const data = {
         tmdb_id: this.selectedMedia.tmdbId,
         release_year: this.selectedMedia.releaseYear,
@@ -554,15 +537,13 @@ export default {
         cast: this.selectedMedia.cast || [],
       };
       
-      // Movie-specific
       if (this.selectedMedia.mediaType === 'movie') {
         data.director = this.selectedMedia.director;
         data.runtime = this.selectedMedia.runtime;
       }
       
-      // TV-specific
       if (this.selectedMedia.mediaType === 'tv') {
-        data.director = this.selectedMedia.director; // Creators
+        data.director = this.selectedMedia.director;
         data.number_of_seasons = this.selectedMedia.numberOfSeasons;
         data.number_of_episodes = this.selectedMedia.numberOfEpisodes;
         data.show_status = this.selectedMedia.showStatus;
