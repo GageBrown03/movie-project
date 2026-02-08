@@ -1,48 +1,90 @@
 <template>
   <div class="all-media">
-    <v-row class="mb-6 align-center">
-      <v-col>
-        <h1 class="text-h3 font-weight-bold">My Collection</h1>
-        <p class="text-subtitle-1 text-medium-emphasis">
-          {{ filteredMedia.length }} {{ filteredMedia.length === 1 ? 'item' : 'items' }}
-        </p>
+    
+    <v-row class="mb-4 align-center" no-gutters>
+      <v-col cols="12" sm="8" md="6">
+        <v-text-field
+          v-model="searchQuery"
+          prepend-inner-icon="mdi-magnify"
+          label="Search collection..."
+          variant="solo-filled"
+          flat
+          density="comfortable"
+          clearable
+          hide-details
+          class="search-bar"
+        />
       </v-col>
-      <v-col cols="auto">
-        <v-btn color="primary" size="large" to="/movies/new" prepend-icon="mdi-plus">
-          Add Movie/TV
+      <v-spacer />
+      <v-col cols="12" sm="auto" class="mt-4 mt-sm-0">
+        <v-btn 
+          color="primary" 
+          size="large" 
+          to="/movies/new" 
+          prepend-icon="mdi-plus"
+          elevation="2"
+          class="font-weight-bold px-8"
+        >
+          Add Media
         </v-btn>
       </v-col>
     </v-row>
 
-    <v-card class="mb-6" elevation="2">
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-text-field
-              v-model="searchQuery"
-              prepend-inner-icon="mdi-magnify"
-              label="Search..."
-              variant="outlined"
-              density="comfortable"
-              clearable
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-select v-model="filterType" :items="typeOptions" label="Type" variant="outlined" density="comfortable" clearable hide-details />
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-select v-model="filterStatus" :items="statusOptions" label="Status" variant="outlined" density="comfortable" clearable hide-details />
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-select v-model="filterRating" :items="ratingOptions" label="Rating" variant="outlined" density="comfortable" clearable hide-details />
-          </v-col>
-          <v-col cols="12" md="2">
-            <v-select v-model="sortBy" :items="sortOptions" label="Sort by" variant="outlined" density="comfortable" hide-details />
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+    <v-row class="mb-6 align-center" no-gutters>
+      <div class="d-flex flex-wrap align-center gap-3 w-100">
+        <v-select
+          v-model="filterType"
+          :items="typeOptions"
+          label="Type"
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+          style="max-width: 130px;"
+        />
+        <v-select
+          v-model="filterRating"
+          :items="ratingOptions"
+          label="Rating"
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+          style="max-width: 130px;"
+        />
+        <v-select
+          v-model="sortBy"
+          :items="sortOptions"
+          label="Sort"
+          variant="outlined"
+          density="compact"
+          hide-details
+          style="max-width: 170px;"
+        />
+
+        <v-btn 
+          v-if="hasActiveFilters" 
+          variant="text" 
+          color="grey" 
+          size="small" 
+          prepend-icon="mdi-filter-off-outline"
+          @click="clearFilters"
+          class="text-none"
+        >
+          Reset
+        </v-btn>
+
+        <v-spacer />
+
+        <div class="d-flex align-center">
+          <span class="text-caption text-grey mr-4">{{ filteredMedia.length }} items</span>
+          <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary">
+            <v-btn value="grid" icon="mdi-view-grid-outline" size="small" />
+            <v-btn value="list" icon="mdi-view-list" size="small" />
+          </v-btn-toggle>
+        </div>
+      </div>
+    </v-row>
     
     <v-row v-if="loading" justify="center" class="my-12">
       <v-progress-circular indeterminate size="64" color="primary" />
@@ -55,25 +97,13 @@
       </template>
     </v-alert>
     
-    <v-empty-state v-else-if="mediaList.length === 0" icon="mdi-movie-open-outline" title="No media yet" text="Start building your collection">
+    <v-empty-state v-else-if="mediaList.length === 0" icon="mdi-movie-open-outline" title="No media yet" text="Start building your media collection">
       <template v-slot:actions>
         <v-btn color="primary" size="large" to="/movies/new">Add Your First Movie or Show</v-btn>
       </template>
     </v-empty-state>
 
     <div v-else>
-      <v-row class="mb-4 align-center">
-        <v-col>
-          <v-chip variant="text">{{ filteredMedia.length }} results</v-chip>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn-toggle v-model="viewMode" mandatory density="compact">
-            <v-btn value="grid" icon="mdi-view-grid" />
-            <v-btn value="list" icon="mdi-view-list" />
-          </v-btn-toggle>
-        </v-col>
-      </v-row>
-
       <v-row v-if="viewMode === 'grid'">
         <v-col v-for="media in filteredMedia" :key="media.mediaId" cols="12" sm="6" md="4" lg="3">
           <v-card
@@ -94,9 +124,6 @@
                     <v-chip v-if="media.rating" size="small" color="#121212" class="rating-label font-weight-black" variant="flat">
                       <v-icon start size="14" color="#FFC107">mdi-star</v-icon>
                       <span class="gold-text">{{ media.rating }}/5</span>
-                    </v-chip>
-                    <v-chip v-else size="small" color="#121212" class="rating-label font-weight-black text-white" variant="flat">
-                      <v-icon start size="14" color="white">mdi-bookmark</v-icon> WATCH
                     </v-chip>
                   </div>
                 </div>
@@ -214,7 +241,6 @@ export default {
       error: null,
       searchQuery: '',
       filterType: null,
-      filterStatus: null,
       filterRating: null,
       sortBy: 'dateAdded',
       viewMode: 'grid',
@@ -226,12 +252,18 @@ export default {
       mediaToDelete: null,
       isDeleting: false,
       typeOptions: [{ title: 'Movies', value: 'movie' }, { title: 'TV Shows', value: 'tv' }],
-      statusOptions: [{ title: 'Watched', value: 'watched' }, { title: 'Watchlist', value: 'want_to_watch' }, { title: 'Watching', value: 'watching' }],
       ratingOptions: [5, 4, 3, 2, 1].map(r => ({ title: `${r} Stars`, value: r })),
-      sortOptions: [{ title: 'Recently Added', value: 'dateAdded' }, { title: 'Title (A-Z)', value: 'titleAsc' }, { title: 'Rating (High to Low)', value: 'ratingDesc' }],
+      sortOptions: [
+        { title: 'Recently Added', value: 'dateAdded' }, 
+        { title: 'Title (A-Z)', value: 'titleAsc' }, 
+        { title: 'Rating (High to Low)', value: 'ratingDesc' }
+      ],
     };
   },
   computed: {
+    hasActiveFilters() {
+      return this.searchQuery || this.filterType || this.filterRating;
+    },
     filteredMedia() {
       let result = [...this.mediaList];
       if (this.searchQuery) {
@@ -239,7 +271,6 @@ export default {
         result = result.filter(m => m.title.toLowerCase().includes(query));
       }
       if (this.filterType) result = result.filter(m => m.mediaType === this.filterType);
-      if (this.filterStatus) result = result.filter(m => m.status === this.filterStatus);
       if (this.filterRating !== null) result = result.filter(m => m.rating === this.filterRating);
       
       switch (this.sortBy) {
@@ -271,7 +302,6 @@ export default {
       if (this.hoverTimeout) { clearTimeout(this.hoverTimeout); this.hoverTimeout = null; }
     },
     startCloseTimeout() {
-      // 250ms Grace Period
       this.closeTimeout = setTimeout(() => { this.showHoverModal = false; }, 250);
     },
     clearCloseTimeout() {
@@ -301,26 +331,42 @@ export default {
         this.closeHoverModalImmediately();
       } finally { this.isDeleting = false; }
     },
-    clearFilters() { this.searchQuery = ''; this.filterType = this.filterStatus = this.filterRating = null; this.sortBy = 'dateAdded'; }
+    clearFilters() { 
+      this.searchQuery = ''; 
+      this.filterType = null; 
+      this.filterRating = null; 
+      this.sortBy = 'dateAdded'; 
+    }
   },
   created() { this.getAllMedia(); }
 };
 </script>
 
 <style scoped>
-/* Scoped deep selectors for Vuetify dialog cleanup */
 :deep(.v-overlay__content) {
   margin: 0 !important;
   pointer-events: auto !important;
 }
 
 .modal-capture-area {
-  padding: 30px; /* Invisible buffer zone */
-  margin: -30px; /* Offset to keep card centered */
+  padding: 30px; 
+  margin: -30px; 
   display: block;
 }
 
-.all-media { max-width: 1600px; margin: 0 auto; }
+.all-media { 
+  max-width: 1600px; 
+  margin: 0 auto; 
+  padding-top: 16px; 
+}
+
+.gap-3 { gap: 12px; }
+
+.search-bar :deep(.v-field__input) {
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
 .media-card { cursor: pointer; transition: transform 0.3s ease; background: transparent !important; }
 .media-card:hover { transform: translateY(-8px); }
 .poster-container { position: relative; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
@@ -335,7 +381,6 @@ export default {
   overflow: hidden; 
 }
 
-/* Cinematic Zoom Animation */
 .zoom-animation {
   animation: scaleBackground 12s linear infinite;
   transform-origin: center;
@@ -345,5 +390,4 @@ export default {
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
-.gap-2 { gap: 8px; }
 </style>
