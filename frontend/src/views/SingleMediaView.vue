@@ -136,79 +136,191 @@
               </div>
 
               <v-card-actions class="flex-column align-stretch pa-4">
-                <!-- Watchlist item: Mark as Watched button -->
-                <v-btn
-                  v-if="media.status === 'want_to_watch'"
-                  color="success"
-                  size="large"
-                  block
-                  @click="showMarkWatchedDialog = true"
-                  prepend-icon="mdi-check-circle"
-                  class="mb-2"
-                >
-                  Mark as Watched
-                </v-btn>
-                
-                <!-- Watched item: Edit button -->
-                <v-btn
-                  v-else
-                  color="primary"
-                  size="large"
-                  block
-                  @click="$router.push(`/movies/${media.mediaId}/edit`)"
-                  prepend-icon="mdi-pencil"
-                  class="mb-2"
-                >
-                  Edit
-                </v-btn>
-                
-                <v-btn
-                  color="error"
-                  variant="outlined"
-                  size="large"
-                  block
-                  @click="confirmDelete"
-                  prepend-icon="mdi-delete"
-                >
-                  Delete
-                </v-btn>
+                <!-- VIEW MODE: Quick actions -->
+                <template v-if="!editMode">
+                  <!-- Watchlist item: Mark as Watched button -->
+                  <v-btn
+                    v-if="media.status === 'want_to_watch'"
+                    color="success"
+                    size="large"
+                    block
+                    @click="quickMarkAsWatched"
+                    prepend-icon="mdi-check-circle"
+                    class="mb-2"
+                  >
+                    Mark as Watched
+                  </v-btn>
+                  
+                  <!-- Watched item: Edit button -->
+                  <v-btn
+                    v-else
+                    color="primary"
+                    size="large"
+                    block
+                    @click="enterEditMode"
+                    prepend-icon="mdi-pencil"
+                    class="mb-2"
+                  >
+                    Edit
+                  </v-btn>
+                  
+                  <v-btn
+                    color="error"
+                    variant="outlined"
+                    size="large"
+                    block
+                    @click="confirmDelete"
+                    prepend-icon="mdi-delete"
+                  >
+                    Delete
+                  </v-btn>
+                </template>
+
+                <!-- EDIT MODE: Save/Cancel -->
+                <template v-else>
+                  <v-btn
+                    color="success"
+                    size="large"
+                    block
+                    @click="saveChanges"
+                    prepend-icon="mdi-check"
+                    :loading="saving"
+                    class="mb-2"
+                  >
+                    Save Changes
+                  </v-btn>
+                  <v-btn
+                    variant="outlined"
+                    size="large"
+                    block
+                    @click="cancelEdit"
+                    prepend-icon="mdi-close"
+                    :disabled="saving"
+                  >
+                    Cancel
+                  </v-btn>
+                </template>
               </v-card-actions>
             </v-card>
           </v-col>
 
           <!-- Right Column: Details -->
           <v-col cols="12" md="8">
-            <!-- Watchlist Banner -->
-            <v-alert v-if="media.status === 'want_to_watch'" type="info" variant="tonal" class="mb-4">
+            <!-- Edit Mode Banner -->
+            <v-alert v-if="editMode" type="info" variant="tonal" class="mb-4" prominent>
+              <v-icon start>mdi-pencil</v-icon>
+              <strong>Edit Mode:</strong> Make changes to your personal data below. TMDB info is read-only.
+            </v-alert>
+
+            <!-- Watchlist Banner (view mode only) -->
+            <v-alert v-if="!editMode && media.status === 'want_to_watch'" type="info" variant="tonal" class="mb-4">
               <v-icon start>mdi-bookmark</v-icon>
               This is on your watchlist. Click "Mark as Watched" to rate it!
             </v-alert>
 
-            <!-- Your Rating (if watched) -->
-            <v-card v-if="media.rating" class="mb-4" elevation="2">
-              <v-card-title class="text-h5">Your Rating</v-card-title>
+            <!-- EDITABLE: Status (in edit mode) -->
+            <v-card v-if="editMode" class="mb-4" elevation="2">
+              <v-card-title class="text-h6">
+                <v-icon start color="primary">mdi-pencil</v-icon>
+                Status
+              </v-card-title>
               <v-card-text>
-                <v-rating
-                  :model-value="media.rating"
-                  color="primary"
-                  size="large"
-                  readonly
+                <v-select
+                  v-model="editData.status"
+                  :items="statusOptions"
+                  label="Status"
+                  variant="outlined"
+                  density="comfortable"
                 />
-                <p class="text-h6 mt-2">{{ media.rating }} out of 5 stars</p>
-                <p v-if="media.watchedDate" class="text-caption text-medium-emphasis mt-1">
-                  Watched on {{ formatDate(media.watchedDate) }}
-                </p>
-                
-                <!-- TV-specific: Seasons watched -->
-                <p v-if="media.mediaType === 'tv' && media.seasonsWatched" class="text-body-2 mt-2">
-                  Watched {{ media.seasonsWatched }} of {{ media.numberOfSeasons }} seasons
-                </p>
               </v-card-text>
             </v-card>
 
-            <!-- External Ratings -->
+            <!-- EDITABLE: Your Rating -->
+            <v-card v-if="editMode || media.rating" class="mb-4" elevation="2">
+              <v-card-title class="text-h6">
+                <v-icon v-if="editMode" start color="primary">mdi-pencil</v-icon>
+                Your Rating
+              </v-card-title>
+              <v-card-text>
+                <!-- EDIT MODE -->
+                <template v-if="editMode">
+                  <v-rating
+                    v-model="editData.rating"
+                    color="primary"
+                    size="large"
+                    hover
+                  />
+                  <p class="text-caption mt-2">
+                    {{ editData.rating ? `${editData.rating} out of 5 stars` : 'Not rated yet' }}
+                  </p>
+                </template>
+
+                <!-- VIEW MODE -->
+                <template v-else>
+                  <v-rating
+                    :model-value="media.rating"
+                    color="primary"
+                    size="large"
+                    readonly
+                  />
+                  <p class="text-h6 mt-2">{{ media.rating }} out of 5 stars</p>
+                  <p v-if="media.watchedDate" class="text-caption text-medium-emphasis mt-1">
+                    Watched on {{ formatDate(media.watchedDate) }}
+                  </p>
+                  
+                  <!-- TV-specific: Seasons watched -->
+                  <p v-if="media.mediaType === 'tv' && media.seasonsWatched" class="text-body-2 mt-2">
+                    Watched {{ media.seasonsWatched }} of {{ media.numberOfSeasons }} seasons
+                  </p>
+                </template>
+              </v-card-text>
+            </v-card>
+
+            <!-- EDITABLE: Date Watched (edit mode only) -->
+            <v-card v-if="editMode && editData.status === 'watched'" class="mb-4" elevation="2">
+              <v-card-title class="text-h6">
+                <v-icon start color="primary">mdi-pencil</v-icon>
+                Date Watched
+              </v-card-title>
+              <v-card-text>
+                <v-text-field
+                  v-model="editData.watchedDate"
+                  type="date"
+                  variant="outlined"
+                  density="comfortable"
+                  label="When did you watch this?"
+                />
+              </v-card-text>
+            </v-card>
+
+            <!-- EDITABLE: Seasons Watched (TV only, edit mode) -->
+            <v-card v-if="editMode && media.mediaType === 'tv' && editData.status === 'watched'" class="mb-4" elevation="2">
+              <v-card-title class="text-h6">
+                <v-icon start color="primary">mdi-pencil</v-icon>
+                Seasons Watched
+              </v-card-title>
+              <v-card-text>
+                <v-text-field
+                  v-model.number="editData.seasonsWatched"
+                  type="number"
+                  variant="outlined"
+                  density="comfortable"
+                  label="How many seasons have you watched?"
+                  :hint="`Total: ${media.numberOfSeasons} seasons`"
+                  persistent-hint
+                  :max="media.numberOfSeasons"
+                  min="0"
+                />
+              </v-card-text>
+            </v-card>
+
+            <!-- READ-ONLY: External Ratings -->
             <v-card v-if="media.tmdbRating || media.imdbRating" class="mb-4" elevation="2">
-              <v-card-title class="text-h6">External Ratings</v-card-title>
+              <v-card-title class="text-h6">
+                <v-icon start>mdi-lock</v-icon>
+                External Ratings
+                <v-chip v-if="editMode" size="x-small" color="grey" class="ml-2">Read-only</v-chip>
+              </v-card-title>
               <v-card-text>
                 <v-row>
                   <v-col v-if="media.tmdbRating" cols="6">
@@ -227,9 +339,13 @@
               </v-card-text>
             </v-card>
 
-            <!-- Cast -->
+            <!-- READ-ONLY: Cast -->
             <v-card v-if="media.cast && media.cast.length > 0" class="mb-4" elevation="2">
-              <v-card-title class="text-h6">Cast</v-card-title>
+              <v-card-title class="text-h6">
+                <v-icon start>mdi-lock</v-icon>
+                Cast
+                <v-chip v-if="editMode" size="x-small" color="grey" class="ml-2">Read-only</v-chip>
+              </v-card-title>
               <v-card-text>
                 <v-row>
                   <v-col 
@@ -254,17 +370,25 @@
               </v-card-text>
             </v-card>
 
-            <!-- Plot -->
+            <!-- READ-ONLY: Plot -->
             <v-card v-if="media.plot" class="mb-4" elevation="2">
-              <v-card-title class="text-h6">{{ media.mediaType === 'tv' ? 'Overview' : 'Plot' }}</v-card-title>
+              <v-card-title class="text-h6">
+                <v-icon start>mdi-lock</v-icon>
+                {{ media.mediaType === 'tv' ? 'Overview' : 'Plot' }}
+                <v-chip v-if="editMode" size="x-small" color="grey" class="ml-2">Read-only</v-chip>
+              </v-card-title>
               <v-card-text>
                 <p class="text-body-1">{{ media.plot }}</p>
               </v-card-text>
             </v-card>
 
-            <!-- Details Grid -->
+            <!-- READ-ONLY: Details Grid -->
             <v-card class="mb-4" elevation="2">
-              <v-card-title class="text-h6">Details</v-card-title>
+              <v-card-title class="text-h6">
+                <v-icon start>mdi-lock</v-icon>
+                Details
+                <v-chip v-if="editMode" size="x-small" color="grey" class="ml-2">Read-only</v-chip>
+              </v-card-title>
               <v-card-text>
                 <v-row dense>
                   <v-col v-if="media.director" cols="12" sm="6">
@@ -324,11 +448,28 @@
               </v-card-text>
             </v-card>
 
-            <!-- Personal Notes -->
-            <v-card v-if="media.notes" class="mb-4" elevation="2">
-              <v-card-title class="text-h6">Your Notes</v-card-title>
+            <!-- EDITABLE: Personal Notes -->
+            <v-card class="mb-4" elevation="2">
+              <v-card-title class="text-h6">
+                <v-icon v-if="editMode" start color="primary">mdi-pencil</v-icon>
+                <v-icon v-else start>mdi-note-text</v-icon>
+                Your Personal Notes
+              </v-card-title>
               <v-card-text>
-                <p class="text-body-1" style="white-space: pre-wrap;">{{ media.notes }}</p>
+                <!-- EDIT MODE -->
+                <v-textarea
+                  v-if="editMode"
+                  v-model="editData.notes"
+                  variant="outlined"
+                  rows="5"
+                  placeholder="What did you think? Any memorable moments?"
+                  hint="These notes are private and only visible to you"
+                  persistent-hint
+                />
+
+                <!-- VIEW MODE -->
+                <p v-else-if="media.notes" class="text-body-1" style="white-space: pre-wrap;">{{ media.notes }}</p>
+                <p v-else class="text-body-2 text-medium-emphasis">No notes yet. Click "Edit" to add your thoughts!</p>
               </v-card-text>
             </v-card>
           </v-col>
@@ -336,23 +477,23 @@
       </v-container>
     </div>
 
-    <!-- Mark as Watched Dialog -->
+    <!-- Quick Mark as Watched Dialog (for watchlist items) -->
     <v-dialog v-model="showMarkWatchedDialog" max-width="500">
       <v-card>
         <v-card-title>Rate {{ media?.title }}</v-card-title>
         <v-card-text>
           <v-rating
-            v-model="newRating"
+            v-model="quickRating"
             color="primary"
             size="large"
             hover
           />
           <p class="text-caption mt-2">
-            {{ newRating ? `${newRating} out of 5 stars` : 'Tap to rate' }}
+            {{ quickRating ? `${quickRating} out of 5 stars` : 'Tap to rate' }}
           </p>
 
           <v-textarea
-            v-model="newNotes"
+            v-model="quickNotes"
             label="Add notes (optional)"
             variant="outlined"
             rows="3"
@@ -362,7 +503,7 @@
           <!-- TV-specific -->
           <v-text-field
             v-if="media?.mediaType === 'tv' && media?.numberOfSeasons"
-            v-model.number="newSeasonsWatched"
+            v-model.number="quickSeasonsWatched"
             label="Seasons watched (optional)"
             type="number"
             variant="outlined"
@@ -378,8 +519,8 @@
           <v-btn
             color="primary"
             @click="markAsWatched"
-            :loading="isUpdating"
-            :disabled="!newRating"
+            :loading="saving"
+            :disabled="!quickRating"
           >
             Mark as Watched
           </v-btn>
@@ -417,12 +558,28 @@ export default {
       showDeleteDialog: false,
       isDeleting: false,
       
-      // Mark as watched
+      // Edit mode
+      editMode: false,
+      editData: {
+        status: null,
+        rating: null,
+        notes: '',
+        watchedDate: null,
+        seasonsWatched: null,
+      },
+      saving: false,
+      
+      // Quick mark as watched (for watchlist items)
       showMarkWatchedDialog: false,
-      newRating: null,
-      newNotes: '',
-      newSeasonsWatched: null,
-      isUpdating: false,
+      quickRating: null,
+      quickNotes: '',
+      quickSeasonsWatched: null,
+      
+      statusOptions: [
+        { title: 'Watched', value: 'watched' },
+        { title: 'Want to Watch', value: 'want_to_watch' },
+        { title: 'Currently Watching', value: 'watching' },
+      ],
     };
   },
 
@@ -451,33 +608,94 @@ export default {
       }
     },
     
-    async markAsWatched() {
-      if (!this.newRating) return;
+    enterEditMode() {
+      // Copy current values to editData
+      this.editData = {
+        status: this.media.status,
+        rating: this.media.rating,
+        notes: this.media.notes || '',
+        watchedDate: this.media.watchedDate || null,
+        seasonsWatched: this.media.seasonsWatched || null,
+      };
+      this.editMode = true;
+    },
+    
+    cancelEdit() {
+      this.editMode = false;
+      this.editData = {
+        status: null,
+        rating: null,
+        notes: '',
+        watchedDate: null,
+        seasonsWatched: null,
+      };
+    },
+    
+    async saveChanges() {
+      // Validation
+      if (this.editData.status === 'watched' && !this.editData.rating) {
+        this.error = 'Rating is required for watched items';
+        return;
+      }
       
-      this.isUpdating = true;
+      this.saving = true;
+      this.error = null;
+      
+      try {
+        const updateData = {
+          status: this.editData.status,
+          rating: this.editData.status === 'watched' ? this.editData.rating : null,
+          notes: this.editData.notes || null,
+          watchedDate: this.editData.watchedDate || null,
+        };
+        
+        // TV-specific
+        if (this.media.mediaType === 'tv' && this.editData.seasonsWatched) {
+          updateData.seasonsWatched = this.editData.seasonsWatched;
+        }
+        
+        this.media = await mediaAPI.update(this.mediaId, updateData);
+        this.editMode = false;
+        
+      } catch (err) {
+        console.error('Update error:', err);
+        this.error = 'Failed to save changes. Please try again.';
+      } finally {
+        this.saving = false;
+      }
+    },
+    
+    quickMarkAsWatched() {
+      this.showMarkWatchedDialog = true;
+    },
+    
+    async markAsWatched() {
+      if (!this.quickRating) return;
+      
+      this.saving = true;
       
       try {
         const updateData = {
           status: 'watched',
-          rating: this.newRating,
-          notes: this.newNotes || this.media.notes,
+          rating: this.quickRating,
+          notes: this.quickNotes || this.media.notes,
         };
         
-        if (this.media.mediaType === 'tv' && this.newSeasonsWatched) {
-          updateData.seasonsWatched = this.newSeasonsWatched;
+        if (this.media.mediaType === 'tv' && this.quickSeasonsWatched) {
+          updateData.seasonsWatched = this.quickSeasonsWatched;
         }
         
         this.media = await mediaAPI.update(this.mediaId, updateData);
         this.showMarkWatchedDialog = false;
-        this.newRating = null;
-        this.newNotes = '';
-        this.newSeasonsWatched = null;
+        this.quickRating = null;
+        this.quickNotes = '';
+        this.quickSeasonsWatched = null;
         
       } catch (err) {
         console.error('Update error:', err);
         this.error = 'Failed to update. Please try again.';
       } finally {
-        this.isUpdating = false;
+        this.saving = false;
       }
     },
 

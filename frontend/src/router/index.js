@@ -4,7 +4,6 @@ import HomeView from '../views/HomeView.vue'
 import AllMoviesView from '../views/AllMediaView.vue';
 import CreateMovieView from '../views/CreateMediaView.vue';
 import SingleMovieView from '../views/SingleMediaView.vue';
-import EditMovieView from '../views/EditMediaView.vue';
 import LoginView from '../views/LoginView.vue';  // NEW
 import RegisterView from '../views/RegisterView.vue';  // NEW
 
@@ -48,10 +47,6 @@ const routes = [
           {
             path: '',
             component: SingleMovieView,
-          },
-          {
-            path: 'edit',
-            component: EditMovieView,
           },
         ],
       },
