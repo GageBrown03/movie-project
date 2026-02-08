@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer app v-model="drawer">
+    <v-navigation-drawer v-model="drawer" app>
       <v-list>
         <v-list-item to="/" prepend-icon="mdi-home">
           <v-list-item-title>Home</v-list-item-title>
@@ -10,7 +10,7 @@
         
         <v-list-subheader>Your Collection</v-list-subheader>
         
-        <v-list-item to="/movies" prepend-icon="mdi-view-grid">
+        <v-list-item to="/media" prepend-icon="mdi-view-grid">
           <v-list-item-title>Browse Media</v-list-item-title>
         </v-list-item>
         
@@ -26,7 +26,7 @@
           <v-list-item-title>What to Watch?</v-list-item-title>
         </v-list-item>
         
-        <v-list-item to="/movies/new" prepend-icon="mdi-plus">
+        <v-list-item to="/media/new" prepend-icon="mdi-plus">
           <v-list-item-title>Add Media</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -34,11 +34,26 @@
     
     <v-app-bar app color="primary" dark>
       <v-app-bar-nav-icon @click="drawer = !drawer" />
-      <v-app-bar-title>MyMDB</v-app-bar-title>
+      <v-app-bar-title>myMDB</v-app-bar-title>
+      
+      <v-spacer />
+      
+      <!-- Theme Toggle -->
+      <v-btn icon @click="toggleTheme">
+        <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
+      
+      <!-- Logout Button (only show if logged in) -->
+      <v-btn v-if="isLoggedIn" @click="handleLogout" variant="text">
+        <v-icon start>mdi-logout</v-icon>
+        Logout
+      </v-btn>
     </v-app-bar>
     
     <v-main>
-      <router-view />
+      <v-container fluid>
+        <router-view />
+      </v-container>
     </v-main>
   </v-app>
 </template>
@@ -52,6 +67,7 @@ export default {
   
   data() {
     return {
+      drawer: true,  // Start with drawer open
       isLoggedIn: false
     };
   },
@@ -96,8 +112,8 @@ export default {
     },
     
     loadTheme() {
-      // Load saved theme preference (default to light)
-      const savedTheme = localStorage.getItem('theme') || 'light';
+      // Load saved theme preference (default to dark)
+      const savedTheme = localStorage.getItem('theme') || 'dark';
       this.theme.global.name.value = savedTheme;
     },
     

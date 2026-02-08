@@ -1,14 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ViewContainer from '../views/ViewContainer.vue';
 import HomeView from '../views/HomeView.vue'
-import AllMoviesView from '../views/AllMediaView.vue';
-import CreateMovieView from '../views/CreateMediaView.vue';
-import SingleMovieView from '../views/SingleMediaView.vue';
-import LoginView from '../views/LoginView.vue';  // NEW
-import RegisterView from '../views/RegisterView.vue';  // NEW
-// Added imports for Analytics view and Random Picker view
-import AnalyticsView from '@/views/AnalyticsView.vue'
-import RandomPickerView from '@/views/RandomPickerView.vue'
+import AllMediaView from '../views/AllMediaView.vue';
+import CreateMediaView from '../views/CreateMediaView.vue';
+import SingleMediaView from '../views/SingleMediaView.vue';
+import LoginView from '../views/LoginView.vue';
+import RegisterView from '../views/RegisterView.vue';
+import AnalyticsView from '../views/AnalyticsView.vue';
+import RandomPickerView from '../views/RandomPickerView.vue';
 
 const routes = [
   {
@@ -17,54 +16,65 @@ const routes = [
     component: HomeView,
   },
   {
-    path: '/login',  // NEW
+    path: '/login',
     name: 'login',
     component: LoginView,
-    meta: { requiresGuest: true }  // Only accessible when NOT logged in
+    meta: { requiresGuest: true }
   },
   {
-    path: '/register',  // NEW
+    path: '/register',
     name: 'register',
     component: RegisterView,
-    meta: { requiresGuest: true }  // Only accessible when NOT logged in
+    meta: { requiresGuest: true }
+  },
+  // Analytics and Random Picker - At root level, protected by auth
+  {
+    path: '/analytics',
+    name: 'analytics',
+    component: AnalyticsView,
+    meta: { requiresAuth: true }
   },
   {
-    path: '/movies',
+    path: '/random',
+    name: 'random-picker',
+    component: RandomPickerView,
+    meta: { requiresAuth: true }
+  },
+  // Media routes
+  {
+    path: '/media',
     component: ViewContainer,
-    meta: { requiresAuth: true },  // NEW: Requires authentication
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
-        component: AllMoviesView,
-        name: 'all-movies',
+        component: AllMediaView,
+        name: 'all-media',
       },
       {
         path: 'new',
-        component: CreateMovieView,
-        name: 'create-movie',
-      },
-      // Add routes
-      {
-        path: '/analytics',
-        name: 'Analytics',
-        component: AnalyticsView
-      },
-      {
-        path: '/random',
-        name: 'RandomPicker',
-        component: RandomPickerView
+        component: CreateMediaView,
+        name: 'create-media',
       },
       {
         path: ':mediaId',
-        component: ViewContainer,
-        children: [
-          {
-            path: '',
-            component: SingleMovieView,
-          },
-        ],
+        component: SingleMediaView,
+        name: 'single-media',
       },
     ],
+  },
+  // Legacy /movies routes - redirect to /media
+  {
+    path: '/movies',
+    redirect: '/media'
+  },
+  {
+    path: '/movies/new',
+    redirect: '/media/new'
+  },
+  {
+    path: '/movies/:mediaId',
+    redirect: to => `/media/${to.params.mediaId}`
   },
 ];
 
@@ -84,7 +94,7 @@ router.beforeEach((to, from, next) => {
   }
   // If route is for guests only (login/register) and user IS logged in
   else if (to.meta.requiresGuest && isLoggedIn) {
-    next('/movies');
+    next('/media');
   }
   // Otherwise, proceed normally
   else {
