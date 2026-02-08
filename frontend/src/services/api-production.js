@@ -63,7 +63,7 @@ export const authAPI = {
   }
 };
 
-// TMDB API (NEW)
+// TMDB API (search movies + TV shows)
 export const tmdbAPI = {
   async search(query) {
     const res = await fetch(`${API_BASE}/tmdb/search?query=${encodeURIComponent(query)}`, {
@@ -89,66 +89,89 @@ export const tmdbAPI = {
     }
     
     return res.json();
-  }
-};
-
-// Movie API (now with authentication)
-export const movieAPI = {
-  async getAll() {
-    const res = await fetch(`${API_BASE}/movies`, {
+  },
+  
+  async getTVDetails(tmdbId) {
+    const res = await fetch(`${API_BASE}/tmdb/tv/${tmdbId}`, {
       headers: getAuthHeaders()
     });
     
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.error || 'Failed to fetch movies');
+      throw new Error(error.error || 'Failed to get TV details');
+    }
+    
+    return res.json();
+  }
+};
+
+// Media API (movies + TV shows - replaces movieAPI)
+export const mediaAPI = {
+  async getAll(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.type) params.append('type', filters.type);
+    if (filters.status) params.append('status', filters.status);
+    
+    const queryString = params.toString();
+    const url = `${API_BASE}/media${queryString ? '?' + queryString : ''}`;
+    
+    const res = await fetch(url, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to fetch media');
     }
     
     return res.json();
   },
   
   async getOne(id) {
-    const res = await fetch(`${API_BASE}/movies/${id}`, {
+    const res = await fetch(`${API_BASE}/media/${id}`, {
       headers: getAuthHeaders()
     });
     
-    if (!res.ok) throw new Error('Movie not found');
+    if (!res.ok) throw new Error('Media not found');
     return res.json();
   },
   
-  async create(movieData) {
-    const res = await fetch(`${API_BASE}/movies`, {
+  async create(mediaData) {
+    const res = await fetch(`${API_BASE}/media`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(movieData)
+      body: JSON.stringify(mediaData)
     });
     
     if (!res.ok) {
       const error = await res.json();
-      throw new Error(error.error || 'Failed to create movie');
+      throw new Error(error.error || 'Failed to create media');
     }
     
     return res.json();
   },
   
-  async update(id, movieData) {
-    const res = await fetch(`${API_BASE}/movies/${id}`, {
+  async update(id, mediaData) {
+    const res = await fetch(`${API_BASE}/media/${id}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify(movieData)
+      body: JSON.stringify(mediaData)
     });
     
-    if (!res.ok) throw new Error('Failed to update movie');
+    if (!res.ok) throw new Error('Failed to update media');
     return res.json();
   },
   
   async delete(id) {
-    const res = await fetch(`${API_BASE}/movies/${id}`, {
+    const res = await fetch(`${API_BASE}/media/${id}`, {
       method: 'DELETE',
       headers: getAuthHeaders()
     });
     
-    if (!res.ok) throw new Error('Failed to delete movie');
+    if (!res.ok) throw new Error('Failed to delete media');
     return res.json();
   }
 };
+
+// Legacy alias for backward compatibility (can remove later)
+export const movieAPI = mediaAPI;

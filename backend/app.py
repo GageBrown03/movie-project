@@ -2,9 +2,10 @@ from dotenv import load_dotenv
 from flask import Flask, Response
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate # NEW: Import Flask-Migrate
 from src.config import Config
-from src.models import db, bcrypt
-from src.routes.movie_router import movie_router
+from src.models import db, bcrypt, User, Media, Actor, MediaCast # Explicitly importing the classes ensures Flask-Migrate detects them
+from src.routes.media_router import media_router  # CHANGED from movie_router
 from src.routes.auth_router import auth_router  # NEW: Import auth router
 from sqlalchemy import text
 from src.routes.tmdb_router import tmdb_router  # NEW
@@ -20,6 +21,9 @@ app.config.from_object(Config)
 
 # Initialize database with app
 db.init_app(app)
+
+# Initialize Migration Engine
+migrate = Migrate(app, db)
 
 # Initialize Bcrypt (for password hashing)
 bcrypt.init_app(app)
@@ -38,7 +42,7 @@ CORS(
 jwt = JWTManager(app)
 
 # Register routers
-app.register_blueprint(movie_router)
+app.register_blueprint(media_router)  # CHANGED from movie_router
 app.register_blueprint(auth_router)  # NEW: Register auth routes
 app.register_blueprint(tmdb_router)  # NEW: Register TMDB routes
 

@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import ViewContainer from '../views/ViewContainer.vue';
 import HomeView from '../views/HomeView.vue'
-import AllMoviesView from '../views/AllMoviesView.vue';
-import CreateMovieView from '../views/CreateMovieView.vue';
-import SingleMovieView from '../views/SingleMovieView.vue';
-import EditMovieView from '../views/EditMovieView.vue';
+import AllMoviesView from '../views/AllMediaView.vue';
+import CreateMovieView from '../views/CreateMediaView.vue';
+import SingleMovieView from '../views/SingleMediaView.vue';
+import EditMovieView from '../views/EditMediaView.vue';
 import LoginView from '../views/LoginView.vue';  // NEW
 import RegisterView from '../views/RegisterView.vue';  // NEW
 
