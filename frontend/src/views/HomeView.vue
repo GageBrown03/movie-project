@@ -1,15 +1,15 @@
 <template>
   <div class="home">
-    <h1>Welcome to Your Movie Library</h1>  <!-- UPDATED: Better title -->
-    <p class="mt-3">Track and rate your favorite movies in this personal movie journal!</p>  <!-- UPDATED: Better description -->
+    <h1>Welcome to Your Digital Library</h1>  <!-- UPDATED: Better title -->
+    <p class="mt-3">Track and rate your favorite movies and TV shows in your personal digital library!</p>  <!-- UPDATED: Better description -->
     
     <!-- NEW: Add quick action buttons -->
     <div class="actions mt-6">
       <v-btn color="primary" size="large" to="/movies/new">
-        Add New Movie
+        Add New Media
       </v-btn>
       <v-btn color="secondary" size="large" to="/movies" class="ml-2">
-        View Your Movies
+        View Your Media
       </v-btn>
     </div>
     

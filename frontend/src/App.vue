@@ -12,7 +12,7 @@
       <!-- Show these buttons only when logged in -->
       <template v-if="isLoggedIn">
         <v-btn to="/">Home</v-btn>
-        <v-btn to="/movies">Your Movies</v-btn>
+        <v-btn to="/movies">Your Media</v-btn>
         <v-btn @click="handleLogout">
           <v-icon left>mdi-logout</v-icon>
           Logout
