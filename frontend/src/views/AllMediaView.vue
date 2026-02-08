@@ -164,16 +164,24 @@
                 </div>
               </v-img>
             </div>
-            <!--vrd-text class="px-1 py-3 text-center"> COMMENTED OUT TO REMOVE MEDIA TITLES FROM GRID VIEW
+            <v-card-text class="px-1 py-3 text-center">
               <div class="text-subtitle-1 font-weight-bold text-truncate">{{ media.title }}</div>
-            < rd-text>-->
+            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
 
-      <!-- List View -->
+      <!-- List View - NOW WITH HOVER SUPPORT -->
       <v-list v-else lines="two" class="bg-transparent">
-        <v-list-item v-for="media in filteredMedia" :key="media.mediaId" @click="goToMedia(media.mediaId)" link class="mb-2 rounded-lg border">
+        <v-list-item 
+          v-for="media in filteredMedia" 
+          :key="media.mediaId" 
+          @click="goToMedia(media.mediaId)" 
+          @mouseenter="startHover(media)"
+          @mouseleave="cancelHover"
+          link 
+          class="mb-2 rounded-lg border list-item-hoverable"
+        >
           <template v-slot:prepend>
             <v-avatar size="80" rounded class="mr-4">
               <v-img v-if="media.posterUrl" :src="media.posterUrl" cover />
@@ -202,7 +210,7 @@
       </v-list>
     </div>
 
-    <!-- FIXED Hover Modal - Better close behavior -->
+    <!-- Hover Modal - Works for BOTH grid and list -->
     <v-dialog
       v-model="showHoverModal"
       max-width="900"
@@ -210,7 +218,6 @@
       transition="scale-transition"
       @click:outside="closeHoverModal"
     >
-      <!-- REMOVED modal-capture-area wrapper that was causing sticky behavior -->
       <v-card 
         v-if="hoveredMedia" 
         class="hover-preview-large" 
@@ -337,7 +344,6 @@ export default {
       finally { this.loading = false; }
     },
     
-    // FIXED: Better hover behavior
     startHover(media) {
       if (this.isMobile) return;
       this.clearCloseTimeout();
@@ -345,7 +351,7 @@ export default {
       this.hoverTimeout = setTimeout(() => {
         this.hoveredMedia = media;
         this.showHoverModal = true;
-      }, 400);  // Slightly longer delay for intentional hovers
+      }, 400);
     },
     
     cancelHover() { 
@@ -355,16 +361,14 @@ export default {
       } 
     },
     
-    // FIXED: Faster close, no sticky behavior
     startCloseTimeout() { 
       this.closeTimeout = setTimeout(() => { 
         this.showHoverModal = false;
         this.hoveredMedia = null;
-      }, 150);  // Reduced from 250ms to 150ms for faster close
+      }, 150);
     },
     
     keepModalOpen() {
-      // When mouse enters modal card, cancel any pending close
       this.clearCloseTimeout();
     },
     
@@ -376,7 +380,6 @@ export default {
     },
     
     closeHoverModal() {
-      // Immediate close on outside click
       this.showHoverModal = false;
       this.hoveredMedia = null;
       this.clearCloseTimeout();
@@ -449,6 +452,15 @@ export default {
 .gold-text { color: #FFC107 !important; }
 .rating-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
 .watchlist-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+
+/* List View Hover Styling */
+.list-item-hoverable {
+  transition: background-color 0.2s ease;
+}
+
+.list-item-hoverable:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
 
 /* Modal Styling */
 .hover-preview-large { border-radius: 20px !important; background-color: #121212 !important; overflow: hidden; }
