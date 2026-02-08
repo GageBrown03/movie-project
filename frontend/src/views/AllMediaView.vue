@@ -1,6 +1,5 @@
 <template>
   <div class="all-media">
-    
     <v-row class="mb-4 align-center" no-gutters>
       <v-col cols="12" sm="8" md="6">
         <v-text-field
@@ -97,9 +96,38 @@
       </template>
     </v-alert>
     
-    <v-empty-state v-else-if="mediaList.length === 0" icon="mdi-movie-open-outline" title="No media yet" text="Start building your media collection">
+    <v-empty-state
+      v-else-if="mediaList.length === 0"
+      class="empty-state-cinematic"
+    >
+      <template v-slot:media>
+        <div class="empty-icon-wrapper">
+          <svg width="180" height="180" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="film-reel-svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1" />
+            <circle cx="12" cy="12" r="2" fill="currentColor" />
+            <circle cx="12" cy="6" r="1.5" fill="currentColor" opacity="0.5" />
+            <circle cx="12" cy="18" r="1.5" fill="currentColor" opacity="0.5" />
+            <circle cx="6" cy="12" r="1.5" fill="currentColor" opacity="0.5" />
+            <circle cx="18" cy="12" r="1.5" fill="currentColor" opacity="0.5" />
+            <path d="M19 12C19 12 21 13 22 16" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2" />
+          </svg>
+        </div>
+      </template>
+
+      <template v-slot:title>
+        <h2 class="text-h4 font-weight-black text-white mt-6">Your Premiere Awaits</h2>
+      </template>
+
+      <template v-slot:text>
+        <p class="text-body-1 text-grey-lighten-1 mx-auto" style="max-width: 500px;">
+          Your collection is currently a blank script. Start adding movies and shows to build your personal library.
+        </p>
+      </template>
+
       <template v-slot:actions>
-        <v-btn color="primary" size="large" to="/movies/new">Add Your First Movie or Show</v-btn>
+        <v-btn color="primary" size="x-large" to="/movies/new" class="mt-4 px-10 font-weight-bold" elevation="8">
+          Add Your First Title
+        </v-btn>
       </template>
     </v-empty-state>
 
@@ -261,9 +289,7 @@ export default {
     };
   },
   computed: {
-    hasActiveFilters() {
-      return this.searchQuery || this.filterType || this.filterRating;
-    },
+    hasActiveFilters() { return this.searchQuery || this.filterType || this.filterRating; },
     filteredMedia() {
       let result = [...this.mediaList];
       if (this.searchQuery) {
@@ -298,27 +324,12 @@ export default {
         this.showHoverModal = true;
       }, 450);
     },
-    cancelHover() {
-      if (this.hoverTimeout) { clearTimeout(this.hoverTimeout); this.hoverTimeout = null; }
-    },
-    startCloseTimeout() {
-      this.closeTimeout = setTimeout(() => { this.showHoverModal = false; }, 250);
-    },
-    clearCloseTimeout() {
-      if (this.closeTimeout) { clearTimeout(this.closeTimeout); this.closeTimeout = null; }
-    },
-    closeHoverModalImmediately() {
-      this.showHoverModal = false;
-      this.clearCloseTimeout();
-    },
-    goToMedia(mediaId) {
-      this.closeHoverModalImmediately();
-      this.$router.push(`/movies/${mediaId}`);
-    },
-    goToEdit(mediaId) {
-      this.closeHoverModalImmediately();
-      this.$router.push(`/movies/${mediaId}/edit`);
-    },
+    cancelHover() { if (this.hoverTimeout) { clearTimeout(this.hoverTimeout); this.hoverTimeout = null; } },
+    startCloseTimeout() { this.closeTimeout = setTimeout(() => { this.showHoverModal = false; }, 250); },
+    clearCloseTimeout() { if (this.closeTimeout) { clearTimeout(this.closeTimeout); this.closeTimeout = null; } },
+    closeHoverModalImmediately() { this.showHoverModal = false; this.clearCloseTimeout(); },
+    goToMedia(mediaId) { this.closeHoverModalImmediately(); this.$router.push(`/movies/${mediaId}`); },
+    goToEdit(mediaId) { this.closeHoverModalImmediately(); this.$router.push(`/movies/${mediaId}/edit`); },
     confirmDelete(media) { this.mediaToDelete = media; this.showDeleteDialog = true; },
     cancelDelete() { this.showDeleteDialog = false; this.mediaToDelete = null; },
     async handleDelete() {
@@ -348,18 +359,8 @@ export default {
   pointer-events: auto !important;
 }
 
-.modal-capture-area {
-  padding: 30px; 
-  margin: -30px; 
-  display: block;
-}
-
-.all-media { 
-  max-width: 1600px; 
-  margin: 0 auto; 
-  padding-top: 16px; 
-}
-
+.modal-capture-area { padding: 30px; margin: -30px; display: block; }
+.all-media { max-width: 1600px; margin: 0 auto; padding-top: 16px; }
 .gap-3 { gap: 12px; }
 
 .search-bar :deep(.v-field__input) {
@@ -367,6 +368,21 @@ export default {
   padding-bottom: 10px !important;
 }
 
+/* Empty State Styling */
+.empty-state-cinematic {
+  background: radial-gradient(circle at center, rgba(var(--v-theme-primary), 0.08) 0%, transparent 75%);
+  padding: 100px 0;
+  border-radius: 24px;
+}
+.film-reel-svg {
+  color: rgb(var(--v-theme-primary));
+  filter: drop-shadow(0 0 15px rgba(var(--v-theme-primary), 0.4));
+  animation: rotateReel 20s linear infinite;
+}
+@keyframes rotateReel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.empty-icon-wrapper { perspective: 1000px; display: flex; justify-content: center; }
+
+/* Media Grid Styling */
 .media-card { cursor: pointer; transition: transform 0.3s ease; background: transparent !important; }
 .media-card:hover { transform: translateY(-8px); }
 .poster-container { position: relative; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
@@ -375,19 +391,8 @@ export default {
 .gold-text { color: #FFC107 !important; }
 .rating-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
 
-.hover-preview-large { 
-  border-radius: 20px !important; 
-  background-color: #121212 !important; 
-  overflow: hidden; 
-}
-
-.zoom-animation {
-  animation: scaleBackground 12s linear infinite;
-  transform-origin: center;
-}
-@keyframes scaleBackground {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
+/* Modal Styling */
+.hover-preview-large { border-radius: 20px !important; background-color: #121212 !important; overflow: hidden; }
+.zoom-animation { animation: scaleBackground 12s linear infinite; transform-origin: center; }
+@keyframes scaleBackground { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 </style>
