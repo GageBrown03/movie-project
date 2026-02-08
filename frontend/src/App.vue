@@ -1,35 +1,44 @@
 <template>
   <v-app>
+    <v-navigation-drawer app v-model="drawer">
+      <v-list>
+        <v-list-item to="/" prepend-icon="mdi-home">
+          <v-list-item-title>Home</v-list-item-title>
+        </v-list-item>
+        
+        <v-divider class="my-2" />
+        
+        <v-list-subheader>Your Collection</v-list-subheader>
+        
+        <v-list-item to="/movies" prepend-icon="mdi-view-grid">
+          <v-list-item-title>Browse Media</v-list-item-title>
+        </v-list-item>
+        
+        <v-list-item to="/analytics" prepend-icon="mdi-chart-line">
+          <v-list-item-title>Analytics</v-list-item-title>
+        </v-list-item>
+        
+        <v-divider class="my-2" />
+        
+        <v-list-subheader>Actions</v-list-subheader>
+        
+        <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
+          <v-list-item-title>What to Watch?</v-list-item-title>
+        </v-list-item>
+        
+        <v-list-item to="/movies/new" prepend-icon="mdi-plus">
+          <v-list-item-title>Add Media</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
+    
     <v-app-bar app color="primary" dark>
-      <v-toolbar-title>myMDB</v-toolbar-title>
-      <v-spacer></v-spacer>
-      
-      <!-- Dark mode toggle button (always visible) -->
-      <v-btn icon @click="toggleTheme" class="mr-2">
-        <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
-      </v-btn>
-      
-      <!-- Show these buttons only when logged in -->
-      <template v-if="isLoggedIn">
-        <v-btn to="/">Home</v-btn>
-        <v-btn to="/movies">Your Media</v-btn>
-        <v-btn @click="handleLogout">
-          <v-icon left>mdi-logout</v-icon>
-          Logout
-        </v-btn>
-      </template>
-      
-      <!-- Show these buttons only when NOT logged in -->
-      <template v-else>
-        <v-btn to="/login">Login</v-btn>
-        <v-btn to="/register">Register</v-btn>
-      </template>
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
+      <v-app-bar-title>MyMDB</v-app-bar-title>
     </v-app-bar>
     
     <v-main>
-      <v-container>
-        <router-view />
-      </v-container>
+      <router-view />
     </v-main>
   </v-app>
 </template>

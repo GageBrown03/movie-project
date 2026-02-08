@@ -6,6 +6,9 @@ import CreateMovieView from '../views/CreateMediaView.vue';
 import SingleMovieView from '../views/SingleMediaView.vue';
 import LoginView from '../views/LoginView.vue';  // NEW
 import RegisterView from '../views/RegisterView.vue';  // NEW
+// Added imports for Analytics view and Random Picker view
+import AnalyticsView from '@/views/AnalyticsView.vue'
+import RandomPickerView from '@/views/RandomPickerView.vue'
 
 const routes = [
   {
@@ -26,22 +29,33 @@ const routes = [
     meta: { requiresGuest: true }  // Only accessible when NOT logged in
   },
   {
-    path: '/movies',
+    path: '/media',
     component: ViewContainer,
     meta: { requiresAuth: true },  // NEW: Requires authentication
     children: [
       {
         path: '',
         component: AllMoviesView,
-        name: 'all-movies',
+        name: 'all-media',
       },
       {
         path: 'new',
         component: CreateMovieView,
-        name: 'create-movie',
+        name: 'create-media',
+      },
+      // Add routes
+      {
+        path: '/analytics',
+        name: 'Analytics',
+        component: AnalyticsView
       },
       {
-        path: ':movieId',
+        path: '/random',
+        name: 'RandomPicker',
+        component: RandomPickerView
+      },
+      {
+        path: ':mediaId',
         component: ViewContainer,
         children: [
           {
