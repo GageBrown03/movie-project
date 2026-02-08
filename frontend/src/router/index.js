@@ -29,19 +29,19 @@ const routes = [
     meta: { requiresGuest: true }  // Only accessible when NOT logged in
   },
   {
-    path: '/media',
+    path: '/movies',
     component: ViewContainer,
     meta: { requiresAuth: true },  // NEW: Requires authentication
     children: [
       {
         path: '',
         component: AllMoviesView,
-        name: 'all-media',
+        name: 'all-movies',
       },
       {
         path: 'new',
         component: CreateMovieView,
-        name: 'create-media',
+        name: 'create-movie',
       },
       // Add routes
       {
