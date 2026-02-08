@@ -294,6 +294,50 @@
       {{ error }}
     </v-alert>
   </div>
+  <!-- Duplicate Warning Dialog -->
+  <v-dialog v-model="showDuplicateDialog" max-width="500">
+    <v-card>
+      <v-card-title class="text-h5">
+        <v-icon start color="warning">mdi-alert</v-icon>
+        Already in Collection
+      </v-card-title>
+      
+      <v-card-text>
+        <p class="text-body-1 mb-4">
+          <strong>{{ pendingMedia?.title }}</strong> is already in your collection.
+        </p>
+        
+        <v-alert type="info" variant="tonal" density="compact">
+          You rated it <strong>{{ duplicateMedia?.rating || 'Not rated' }}</strong>
+          <span v-if="duplicateMedia?.status === 'want_to_watch'"> (on your watchlist)</span>
+        </v-alert>
+        
+        <p class="text-body-2 text-medium-emphasis mt-4">
+          Would you like to view it or add it again anyway?
+        </p>
+      </v-card-text>
+      
+      <v-card-actions>
+        <v-btn variant="text" @click="showDuplicateDialog = false">
+          Cancel
+        </v-btn>
+        <v-spacer />
+        <v-btn 
+          color="primary" 
+          variant="flat"
+          @click="goToExistingMedia"
+        >
+          View Existing
+        </v-btn>
+        <v-btn 
+          variant="outlined"
+          @click="addDuplicateAnyway"
+        >
+          Add Anyway
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -328,6 +372,11 @@ export default {
       // UI state
       saving: false,
       error: null,
+
+      // NEW: Duplicate detection
+      showDuplicateDialog: false,
+      duplicateMedia: null,  //  existing media item found
+      pendingMedia: null,    //  new media user is trying to add
     };
   },
   
@@ -352,7 +401,72 @@ export default {
         this.searching = false;
       }
     },
+    // NEW METHOD: Check if media already exists
+  async checkForDuplicate(tmdbId, mediaType) {
+    try {
+      // Fetch all user's media
+      const allMedia = await mediaAPI.getAll();
+      
+      // Check if this TMDB ID already exists for this user
+      const duplicate = allMedia.find(m => 
+        m.tmdbId === tmdbId && m.mediaType === mediaType
+      );
+      
+      return duplicate || null;
+    } catch (err) {
+      console.error('Error checking for duplicates:', err);
+      return null;  // Continue anyway if check fails
+    }
+  },
+  
+  // MODIFIED: selectMedia method (add duplicate check)
+  async selectMedia(result) {
+    // First, check for duplicate
+    const duplicate = await this.checkForDuplicate(result.tmdbId, result.mediaType);
     
+    if (duplicate) {
+      // Found duplicate! Store both for dialog
+      this.duplicateMedia = duplicate;
+      this.pendingMedia = result;
+      this.showDuplicateDialog = true;
+      return;  // Stop here, let user decide
+    }
+    
+    // No duplicate, proceed as normal
+    try {
+      if (result.mediaType === 'movie') {
+        this.selectedMedia = await tmdbAPI.getMovieDetails(result.tmdbId);
+      } else {
+        this.selectedMedia = await tmdbAPI.getTVDetails(result.tmdbId);
+      }
+    } catch (err) {
+      console.error('Error fetching details:', err);
+      this.selectedMedia = result;
+    }
+  },
+  
+  // NEW METHOD: User chose to view existing media
+  goToExistingMedia() {
+    this.showDuplicateDialog = false;
+    this.$router.push(`/movies/${this.duplicateMedia.mediaId}`);
+  },
+  
+  // NEW METHOD: User chose to add duplicate anyway (override)
+  async addDuplicateAnyway() {
+    this.showDuplicateDialog = false;
+    
+    // Fetch full details and proceed
+    try {
+      if (this.pendingMedia.mediaType === 'movie') {
+        this.selectedMedia = await tmdbAPI.getMovieDetails(this.pendingMedia.tmdbId);
+      } else {
+        this.selectedMedia = await tmdbAPI.getTVDetails(this.pendingMedia.tmdbId);
+      }
+    } catch (err) {
+      console.error('Error fetching details:', err);
+      this.selectedMedia = this.pendingMedia;
+    }
+  },
     async selectMedia(result) {
       // Fetch full details based on type
       try {

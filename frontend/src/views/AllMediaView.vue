@@ -171,7 +171,7 @@
         </v-col>
       </v-row>
 
-      <!-- List View - FIXED to show watchlist indicator -->
+      <!-- List View -->
       <v-list v-else lines="two" class="bg-transparent">
         <v-list-item v-for="media in filteredMedia" :key="media.mediaId" @click="goToMedia(media.mediaId)" link class="mb-2 rounded-lg border">
           <template v-slot:prepend>
@@ -202,7 +202,7 @@
       </v-list>
     </div>
 
-    <!-- Hover Modal -->
+    <!-- Hover Modal - FIXED: Removed Edit button -->
     <v-dialog
       v-model="showHoverModal"
       max-width="900"
@@ -264,10 +264,12 @@
           </v-card-text>
 
           <v-divider></v-divider>
-          <v-card-actions class="pa-6">
-            <v-btn variant="text" color="grey" @click.stop="goToEdit(hoveredMedia.mediaId)"><v-icon start>mdi-pencil</v-icon> Edit</v-btn>
-            <v-spacer />
-            <v-btn color="primary" variant="flat" size="large">Full Details <v-icon end>mdi-chevron-right</v-icon></v-btn>
+          <v-card-actions class="pa-6 justify-center">
+            <!-- REMOVED: Edit button (no longer needed since inline edit exists) -->
+            <!-- Just show Full Details button -->
+            <v-btn color="primary" variant="flat" size="large" block>
+              View Full Details <v-icon end>mdi-chevron-right</v-icon>
+            </v-btn>
           </v-card-actions>
         </v-card>
       </div>
@@ -351,7 +353,6 @@ export default {
     clearCloseTimeout() { if (this.closeTimeout) { clearTimeout(this.closeTimeout); this.closeTimeout = null; } },
     closeHoverModalImmediately() { this.showHoverModal = false; this.clearCloseTimeout(); },
     goToMedia(mediaId) { this.closeHoverModalImmediately(); this.$router.push(`/movies/${mediaId}`); },
-    goToEdit(mediaId) { this.closeHoverModalImmediately(); this.$router.push(`/movies/${mediaId}/edit`); },
     confirmDelete(media) { this.mediaToDelete = media; this.showDeleteDialog = true; },
     cancelDelete() { this.showDeleteDialog = false; this.mediaToDelete = null; },
     async handleDelete() {
