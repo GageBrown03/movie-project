@@ -1,9 +1,8 @@
 <template>
   <div class="all-media">
-    <!-- Header with actions -->
     <v-row class="mb-6 align-center">
       <v-col>
-        <h1 class="text-h3">My Collection</h1>
+        <h1 class="text-h3 font-weight-bold">My Collection</h1>
         <p class="text-subtitle-1 text-medium-emphasis">
           {{ filteredMedia.length }} {{ filteredMedia.length === 1 ? 'item' : 'items' }}
         </p>
@@ -15,7 +14,6 @@
       </v-col>
     </v-row>
 
-    <!-- Filters Bar -->
     <v-card class="mb-6" elevation="2">
       <v-card-text>
         <v-row>
@@ -77,12 +75,10 @@
       </v-card-text>
     </v-card>
     
-    <!-- Loading state -->
     <v-row v-if="loading" justify="center" class="my-12">
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-row>
     
-    <!-- Error state -->
     <v-alert v-else-if="error" type="error" variant="tonal" class="mb-4">
       {{ error }}
       <template v-slot:append>
@@ -90,7 +86,6 @@
       </template>
     </v-alert>
     
-    <!-- Empty state -->
     <v-empty-state
       v-else-if="mediaList.length === 0"
       icon="mdi-movie-open-outline"
@@ -104,7 +99,6 @@
       </template>
     </v-empty-state>
 
-    <!-- No results from search/filter -->
     <v-empty-state
       v-else-if="filteredMedia.length === 0"
       icon="mdi-movie-search-outline"
@@ -116,9 +110,7 @@
       </template>
     </v-empty-state>
     
-    <!-- Media Grid/List View -->
     <div v-else>
-      <!-- View Toggle -->
       <v-row class="mb-4 align-center">
         <v-col>
           <v-chip variant="text">
@@ -133,19 +125,17 @@
         </v-col>
       </v-row>
 
-      <!-- Grid View -->
       <v-row v-if="viewMode === 'grid'">
         <v-col
           v-for="media in filteredMedia"
           :key="media.mediaId"
-          cols="12"
-          sm="6"
-          md="4"
-          lg="3"
+          cols="12" sm="6" md="4" lg="3"
         >
           <v-card
             class="media-card"
             flat
+            @mouseenter="startHover(media)"
+            @mouseleave="cancelHover"
             @click="goToMedia(media.mediaId)"
           >
             <div class="poster-container">
@@ -163,32 +153,33 @@
                     
                     <v-chip
                       size="x-small"
-                      :color="media.mediaType === 'movie' ? 'blue-darken-2' : 'purple-darken-2'"
-                      class="glass-chip font-weight-black"
+                      :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
+                      class="type-label font-weight-black text-white"
                       variant="flat"
+                      label
                     >
-                      {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+                      {{ media.mediaType.toUpperCase() }}
                     </v-chip>
 
                     <v-chip
                       v-if="media.rating"
                       size="small"
-                      color="amber-darken-2"
-                      class="glass-chip font-weight-black"
+                      color="#121212"
+                      class="rating-label font-weight-black"
                       variant="flat"
                     >
-                      <v-icon start size="14">mdi-star</v-icon>
-                      {{ media.rating }}/5
+                      <v-icon start size="14" color="#FFC107">mdi-star</v-icon>
+                      <span class="gold-text">{{ media.rating }}/5</span>
                     </v-chip>
                     
                     <v-chip
                       v-else
                       size="small"
-                      color="grey-darken-3"
-                      class="glass-chip font-weight-black"
+                      color="#121212"
+                      class="rating-label font-weight-black text-white"
                       variant="flat"
                     >
-                      <v-icon start size="14">mdi-bookmark</v-icon>
+                      <v-icon start size="14" color="white">mdi-bookmark</v-icon>
                       WATCH
                     </v-chip>
                   </div>
@@ -200,6 +191,10 @@
                   </v-row>
                 </template>
               </v-img>
+              <div v-else class="poster-placeholder">
+                <v-icon size="64" color="grey-lighten-1">mdi-movie-outline</v-icon>
+                <p class="text-caption mt-2">No poster</p>
+              </div>
             </div>
 
             <v-card-text class="px-1 py-3">
@@ -211,15 +206,13 @@
         </v-col>
       </v-row>
 
-      <!-- List View -->
-      <v-list v-else lines="two">
+      <v-list v-else lines="two" class="bg-transparent">
         <v-list-item
           v-for="media in filteredMedia"
           :key="media.mediaId"
           @click="goToMedia(media.mediaId)"
-          @mouseenter="startHover(media)"
-          @mouseleave="cancelHover"
           link
+          class="mb-2 rounded-lg border"
         >
           <template v-slot:prepend>
             <v-avatar size="80" rounded class="mr-4">
@@ -228,133 +221,131 @@
             </v-avatar>
           </template>
 
-          <v-list-item-title class="text-h6">
+          <v-list-item-title class="text-h6 font-weight-bold">
             {{ media.title }}
             <v-chip 
-              :color="media.mediaType === 'movie' ? 'primary' : 'secondary'" 
+              :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
               size="x-small" 
-              class="ml-2"
+              class="ml-2 text-white"
+              label
             >
-              {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+              {{ media.mediaType.toUpperCase() }}
             </v-chip>
           </v-list-item-title>
 
-          <v-list-item-subtitle v-if="media.cast && media.cast.length > 0">
-            {{ media.cast.slice(0, 3).map(c => c.name).join(', ') }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle v-else-if="media.director">
-            {{ media.director }}
+          <v-list-item-subtitle>
+            {{ media.releaseYear }} • {{ media.director || 'Director unknown' }}
           </v-list-item-subtitle>
 
           <template v-slot:append>
-            <div class="d-flex flex-column align-end">
-              <v-chip v-if="media.rating" color="amber" size="small">
-                <v-icon start size="small">mdi-star</v-icon>
-                {{ media.rating }}/5
-              </v-chip>
-              <v-chip v-else color="info" size="small">
-                <v-icon start size="small">mdi-bookmark</v-icon>
-                Watchlist
-              </v-chip>
-            </div>
+            <v-chip v-if="media.rating" color="#121212" variant="flat" class="rating-label">
+              <v-icon start color="#FFC107" size="small">mdi-star</v-icon>
+              <span class="gold-text font-weight-bold">{{ media.rating }}/5</span>
+            </v-chip>
+            <v-chip v-else color="grey-darken-3" size="small" variant="flat">
+              <v-icon start size="small">mdi-bookmark</v-icon> Watchlist
+            </v-chip>
           </template>
         </v-list-item>
       </v-list>
     </div>
 
-    <!-- Hover Preview Modal -->
     <v-dialog
-  v-model="showHoverModal"
-  max-width="900" 
-  :scrim="true"
-  transition="scale-transition"
-  @click:outside="closeHoverModal"
->
-  <v-card 
-    v-if="hoveredMedia" 
-    class="hover-preview-large"
-    @click="goToMedia(hoveredMedia.mediaId)"
-  >
-    <v-img
-      :src="hoveredMedia.backdropUrl || hoveredMedia.posterUrl"
-      height="450"
-      cover
-      class="align-end"
-      gradient="to top, rgba(18,18,18,1) 0%, rgba(18,18,18,0.7) 20%, rgba(18,18,18,0) 100%"
+      v-model="showHoverModal"
+      max-width="900"
+      :scrim="true"
+      transition="scale-transition"
+      @click:outside="closeHoverModal"
     >
-      <div class="pa-6">
-        <div class="d-flex align-center mb-2">
-          <v-chip 
-            size="small" 
-            :color="hoveredMedia.mediaType === 'movie' ? 'blue-darken-2' : 'purple-darken-2'" 
-            class="glass-chip mr-2"
-          >
-            {{ hoveredMedia.mediaType.toUpperCase() }}
-          </v-chip>
-          <span v-if="hoveredMedia.releaseYear" class="text-h6 text-grey-lighten-1">
-            {{ hoveredMedia.releaseYear }}
-          </span>
-        </div>
-        <h2 class="text-h3 font-weight-black text-white mb-2">{{ hoveredMedia.title }}</h2>
-      </div>
-    </v-img>
-
-    <v-card-text class="pa-6 bg-surface">
-      <v-row>
-        <v-col cols="12" md="8">
-          <div class="d-flex align-center mb-4">
-            <v-chip v-if="hoveredMedia.rating" color="amber-darken-2" class="mr-3 glass-chip" size="large">
-              <v-icon start>mdi-star</v-icon> {{ hoveredMedia.rating }}/5
-            </v-chip>
-            <v-chip v-else color="grey-darken-3" class="mr-3 glass-chip" size="large">
-              <v-icon start>mdi-bookmark</v-icon> WATCHLIST
-            </v-chip>
-            
-            <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">
-              TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}
-            </v-chip>
+      <v-card 
+        v-if="hoveredMedia" 
+        class="hover-preview-large"
+        @click="goToMedia(hoveredMedia.mediaId)"
+      >
+        <v-img
+          :src="hoveredMedia.backdropUrl || hoveredMedia.posterUrl"
+          height="450"
+          cover
+          class="align-end"
+          gradient="to top, rgba(18,18,18,1) 0%, rgba(18,18,18,0.7) 20%, rgba(18,18,18,0) 100%"
+        >
+          <div class="pa-8">
+            <div class="d-flex align-center mb-2">
+              <v-chip 
+                size="small" 
+                :color="hoveredMedia.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
+                class="mr-3 text-white font-weight-black"
+                label
+              >
+                {{ hoveredMedia.mediaType.toUpperCase() }}
+              </v-chip>
+              <span v-if="hoveredMedia.releaseYear" class="text-h5 text-grey-lighten-1">
+                {{ hoveredMedia.releaseYear }}
+              </span>
+            </div>
+            <h2 class="text-h2 font-weight-black text-white mb-2">{{ hoveredMedia.title }}</h2>
           </div>
+        </v-img>
 
-          <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-4" style="line-height: 1.6;">
-            {{ hoveredMedia.plot || 'No description available.' }}
-          </p>
+        <v-card-text class="pa-8 bg-surface">
+          <v-row>
+            <v-col cols="12" md="8">
+              <div class="d-flex align-center mb-6">
+                <v-chip v-if="hoveredMedia.rating" color="#121212" class="mr-4 rating-label" size="large" variant="flat">
+                  <v-icon start color="#FFC107">mdi-star</v-icon>
+                  <span class="gold-text font-weight-black text-h6">{{ hoveredMedia.rating }}/5</span>
+                </v-chip>
+                <v-chip v-else color="grey-darken-3" class="mr-4" size="large" variant="flat">
+                  <v-icon start>mdi-bookmark</v-icon> WATCHLIST
+                </v-chip>
+                
+                <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">
+                  TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}
+                </v-chip>
+              </div>
 
-          <div v-if="hoveredMedia.genres" class="d-flex flex-wrap gap-2">
-            <v-chip v-for="genre in hoveredMedia.genres" :key="genre" size="small" variant="tonal" class="mr-1">
-              {{ genre }}
-            </v-chip>
-          </div>
-        </v-col>
+              <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-6" style="line-height: 1.6;">
+                {{ hoveredMedia.plot || 'No plot description available.' }}
+              </p>
 
-        <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
-          <div class="text-subtitle-2 text-grey-darken-1 mb-1">STARRING</div>
-          <div class="text-body-2 mb-4">
-            {{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}
-          </div>
+              <div class="d-flex flex-wrap gap-2">
+                <v-chip v-for="genre in hoveredMedia.genres" :key="genre" size="small" variant="tonal" class="mr-2">
+                  {{ genre }}
+                </v-chip>
+              </div>
+            </v-col>
 
-          <div v-if="hoveredMedia.mediaType === 'tv'" class="mb-4">
-            <div class="text-subtitle-2 text-grey-darken-1 mb-1">SEASONS</div>
-            <div class="text-body-2">{{ hoveredMedia.numberOfSeasons }} Seasons</div>
-          </div>
-        </v-col>
-      </v-row>
-    </v-card-text>
+            <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
+              <div class="text-overline text-grey-darken-1 mb-2">Cast</div>
+              <div class="text-body-1 mb-6">
+                {{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}
+              </div>
 
-    <v-divider></v-divider>
+              <div v-if="hoveredMedia.mediaType === 'tv'">
+                <div class="text-overline text-grey-darken-1 mb-2">Series Info</div>
+                <div class="text-body-1">{{ hoveredMedia.numberOfSeasons }} Seasons</div>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
 
-    <v-card-actions class="pa-4">
-      <v-btn variant="text" color="grey" @click.stop="goToEdit(hoveredMedia.mediaId)">
-        <v-icon start>mdi-pencil</v-icon> Edit Entry
-      </v-btn>
-      <v-spacer />
-      <v-btn color="primary" variant="flat" size="large" @click.stop="goToMedia(hoveredMedia.mediaId)">
-        View Full Page <v-icon end>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-card-actions>
-  </v-card>
-</v-dialog>
+        <v-divider></v-divider>
 
-    <!-- Delete Confirmation -->
+        <v-card-actions class="pa-6">
+          <v-btn variant="text" color="grey" @click.stop="goToEdit(hoveredMedia.mediaId)">
+            <v-icon start>mdi-pencil</v-icon> Edit
+          </v-btn>
+          <v-btn variant="text" color="error" @click.stop="confirmDelete(hoveredMedia)">
+            <v-icon start>mdi-delete</v-icon> Delete
+          </v-btn>
+          <v-spacer />
+          <v-btn color="primary" variant="flat" size="large" @click.stop="goToMedia(hoveredMedia.mediaId)">
+            Full Details <v-icon end>mdi-chevron-right</v-icon>
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <delete-confirm-dialog
       :show="showDeleteDialog"
       :movie-title="mediaToDelete?.title || ''"
@@ -371,10 +362,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue';
 
 export default {
   name: 'AllMediaView',
-  
-  components: {
-    DeleteConfirmDialog
-  },
+  components: { DeleteConfirmDialog },
   
   data() {
     return {
@@ -388,12 +376,10 @@ export default {
       sortBy: 'dateAdded',
       viewMode: 'grid',
       
-      // Hover modal
       showHoverModal: false,
       hoveredMedia: null,
       hoverTimeout: null,
       
-      // Delete
       showDeleteDialog: false,
       mediaToDelete: null,
       isDeleting: false,
@@ -402,13 +388,11 @@ export default {
         { title: 'Movies', value: 'movie' },
         { title: 'TV Shows', value: 'tv' },
       ],
-      
       statusOptions: [
         { title: 'Watched', value: 'watched' },
         { title: 'Watchlist', value: 'want_to_watch' },
         { title: 'Watching', value: 'watching' },
       ],
-      
       ratingOptions: [
         { title: '5 Stars', value: 5 },
         { title: '4 Stars', value: 4 },
@@ -416,7 +400,6 @@ export default {
         { title: '2 Stars', value: 2 },
         { title: '1 Star', value: 1 },
       ],
-      
       sortOptions: [
         { title: 'Recently Added', value: 'dateAdded' },
         { title: 'Title (A-Z)', value: 'titleAsc' },
@@ -430,8 +413,6 @@ export default {
   computed: {
     filteredMedia() {
       let result = [...this.mediaList];
-      
-      // Search filter
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
         result = result.filter(m =>
@@ -441,86 +422,44 @@ export default {
           (m.cast && m.cast.some(c => c.name.toLowerCase().includes(query)))
         );
       }
+      if (this.filterType) result = result.filter(m => m.mediaType === this.filterType);
+      if (this.filterStatus) result = result.filter(m => m.status === this.filterStatus);
+      if (this.filterRating !== null) result = result.filter(m => m.rating === this.filterRating);
       
-      // Type filter
-      if (this.filterType) {
-        result = result.filter(m => m.mediaType === this.filterType);
-      }
-      
-      // Status filter
-      if (this.filterStatus) {
-        result = result.filter(m => m.status === this.filterStatus);
-      }
-      
-      // Rating filter
-      if (this.filterRating !== null) {
-        result = result.filter(m => m.rating === this.filterRating);
-      }
-      
-      // Sorting
       switch (this.sortBy) {
-        case 'titleAsc':
-          result.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-        case 'titleDesc':
-          result.sort((a, b) => b.title.localeCompare(a.title));
-          break;
-        case 'ratingDesc':
-          result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-          break;
-        case 'ratingAsc':
-          result.sort((a, b) => (a.rating || 0) - (b.rating || 0));
-          break;
-        case 'dateAdded':
-        default:
-          result.sort((a, b) => {
-            const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-            const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
-            return dateB - dateA;
-          });
+        case 'titleAsc': result.sort((a, b) => a.title.localeCompare(b.title)); break;
+        case 'titleDesc': result.sort((a, b) => b.title.localeCompare(a.title)); break;
+        case 'ratingDesc': result.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
+        case 'ratingAsc': result.sort((a, b) => (a.rating || 0) - (b.rating || 0)); break;
+        default: result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
-      
       return result;
     },
-    
-    isMobile() {
-      return this.$vuetify.display.mobile;
-    }
+    isMobile() { return this.$vuetify.display.mobile; }
   },
   
   created() {
     this.getAllMedia();
     const savedView = localStorage.getItem('mediaViewMode');
-    if (savedView) {
-      this.viewMode = savedView;
-    }
+    if (savedView) this.viewMode = savedView;
   },
   
   watch: {
-    viewMode(newMode) {
-      localStorage.setItem('mediaViewMode', newMode);
-    }
+    viewMode(newMode) { localStorage.setItem('mediaViewMode', newMode); }
   },
   
   methods: {
     async getAllMedia() {
       this.loading = true;
-      this.error = null;
-      
-      try {
-        this.mediaList = await mediaAPI.getAll();
-      } catch (err) {
-        console.error('Error loading media:', err);
-        this.error = 'Failed to load media. Please try again.';
-      } finally {
-        this.loading = false;
-      }
+      try { this.mediaList = await mediaAPI.getAll(); } 
+      catch (err) { this.error = 'Failed to load media.'; } 
+      finally { this.loading = false; }
     },
     
     startHover(media) {
-      if (this.isMobile) return;
-      
+      if (this.isMobile || this.showHoverModal) return;
       this.cancelHover();
+      // Original 300ms + 150ms preferred = 450ms
       this.hoverTimeout = setTimeout(() => {
         this.hoveredMedia = media;
         this.showHoverModal = true;
@@ -536,16 +475,17 @@ export default {
     
     closeHoverModal() {
       this.showHoverModal = false;
-      this.hoveredMedia = null;
+      // Slight delay to prevent state jumping
+      setTimeout(() => { if (!this.showHoverModal) this.hoveredMedia = null; }, 200);
     },
     
     goToMedia(mediaId) {
-      this.closeHoverModal();
+      this.showHoverModal = false;
       this.$router.push(`/movies/${mediaId}`);
     },
     
     goToEdit(mediaId) {
-      this.closeHoverModal();
+      this.showHoverModal = false;
       this.$router.push(`/movies/${mediaId}/edit`);
     },
     
@@ -561,109 +501,94 @@ export default {
     
     async handleDelete() {
       if (!this.mediaToDelete) return;
-      
       this.isDeleting = true;
-      
       try {
         await mediaAPI.delete(this.mediaToDelete.mediaId);
         this.mediaList = this.mediaList.filter(m => m.mediaId !== this.mediaToDelete.mediaId);
         this.showDeleteDialog = false;
         this.showHoverModal = false;
-        this.mediaToDelete = null;
-      } catch (err) {
-        console.error('Delete error:', err);
-        this.error = 'Failed to delete. Please try again.';
-      } finally {
-        this.isDeleting = false;
-      }
+      } finally { this.isDeleting = false; }
     },
     
     clearFilters() {
       this.searchQuery = '';
-      this.filterType = null;
-      this.filterStatus = null;
-      this.filterRating = null;
+      this.filterType = this.filterStatus = this.filterRating = null;
       this.sortBy = 'dateAdded';
-    },
-    
-    truncateText(text, maxLength) {
-      if (!text) return '';
-      return text.length > maxLength
-        ? text.substring(0, maxLength) + '...'
-        : text;
     }
   }
 };
 </script>
 
 <style scoped>
+.all-media {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
 .media-card {
-  background: transparent !important;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: transform 0.3s ease;
+  background: transparent !important;
 }
 
 .media-card:hover {
   transform: translateY(-8px);
 }
 
-.media-card:hover .poster-image {
-  box-shadow: 0 12px 20px rgba(0,0,0,0.5);
-}
-
 .poster-container {
   position: relative;
+  aspect-ratio: 2/3;
   border-radius: 12px;
   overflow: hidden;
-  aspect-ratio: 2/3;
-  background-color: #121212;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
 
-.poster-image {
-  transition: transform 0.5s ease;
-}
-
-/* Dark gradient at the top */
 .top-scrim {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: 60px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
   z-index: 1;
 }
 
 .overlay-content {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   z-index: 2;
 }
 
-/* Glassmorphism effect */
-.glass-chip {
-  backdrop-filter: blur(8px) saturate(1.2);
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.type-label {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
   letter-spacing: 0.5px;
-  font-weight: 700;
 }
+
+.rating-label {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.gold-text {
+  color: #FFC107 !important;
+}
+
 .hover-preview-large {
-  cursor: pointer; /* Makes the whole card feel interactive */
+  cursor: pointer;
   overflow: hidden;
-  border-radius: 16px !important;
-  background-color: #121212 !important; /* Force deep dark theme */
+  border-radius: 20px !important;
+  background-color: #121212 !important;
   transition: transform 0.2s ease;
 }
 
 .hover-preview-large:hover {
-  /* Subtle lift when hovering over the modal itself */
   transform: scale(1.01);
 }
 
-.gap-2 {
-  gap: 8px;
+.gap-2 { gap: 8px; }
+
+.poster-placeholder {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #1e1e1e;
 }
 </style>
