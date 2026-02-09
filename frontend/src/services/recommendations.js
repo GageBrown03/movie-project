@@ -1,7 +1,13 @@
 // recommendations.js - Service for fetching recommendations from TMDB
 
-const TMDB_API_KEY = process.env.VITE_TMDB_API_KEY;
+// FIXED: Use import.meta.env for Vite (not process.env)
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+
+// Debug: Check if API key is loaded
+if (!TMDB_API_KEY) {
+  console.error('TMDB_API_KEY is not defined! Check your .env file.');
+}
 
 export const recommendationsAPI = {
   /**
@@ -12,13 +18,19 @@ export const recommendationsAPI = {
       ? `${TMDB_BASE_URL}/movie/${tmdbId}/similar`
       : `${TMDB_BASE_URL}/tv/${tmdbId}/similar`;
     
-    const response = await fetch(`${endpoint}?api_key=${TMDB_API_KEY}&page=1`);
+    const url = `${endpoint}?api_key=${TMDB_API_KEY}&page=1`;
+    console.log('Fetching similar content:', url.replace(TMDB_API_KEY, 'API_KEY'));
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch similar content');
+      const errorText = await response.text();
+      console.error('TMDB API Error:', response.status, errorText);
+      throw new Error(`Failed to fetch similar content: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('Similar content results:', data.results?.length || 0);
     
     // Transform TMDB results to our format
     return data.results.slice(0, 12).map(item => ({
@@ -47,15 +59,19 @@ export const recommendationsAPI = {
       ? `${TMDB_BASE_URL}/discover/movie`
       : `${TMDB_BASE_URL}/discover/tv`;
     
-    const response = await fetch(
-      `${endpoint}?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=vote_average.desc&vote_count.gte=100&page=${page}`
-    );
+    const url = `${endpoint}?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=vote_average.desc&vote_count.gte=100&page=${page}`;
+    console.log('Fetching genre recommendations:', url.replace(TMDB_API_KEY, 'API_KEY'));
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch genre recommendations');
+      const errorText = await response.text();
+      console.error('TMDB API Error:', response.status, errorText);
+      throw new Error(`Failed to fetch genre recommendations: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('Genre recommendations results:', data.results?.length || 0);
     
     return data.results.slice(0, 20).map(item => ({
       tmdbId: item.id,
@@ -79,6 +95,8 @@ export const recommendationsAPI = {
    * Get media by a specific actor
    */
   async getByActor(actorId, page = 1) {
+    console.log('Fetching actor credits for:', actorId);
+    
     // Get actor's movie credits
     const movieResponse = await fetch(
       `${TMDB_BASE_URL}/person/${actorId}/movie_credits?api_key=${TMDB_API_KEY}`
@@ -89,11 +107,17 @@ export const recommendationsAPI = {
     );
     
     if (!movieResponse.ok || !tvResponse.ok) {
+      console.error('Actor credits error:', movieResponse.status, tvResponse.status);
       throw new Error('Failed to fetch actor credits');
     }
     
     const movieData = await movieResponse.json();
     const tvData = await tvResponse.json();
+    
+    console.log('Actor credits:', {
+      movies: movieData.cast?.length || 0,
+      tv: tvData.cast?.length || 0
+    });
     
     // Combine and sort by popularity
     const movies = movieData.cast.map(item => ({
@@ -134,15 +158,19 @@ export const recommendationsAPI = {
    * Get trending content
    */
   async getTrending(mediaType = 'all', timeWindow = 'week') {
-    const response = await fetch(
-      `${TMDB_BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}`
-    );
+    const url = `${TMDB_BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}`;
+    console.log('Fetching trending:', url.replace(TMDB_API_KEY, 'API_KEY'));
+    
+    const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error('Failed to fetch trending content');
+      const errorText = await response.text();
+      console.error('TMDB API Error:', response.status, errorText);
+      throw new Error(`Failed to fetch trending content: ${response.status}`);
     }
     
     const data = await response.json();
+    console.log('Trending results:', data.results?.length || 0);
     
     return data.results.slice(0, 20).map(item => ({
       tmdbId: item.id,
