@@ -27,7 +27,7 @@
       class="mb-4"
       prominent
     >
-      <v-row align="center">
+      <v-row class="align-center">
         <v-col>
           <div class="text-h6">
             You have {{ pendingRequests.received.length }} pending friend 
