@@ -8,6 +8,7 @@ import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import AnalyticsView from '../views/AnalyticsView.vue';
 import RandomPickerView from '../views/RandomPickerView.vue';
+import DiscoverView from '../views/DiscoverView.vue'; // Add import for DiscoverView update
 
 const routes = [
   {
@@ -75,6 +76,13 @@ const routes = [
   {
     path: '/movies/:mediaId',
     redirect: to => `/media/${to.params.mediaId}`
+  },
+  // Add route for DiscoverView
+  {
+    path: '/discover',
+    name: 'discover',
+    component: DiscoverView,
+    meta: { requiresAuth: true }
   },
 ];
 

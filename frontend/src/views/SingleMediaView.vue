@@ -69,6 +69,11 @@
                   {{ media.mediaType === 'tv' ? media.director : `Dir: ${media.director}` }}
                 </v-chip>
               </div>
+              <similar-content 
+                v-if="media && media.tmdbId"
+                :tmdb-id="media.tmdbId"
+                :media-type="media.mediaType"
+              />
             </v-container>
           </div>
         </v-img>
@@ -542,12 +547,14 @@
 <script>
 import { mediaAPI } from '@/services/api-production';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue';
+import SimilarContent from '@/components/SimilarContent.vue';
 
 export default {
   name: 'SingleMediaView',
   
   components: {
-    DeleteConfirmDialog
+    DeleteConfirmDialog,
+    SimilarContent
   },
 
   data() {

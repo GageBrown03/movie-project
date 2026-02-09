@@ -22,13 +22,19 @@
         
         <!-- <v-list-subheader>Actions</v-list-subheader> -->
         
-        <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
-          <v-list-item-title>What to Watch?</v-list-item-title>
-        </v-list-item>
-        
         <v-list-item to="/media/new" prepend-icon="mdi-plus">
           <v-list-item-title>Add Media</v-list-item-title>
         </v-list-item>
+
+        <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
+          <v-list-item-title>What to Watch</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item to="/discover" prepend-icon="mdi-compass">
+          <v-list-item-title>Discover</v-list-item-title>
+        </v-list-item>
+        
+        
       </v-list>
     </v-navigation-drawer>
     
