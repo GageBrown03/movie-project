@@ -3,19 +3,18 @@
     <!-- Header -->
     <v-row class="mb-6 align-center">
       <v-col>
-        <h1 class="text-h3 font-weight-bold">Friend Requests</h1>
-        <p class="text-subtitle-1 text-medium-emphasis">
-          Manage your pending friend requests
-        </p>
-      </v-col>
-      <v-col cols="auto">
-        <v-btn 
-          variant="text" 
+        <v-btn
+          variant="text"
           prepend-icon="mdi-arrow-left"
-          to="/friends"
+          @click="$router.push('/friends')"
         >
           Back to Friends
         </v-btn>
+        
+        <h1 class="text-h3 font-weight-bold mt-4">Friend Requests</h1>
+        <p class="text-subtitle-1 text-medium-emphasis">
+          Manage your pending friend requests
+        </p>
       </v-col>
     </v-row>
 
@@ -29,9 +28,9 @@
       <v-tabs v-model="activeTab" class="mb-6">
         <v-tab value="received">
           Received
-          <v-badge 
-            v-if="receivedRequests.length > 0" 
-            :content="receivedRequests.length" 
+          <v-badge
+            v-if="receivedRequests.length > 0"
+            :content="receivedRequests.length"
             color="error"
             inline
             class="ml-2"
@@ -39,89 +38,67 @@
         </v-tab>
         <v-tab value="sent">
           Sent
-          <v-badge 
-            v-if="sentRequests.length > 0" 
-            :content="sentRequests.length" 
-            color="primary"
+          <v-badge
+            v-if="sentRequests.length > 0"
+            :content="sentRequests.length"
+            color="warning"
             inline
             class="ml-2"
           />
         </v-tab>
       </v-tabs>
 
-      <!-- Received Requests Tab -->
+      <!-- Received Requests -->
       <v-window v-model="activeTab">
         <v-window-item value="received">
-          <!-- Empty State -->
-          <v-empty-state
-            v-if="receivedRequests.length === 0"
-            icon="mdi-account-clock"
-            title="No Pending Requests"
-            text="You don't have any friend requests at the moment."
-          >
-            <template v-slot:actions>
-              <v-btn color="primary" to="/friends">
-                View Friends
-              </v-btn>
-            </template>
-          </v-empty-state>
+          <div v-if="receivedRequests.length > 0">
+            <friend-request-card
+              v-for="request in receivedRequests"
+              :key="request.friendshipId"
+              :request="request"
+              type="received"
+              @accept="acceptRequest(request)"
+              @decline="declineRequest(request)"
+              class="mb-4"
+            />
+          </div>
 
-          <!-- Requests List -->
-          <v-row v-else>
-            <v-col 
-              v-for="request in receivedRequests" 
-              :key="request.friendship_id"
-              cols="12"
-              sm="6"
-              md="4"
-            >
-              <friend-request-card
-                :request="request"
-                type="received"
-                @accept="acceptRequest(request)"
-                @decline="declineRequest(request)"
-              />
-            </v-col>
-          </v-row>
+          <!-- Empty State -->
+          <v-card v-else class="text-center pa-12">
+            <v-icon size="64" color="grey">mdi-inbox</v-icon>
+            <h3 class="text-h5 mt-4">No Pending Requests</h3>
+            <p class="text-body-2 text-medium-emphasis">
+              You don't have any friend requests at the moment
+            </p>
+          </v-card>
         </v-window-item>
 
-        <!-- Sent Requests Tab -->
+        <!-- Sent Requests -->
         <v-window-item value="sent">
-          <!-- Empty State -->
-          <v-empty-state
-            v-if="sentRequests.length === 0"
-            icon="mdi-account-arrow-right"
-            title="No Sent Requests"
-            text="You haven't sent any friend requests."
-          >
-            <template v-slot:actions>
-              <v-btn color="primary" to="/friends">
-                Add Friends
-              </v-btn>
-            </template>
-          </v-empty-state>
+          <div v-if="sentRequests.length > 0">
+            <friend-request-card
+              v-for="request in sentRequests"
+              :key="request.friendshipId"
+              :request="request"
+              type="sent"
+              @cancel="cancelRequest(request)"
+              class="mb-4"
+            />
+          </div>
 
-          <!-- Requests List -->
-          <v-row v-else>
-            <v-col 
-              v-for="request in sentRequests" 
-              :key="request.friendship_id"
-              cols="12"
-              sm="6"
-              md="4"
-            >
-              <friend-request-card
-                :request="request"
-                type="sent"
-                @cancel="cancelRequest(request)"
-              />
-            </v-col>
-          </v-row>
+          <!-- Empty State -->
+          <v-card v-else class="text-center pa-12">
+            <v-icon size="64" color="grey">mdi-send-outline</v-icon>
+            <h3 class="text-h5 mt-4">No Pending Requests</h3>
+            <p class="text-body-2 text-medium-emphasis">
+              You haven't sent any friend requests
+            </p>
+          </v-card>
         </v-window-item>
       </v-window>
     </div>
 
-    <!-- Snackbar for notifications -->
+    <!-- Snackbar -->
     <v-snackbar v-model="showSnackbar" :color="snackbarColor">
       {{ snackbarMessage }}
       <template v-slot:actions>
@@ -133,6 +110,7 @@
 
 <script>
 import FriendRequestCard from '@/components/FriendRequestCard.vue';
+import { friendsAPI } from '@/services/api-production';
 
 export default {
   name: 'FriendRequestsView',
@@ -163,20 +141,17 @@ export default {
     async loadRequests() {
       this.loading = true;
       try {
-        const response = await fetch('/api/friends/pending', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        const requests = await friendsAPI.getPending();
+        this.receivedRequests = requests.filter(r => r.requestType === 'received');
+        this.sentRequests = requests.filter(r => r.requestType === 'sent');
         
-        if (response.ok) {
-          const requests = await response.json();
-          this.receivedRequests = requests.filter(r => r.request_type === 'received');
-          this.sentRequests = requests.filter(r => r.request_type === 'sent');
+        // Auto-switch to received if there are requests
+        if (this.receivedRequests.length > 0) {
+          this.activeTab = 'received';
         }
       } catch (err) {
         console.error('Error loading requests:', err);
-        this.showError('Failed to load friend requests');
+        this.showError(err.message || 'Failed to load requests');
       } finally {
         this.loading = false;
       }
@@ -184,79 +159,52 @@ export default {
     
     async acceptRequest(request) {
       try {
-        const response = await fetch(`/api/friends/accept/${request.friendship_id}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        await friendsAPI.acceptRequest(request.friendshipId);
         
-        if (response.ok) {
-          // Remove from received requests
-          this.receivedRequests = this.receivedRequests.filter(
-            r => r.friendship_id !== request.friendship_id
-          );
-          
-          this.showSuccess(`You're now friends with ${request.other_username}!`);
-        } else {
-          const error = await response.json();
-          this.showError(error.error || 'Failed to accept request');
-        }
+        // Remove from list
+        this.receivedRequests = this.receivedRequests.filter(
+          r => r.friendshipId !== request.friendshipId
+        );
+        
+        this.showSuccess(`You're now friends with ${request.otherUsername}!`);
+        
+        // Emit event to parent/router if needed
+        this.$router.push('/friends');
       } catch (err) {
         console.error('Error accepting request:', err);
-        this.showError('Failed to accept request');
+        this.showError(err.message || 'Failed to accept request');
       }
     },
     
     async declineRequest(request) {
       try {
-        const response = await fetch(`/api/friends/decline/${request.friendship_id}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        await friendsAPI.declineRequest(request.friendshipId);
         
-        if (response.ok) {
-          // Remove from received requests
-          this.receivedRequests = this.receivedRequests.filter(
-            r => r.friendship_id !== request.friendship_id
-          );
-          
-          this.showSuccess('Request declined');
-        } else {
-          const error = await response.json();
-          this.showError(error.error || 'Failed to decline request');
-        }
+        // Remove from list
+        this.receivedRequests = this.receivedRequests.filter(
+          r => r.friendshipId !== request.friendshipId
+        );
+        
+        this.showSuccess('Friend request declined');
       } catch (err) {
         console.error('Error declining request:', err);
-        this.showError('Failed to decline request');
+        this.showError(err.message || 'Failed to decline request');
       }
     },
     
     async cancelRequest(request) {
       try {
-        const response = await fetch(`/api/friends/${request.friendship_id}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        await friendsAPI.remove(request.friendshipId);
         
-        if (response.ok) {
-          // Remove from sent requests
-          this.sentRequests = this.sentRequests.filter(
-            r => r.friendship_id !== request.friendship_id
-          );
-          
-          this.showSuccess('Request cancelled');
-        } else {
-          const error = await response.json();
-          this.showError(error.error || 'Failed to cancel request');
-        }
+        // Remove from list
+        this.sentRequests = this.sentRequests.filter(
+          r => r.friendshipId !== request.friendshipId
+        );
+        
+        this.showSuccess('Friend request cancelled');
       } catch (err) {
         console.error('Error cancelling request:', err);
-        this.showError('Failed to cancel request');
+        this.showError(err.message || 'Failed to cancel request');
       }
     },
     
@@ -277,7 +225,7 @@ export default {
 
 <style scoped>
 .friend-requests-view {
-  max-width: 1400px;
+  max-width: 800px;
   margin: 0 auto;
 }
 </style>

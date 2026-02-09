@@ -229,12 +229,11 @@
       </div>
 
       <!-- Empty State -->
-      <v-empty-state
-        v-else
-        icon="mdi-filter-off"
-        title="No matches"
-        text="Try adjusting your filters"
-      />
+      <v-card v-else class="text-center pa-12">
+        <v-icon size="64" color="grey">mdi-filter-off</v-icon>
+        <h3 class="text-h5 mt-4">No matches</h3>
+        <p class="text-body-2 text-medium-emphasis">Try adjusting your filters</p>
+      </v-card>
 
       <!-- Recommendations Section -->
       <v-row class="mt-6" v-if="comparison.recommendationsForMe.length > 0">
@@ -284,6 +283,8 @@
 </template>
 
 <script>
+import { compareAPI } from '@/services/api-production';
+
 export default {
   name: 'CompareRatingsView',
   
@@ -373,22 +374,11 @@ export default {
       this.error = null;
       
       try {
-        const response = await fetch(`/api/compare/${this.friendUsername}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        
-        if (response.ok) {
-          this.comparison = await response.json();
-          this.friendData = this.comparison.friend;
-        } else {
-          const errorData = await response.json();
-          this.error = errorData.error || 'Failed to load comparison';
-        }
+        this.comparison = await compareAPI.getRatings(this.friendUsername);
+        this.friendData = this.comparison.friend;
       } catch (err) {
         console.error('Error loading comparison:', err);
-        this.error = 'Failed to load comparison';
+        this.error = err.message || 'Failed to load comparison';
       } finally {
         this.loading = false;
       }

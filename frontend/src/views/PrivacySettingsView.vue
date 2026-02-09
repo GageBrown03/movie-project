@@ -76,7 +76,7 @@
               <div>
                 <h3 class="text-h6">Ratings</h3>
                 <p class="text-caption text-medium-emphasis">
-                  Who can see your star ratings
+                  Who can see your star ratings (Required for comparisons!)
                 </p>
               </div>
             </div>
@@ -98,7 +98,7 @@
                   <div>
                     <strong>Friends Only</strong>
                     <span class="text-caption text-medium-emphasis d-block">
-                      Only friends can see your ratings (enables comparisons)
+                      Friends can see & compare ratings ⭐ Recommended!
                     </span>
                   </div>
                 </template>
@@ -290,6 +290,8 @@
 </template>
 
 <script>
+import { privacyAPI } from '@/services/api-production';
+
 export default {
   name: 'PrivacySettingsView',
   
@@ -324,21 +326,11 @@ export default {
     async loadSettings() {
       this.loading = true;
       try {
-        const response = await fetch('/api/privacy', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        
-        if (response.ok) {
-          this.settings = await response.json();
-          this.originalSettings = { ...this.settings };
-        } else {
-          this.showError('Failed to load privacy settings');
-        }
+        this.settings = await privacyAPI.getSettings();
+        this.originalSettings = { ...this.settings };
       } catch (err) {
         console.error('Error loading privacy settings:', err);
-        this.showError('Failed to load privacy settings');
+        this.showError(err.message || 'Failed to load privacy settings');
       } finally {
         this.loading = false;
       }
@@ -347,34 +339,20 @@ export default {
     async saveSettings() {
       this.saving = true;
       try {
-        const response = await fetch('/api/privacy', {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.settings)
-        });
-        
-        if (response.ok) {
-          const updated = await response.json();
-          this.settings = {
-            privacyCollection: updated.privacyCollection,
-            privacyRatings: updated.privacyRatings,
-            privacyStats: updated.privacyStats,
-            privacyProfileSearchable: updated.privacyProfileSearchable,
-            emailNotificationsFriendRequests: updated.emailNotificationsFriendRequests,
-          };
-          this.originalSettings = { ...this.settings };
-          this.hasChanges = false;
-          this.showSuccess('Privacy settings saved successfully');
-        } else {
-          const error = await response.json();
-          this.showError(error.error || 'Failed to save settings');
-        }
+        const updated = await privacyAPI.updateSettings(this.settings);
+        this.settings = {
+          privacyCollection: updated.privacyCollection,
+          privacyRatings: updated.privacyRatings,
+          privacyStats: updated.privacyStats,
+          privacyProfileSearchable: updated.privacyProfileSearchable,
+          emailNotificationsFriendRequests: updated.emailNotificationsFriendRequests,
+        };
+        this.originalSettings = { ...this.settings };
+        this.hasChanges = false;
+        this.showSuccess('Privacy settings saved successfully');
       } catch (err) {
         console.error('Error saving privacy settings:', err);
-        this.showError('Failed to save settings');
+        this.showError(err.message || 'Failed to save settings');
       } finally {
         this.saving = false;
       }
