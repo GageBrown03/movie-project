@@ -23,7 +23,7 @@
       text="Start adding movies and TV shows to see your analytics"
     >
       <template v-slot:actions>
-        <v-btn color="primary" size="large" to="/movies/new">
+        <v-btn color="primary" size="large" to="/media/new">
           Add Your First Title
         </v-btn>
       </template>
@@ -93,7 +93,7 @@
           </v-card>
         </v-col>
 
-        <!-- Total Watch Time -->
+        <!-- FIXED: Total Watch Time - Only Watched Items -->
         <v-col cols="12" sm="6" md="4">
           <v-card class="stat-card" elevation="2">
             <v-card-text>
@@ -221,7 +221,7 @@
           </v-card>
         </v-col>
 
-        <!-- Recent Activity -->
+        <!-- FIXED: Recent Activity with proper timeAgo -->
         <v-col cols="12">
           <v-card elevation="2">
             <v-card-title class="text-h6">
@@ -233,7 +233,7 @@
                 <v-list-item
                   v-for="media in recentMedia"
                   :key="media.mediaId"
-                  :to="`/movies/${media.mediaId}`"
+                  :to="`/media/${media.mediaId}`"
                   link
                 >
                   <template v-slot:prepend>
@@ -316,9 +316,9 @@ export default {
         ratingDistribution[i] = this.mediaList.filter(m => m.rating === i).length;
       }
       
-      // Total watch time (movies only, estimate TV as 45min per episode)
+      // FIXED: Total watch time - ONLY COUNT WATCHED ITEMS
       let totalMinutes = 0;
-      this.mediaList.forEach(m => {
+      watched.forEach(m => {  // Changed from this.mediaList to watched
         if (m.mediaType === 'movie' && m.runtime) {
           totalMinutes += m.runtime;
         } else if (m.mediaType === 'tv' && m.numberOfEpisodes) {
@@ -397,11 +397,18 @@ export default {
       return maxCount > 0 ? (count / maxCount) * 100 : 0;
     },
     
+    // FIXED: timeAgo function to handle recent dates properly
     timeAgo(dateString) {
       if (!dateString) return '';
+      
       const date = new Date(dateString);
       const now = new Date();
-      const diffMs = now - date;
+      
+      // Reset hours to compare just dates
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      const diffMs = nowOnly - dateOnly;
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       
       if (diffDays === 0) return 'Today';

@@ -15,16 +15,16 @@
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-row>
 
-    <!-- Empty Watchlist State -->
+    <!-- FIXED: Empty Watchlist State with Add Button -->
     <v-empty-state
       v-else-if="watchlist.length === 0"
       icon="mdi-bookmark-outline"
       title="Your Watchlist is Empty"
-      text="Add some movies or TV shows to your watchlist first"
+      text="Add some movies or TV shows to your watchlist first, then come back here to let us pick something for you!"
     >
       <template v-slot:actions>
-        <v-btn color="primary" size="large" to="/movies/new">
-          Browse & Add Media
+        <v-btn color="primary" size="large" to="/media/new" prepend-icon="mdi-plus">
+          Add to Watchlist
         </v-btn>
       </template>
     </v-empty-state>
@@ -105,7 +105,7 @@
         </v-card-text>
       </v-card>
 
-      <!-- Pick Button -->
+      <!-- FIXED: Pick Button with Centered Text -->
       <v-row v-if="!pickedMedia" justify="center" class="my-12">
         <v-col cols="12" sm="8" md="6" class="text-center">
           <v-btn
@@ -116,8 +116,10 @@
             class="pick-button"
             elevation="8"
           >
-            <v-icon start size="large">mdi-dice-5</v-icon>
-            Pick For Me
+            <div class="d-flex align-center justify-center">
+              <v-icon start size="large">mdi-dice-5</v-icon>
+              <span>Pick For Me</span>
+            </div>
           </v-btn>
           <p v-if="filteredWatchlist.length === 0" class="text-caption text-error mt-4">
             No items match your filters
@@ -403,7 +405,7 @@ export default {
       }
       
       // Runtime filter (movies only)
-      if (this.filters.runtime && !this.filters.type || this.filters.type === 'movie') {
+      if (this.filters.runtime && (!this.filters.type || this.filters.type === 'movie')) {
         result = result.filter(m => {
           if (m.mediaType !== 'movie' || !m.runtime) return false;
           
@@ -552,7 +554,7 @@ export default {
     },
     
     viewDetails() {
-      this.$router.push(`/movies/${this.pickedMedia.mediaId}`);
+      this.$router.push(`/media/${this.pickedMedia.mediaId}`);
     },
     
     getGenreArray(genres) {
@@ -568,10 +570,17 @@ export default {
   margin: 0 auto;
 }
 
+/* FIXED: Button with centered text */
 .pick-button {
   padding: 32px 64px !important;
   font-size: 1.5rem !important;
   font-weight: bold;
+  min-height: 80px !important;
+}
+
+.pick-button .d-flex {
+  width: 100%;
+  height: 100%;
 }
 
 .picked-card {

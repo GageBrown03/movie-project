@@ -585,7 +585,8 @@ export default {
 
   computed: {
     mediaId() {
-      return this.$route.params.movieId;
+      // FIXED: Changed from movieId to mediaId to match route param
+      return this.$route.params.mediaId;
     }
   },
 
