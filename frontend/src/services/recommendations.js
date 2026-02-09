@@ -1,7 +1,7 @@
 // recommendations.js - Service for fetching recommendations from TMDB
 
 // FIXED: Use import.meta.env for Vite (not process.env)
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const TMDB_API_KEY = process.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
 // Debug: Check if API key is loaded
