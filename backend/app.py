@@ -10,6 +10,8 @@ from src.routes.auth_router import auth_router  # NEW: Import auth router
 from sqlalchemy import text
 from src.routes.tmdb_router import tmdb_router  # NEW
 from src.routes.friends import friends  # NEW for friend system
+from src.routes.privacy import privacy  # NEW for privacy settings
+from src.routes.compare import compare  # NEW for comparative ratings
 
 # Load local environment variables before anything else
 load_dotenv()
@@ -47,6 +49,9 @@ app.register_blueprint(media_router)  # CHANGED from movie_router
 app.register_blueprint(auth_router)  # NEW: Register auth routes
 app.register_blueprint(tmdb_router)  # NEW: Register TMDB routes
 app.register_blueprint(friends)  # NEW: Register friend system routes
+app.register_blueprint(privacy)  # NEW for privacy settings routes
+app.register_blueprint(compare)  # NEW for comparative ratings routes
+
 
 
 @app.get('/health')

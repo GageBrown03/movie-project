@@ -8,9 +8,11 @@ import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import AnalyticsView from '../views/AnalyticsView.vue';
 import RandomPickerView from '../views/RandomPickerView.vue';
-import DiscoverView from '../views/DiscoverView.vue'; // Add import for DiscoverView update
+import DiscoverView from '../views/DiscoverView.vue'; 
 import FriendsView from '../views/FriendsView.vue';
 import FriendRequestsView from '../views/FriendRequestsView.vue';
+import PrivacySettingsView from '../views/PrivacySettingsView.vue'; 
+import CompareRatingsView from '../views/CompareRatingsView.vue'; 
 
 const routes = [
   {
@@ -99,6 +101,16 @@ const routes = [
     component: DiscoverView,
     meta: { requiresAuth: true }
   },
+  {// Add Routing for privacy settings
+     path: '/settings/privacy',
+     component: PrivacySettingsView,
+     meta: { requiresAuth: true }
+   },
+   {
+     path: '/friends/:username/compare',
+     component: CompareRatingsView,
+     meta: { requiresAuth: true }
+   }
 ];
 
 const router = createRouter({

@@ -51,7 +51,7 @@ class User(db.Model):
     privacy_collection = db.Column(db.String(20), default='private')
     privacy_ratings = db.Column(db.String(20), default='private')
     privacy_stats = db.Column(db.String(20), default='private')
-    privacy_profile_searchable = db.Column(db.Boolean, default=False)
+    privacy_profile_searchable = db.Column(db.Boolean, default=True)
     
     # Email notification preferences
     email_notifications_friend_requests = db.Column(db.Boolean, default=True)
