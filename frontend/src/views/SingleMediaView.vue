@@ -69,11 +69,6 @@
                   {{ media.mediaType === 'tv' ? media.director : `Dir: ${media.director}` }}
                 </v-chip>
               </div>
-              <similar-content 
-                v-if="media && media.tmdbId"
-                :tmdb-id="media.tmdbId"
-                :media-type="media.mediaType"
-              />
             </v-container>
           </div>
         </v-img>
@@ -479,6 +474,11 @@
             </v-card>
           </v-col>
         </v-row>
+        <similar-content 
+          v-if="media && media.tmdbId"
+          :tmdb-id="media.tmdbId"
+          :media-type="media.mediaType"
+        />
       </v-container>
     </div>
 
