@@ -19,12 +19,23 @@
         </v-list-item>
         
         <v-divider class="my-2" />
+
         
         <!-- <v-list-subheader>Actions</v-list-subheader> -->
         
         <v-list-item to="/media/new" prepend-icon="mdi-plus">
           <v-list-item-title>Add Media</v-list-item-title>
         </v-list-item>
+
+        
+        <!-- In your navigation drawer -->
+        <v-list-item to="/friends" prepend-icon="mdi-account-group">
+          <v-list-item-title>Friends</v-list-item-title>
+          <template v-slot:append v-if="pendingFriendRequests > 0">
+            <v-badge :content="pendingFriendRequests" color="error" />
+          </template>
+        </v-list-item>
+        
 
         <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
           <v-list-item-title>What to Watch</v-list-item-title>
@@ -74,7 +85,8 @@ export default {
   data() {
     return {
       drawer: true,  // Start with drawer open
-      isLoggedIn: false
+      isLoggedIn: false,
+      pendingFriendRequests: 0 //Track pending friend requests for badge
     };
   },
   
@@ -101,8 +113,33 @@ export default {
       () => this.$route.path,
       () => {
         this.checkAuth();
+        // Reload friend requests on route change
+        if (this.isLoggedIn) {
+          this.loadPendingRequests();
+        }
       }
     );
+  },
+
+  // ADD THIS HOOK TO LOAD PENDING FRIEND REQUESTS WHEN COMPONENT MOUNTS
+  mounted() {
+    if (this.isLoggedIn) {
+      this.loadPendingRequests();
+      
+      // Refresh every 60 seconds
+      this.pendingRequestsInterval = setInterval(() => {
+        if (this.isLoggedIn) {
+          this.loadPendingRequests();
+        }
+      }, 60000);
+    }
+  },
+
+  beforeUnmount() {
+    // Clean up interval
+    if (this.pendingRequestsInterval) {
+      clearInterval(this.pendingRequestsInterval);
+    }
   },
   
   methods: {
@@ -122,13 +159,40 @@ export default {
       const savedTheme = localStorage.getItem('theme') || 'dark';
       this.theme.global.name.value = savedTheme;
     },
+
+    // New method to load pending friend requests and set badge count
+    async loadPendingRequests() {
+      // Only load if logged in
+      if (!this.isLoggedIn) {
+        this.pendingFriendRequests = 0;
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/friends/pending', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const requests = await response.json();
+          this.pendingFriendRequests = requests.filter(
+            r => r.requestType === 'received'
+          ).length;
+        } else {
+          // If request fails (e.g., 401), clear badge
+          this.pendingFriendRequests = 0;
+        }
+      } catch (err) {
+        console.error('Error loading pending requests:', err);
+        this.pendingFriendRequests = 0;
+      }
+    },
     
     toggleTheme() {
-      // Toggle between light and dark
       const newTheme = this.isDark ? 'light' : 'dark';
       this.theme.global.name.value = newTheme;
-      
-      // Save preference to localStorage
       localStorage.setItem('theme', newTheme);
     }
   }

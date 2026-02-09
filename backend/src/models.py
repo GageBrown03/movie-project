@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 import enum
+from datetime import datetime
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
@@ -18,22 +19,67 @@ class MediaStatus(enum.Enum):
     WATCHED = "watched"
 
 
+class FriendshipStatus(enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    BLOCKED = "blocked"
+
+
+class ActivityType(enum.Enum):
+    ADDED_MEDIA = "added_media"
+    RATED_MEDIA = "rated_media"
+    CHANGED_RATING = "changed_rating"
+    MILESTONE = "milestone"
+    JOINED = "joined"
+
+
 class User(db.Model):
     __tablename__ = 'users'
     
     user_id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.now())
     
-    # Relationship to media (movies + TV shows)
+    # PHASE 2: NEW FIELDS
+    username = db.Column(db.String(50), unique=True, nullable=True, index=True)
+    display_name = db.Column(db.String(100), nullable=True)
+    bio = db.Column(db.Text, nullable=True)
+    
+    # Privacy settings (default: private)
+    privacy_collection = db.Column(db.String(20), default='private')
+    privacy_ratings = db.Column(db.String(20), default='private')
+    privacy_stats = db.Column(db.String(20), default='private')
+    privacy_profile_searchable = db.Column(db.Boolean, default=False)
+    
+    # Email notification preferences
+    email_notifications_friend_requests = db.Column(db.Boolean, default=True)
+    
+    # Relationships
     media = db.relationship('Media', backref='user', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, username, email, password):
-        self.username = username
+    # Friend relationships (using secondary table)
+    friendships_initiated = db.relationship(
+        'Friendship',
+        foreign_keys='Friendship.user_id_1',
+        backref='initiator',
+        lazy='dynamic'
+    )
+    friendships_received = db.relationship(
+        'Friendship',
+        foreign_keys='Friendship.user_id_2',
+        backref='receiver',
+        lazy='dynamic'
+    )
+    
+    # Activity feed
+    activities = db.relationship('ActivityFeed', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def __init__(self, email, password, username=None):
         self.email = email
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        self.username = username
     
     def check_password(self, password):
         """Verify password against hash"""
@@ -42,10 +88,114 @@ class User(db.Model):
     def to_dict(self):
         return {
             'userId': self.user_id,
-            'username': self.username,
             'email': self.email,
-            'createdAt': self.created_at.isoformat() if self.created_at else None
+            'username': self.username,
+            'displayName': self.display_name,
+            'bio': self.bio,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'privacyCollection': self.privacy_collection,
+            'privacyRatings': self.privacy_ratings,
+            'privacyStats': self.privacy_stats,
+            'privacyProfileSearchable': self.privacy_profile_searchable,
         }
+
+
+class Friendship(db.Model):
+    """
+    Friendship table with normalized storage (user_id_1 < user_id_2)
+    """
+    __tablename__ = 'friendships'
+    
+    friendship_id = db.Column(db.Integer, primary_key=True)
+    user_id_1 = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, index=True)
+    user_id_2 = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, index=True)
+    status = db.Column(db.Enum(FriendshipStatus), default=FriendshipStatus.PENDING, nullable=False, index=True)
+    requested_by = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    accepted_at = db.Column(db.DateTime, default=db.func.now())
+    
+    # Composite unique constraint
+    __table_args__ = (
+        db.UniqueConstraint('user_id_1', 'user_id_2', name='unique_friendship'),
+        db.CheckConstraint('user_id_1 < user_id_2', name='ordered_friendship'),
+        db.CheckConstraint('user_id_1 != user_id_2', name='no_self_friendship'),
+    )
+    
+    def __init__(self, user_id_1, user_id_2, requested_by):
+        # Ensure user_id_1 < user_id_2 (normalized storage)
+        if user_id_1 > user_id_2:
+            user_id_1, user_id_2 = user_id_2, user_id_1
+        
+        self.user_id_1 = user_id_1
+        self.user_id_2 = user_id_2
+        self.requested_by = requested_by
+    
+    def to_dict(self, current_user_id):
+        """
+        Convert to dict from perspective of current_user_id
+        """
+        # Determine the other user
+        other_user_id = self.user_id_2 if self.user_id_1 == current_user_id else self.user_id_1
+        
+        # Get other user's info
+        other_user = User.query.get(other_user_id)
+        
+        # Determine request type
+        request_type = 'sent' if self.requested_by == current_user_id else 'received'
+        
+        return {
+            'friendshipId': self.friendship_id,
+            'status': self.status.value,
+            'requestType': request_type,
+            'otherUserId': other_user_id,
+            'otherUsername': other_user.username,
+            'otherDisplayName': other_user.display_name,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'acceptedAt': self.accepted_at.isoformat() if self.accepted_at else None,
+        }
+
+
+class ActivityFeed(db.Model):
+    """
+    Activity feed for social features
+    """
+    __tablename__ = 'activity_feed'
+    
+    activity_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, index=True)
+    activity_type = db.Column(db.Enum(ActivityType), nullable=False, index=True)
+    media_id = db.Column(db.Integer, db.ForeignKey('media.media_id'), nullable=True)
+    data = db.Column(db.JSON, nullable=True)  # Extra data as JSON
+    created_at = db.Column(db.DateTime, default=db.func.now(), index=True)
+    
+    # Relationship to media
+    media = db.relationship('Media', backref='activities', lazy='joined')
+    
+    def __init__(self, user_id, activity_type, media_id=None, data=None):
+        self.user_id = user_id
+        self.activity_type = activity_type
+        self.media_id = media_id
+        self.data = data or {}
+    
+    def to_dict(self):
+        result = {
+            'activityId': self.activity_id,
+            'userId': self.user_id,
+            'activityType': self.activity_type.value,
+            'mediaId': self.media_id,
+            'data': self.data,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+        }
+        
+        # Include media info if available
+        if self.media:
+            result['media'] = {
+                'title': self.media.title,
+                'mediaType': self.media.media_type.value,
+                'posterUrl': self.media.poster_url,
+            }
+        
+        return result
 
 
 class Media(db.Model):
@@ -64,7 +214,7 @@ class Media(db.Model):
     plot = db.Column(db.Text)
     genres = db.Column(db.String(500))  # Comma-separated: "Action, Sci-Fi"
     
-    # TMDB metadata (cached from API)
+    # TMDB data (cached from API)
     tmdb_id = db.Column(db.Integer, index=True)  # Not unique - multiple users can add same media
     poster_url = db.Column(db.String(500))
     backdrop_url = db.Column(db.String(500))
@@ -96,16 +246,6 @@ class Media(db.Model):
     cast = db.relationship('MediaCast', back_populates='media', lazy='joined', cascade='all, delete-orphan')
     
     def __init__(self, title, media_type, user_id, status=MediaStatus.WATCHED, rating=None, **kwargs):
-        """
-        Required: title, media_type, user_id
-        Optional: status, rating (if watched), director, runtime, plot, genres,
-                  tmdb_id, poster_url, backdrop_url, imdb_rating, tmdb_rating,
-                  watched_date, notes, number_of_seasons, number_of_episodes,
-                  show_status, seasons_watched
-        
-        Note: If status=WATCHED, rating should be provided.
-              If status=WANT_TO_WATCH, rating should be None.
-        """
         self.title = title
         self.media_type = media_type
         self.user_id = user_id
@@ -118,12 +258,6 @@ class Media(db.Model):
                 setattr(self, key, value)
     
     def to_dict(self, include_cast=False):
-        """
-        Convert to dictionary for API responses.
-        
-        Args:
-            include_cast: If True, includes full cast list (expensive)
-        """
         result = {
             'mediaId': self.media_id,
             'userId': self.user_id,
@@ -138,7 +272,7 @@ class Media(db.Model):
             'plot': self.plot,
             'genres': self.genres.split(',') if self.genres else [],
             
-            # TMDB metadata
+            # TMDB data
             'tmdbId': self.tmdb_id,
             'posterUrl': self.poster_url,
             'backdropUrl': self.backdrop_url,
@@ -169,7 +303,7 @@ class Media(db.Model):
             result['showStatus'] = self.show_status
             result['seasonsWatched'] = self.seasons_watched
         
-        # Include cast if requested (top 5 by default for performance)
+        # Include cast if requested
         if include_cast:
             cast_list = sorted(self.cast, key=lambda x: x.order if x.order is not None else 999)[:5]
             result['cast'] = [
@@ -213,8 +347,7 @@ class Actor(db.Model):
 
 class MediaCast(db.Model):
     """
-    Join table linking Media to Actors with additional metadata.
-    Stores which actors appeared in which media and their roles.
+    Join table linking Media to Actors with additional data.
     """
     __tablename__ = 'media_cast'
     

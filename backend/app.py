@@ -9,6 +9,7 @@ from src.routes.media_router import media_router  # CHANGED from movie_router
 from src.routes.auth_router import auth_router  # NEW: Import auth router
 from sqlalchemy import text
 from src.routes.tmdb_router import tmdb_router  # NEW
+from src.routes.friends import friends  # NEW for friend system
 
 # Load local environment variables before anything else
 load_dotenv()
@@ -45,6 +46,7 @@ jwt = JWTManager(app)
 app.register_blueprint(media_router)  # CHANGED from movie_router
 app.register_blueprint(auth_router)  # NEW: Register auth routes
 app.register_blueprint(tmdb_router)  # NEW: Register TMDB routes
+app.register_blueprint(friends)  # NEW: Register friend system routes
 
 
 @app.get('/health')

@@ -9,6 +9,8 @@ import RegisterView from '../views/RegisterView.vue';
 import AnalyticsView from '../views/AnalyticsView.vue';
 import RandomPickerView from '../views/RandomPickerView.vue';
 import DiscoverView from '../views/DiscoverView.vue'; // Add import for DiscoverView update
+import FriendsView from '../views/FriendsView.vue';
+import FriendRequestsView from '../views/FriendRequestsView.vue';
 
 const routes = [
   {
@@ -63,6 +65,19 @@ const routes = [
         name: 'single-media',
       },
     ],
+  },
+  // Friend system routes
+  {
+    path: '/friends',
+    name: 'friends',
+    component: FriendsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/friends/requests',
+    name: 'friend-requests',
+    component: FriendRequestsView,
+    meta: { requiresAuth: true }
   },
   // Legacy /movies routes - redirect to /media
   {
