@@ -20,7 +20,7 @@
         
         <v-divider class="my-2" />
         
-        <!-- <v-list-subheader>Actions</v-list-subheader>
+        <!-- <v-list-subheader>Actions</v-list-subheader> -->
         
         <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
           <v-list-item-title>What to Watch?</v-list-item-title>
@@ -36,7 +36,7 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" />
       <v-app-bar-title>myMDB</v-app-bar-title>
       
-      <v-spacer /> -->
+      <v-spacer />
       
       <!-- Theme Toggle -->
       <v-btn icon @click="toggleTheme">
