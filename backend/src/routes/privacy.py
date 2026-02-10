@@ -9,6 +9,16 @@ privacy = Blueprint('privacy', __name__, url_prefix='/api/privacy')
 
 
 # ==========================================
+# Explicit OPTIONS handler (prevent caching)
+# ==========================================
+@privacy.route('/', methods=['OPTIONS'])
+@privacy.route('/check/<int:target_user_id>', methods=['OPTIONS'])
+def handle_options(target_user_id=None):
+    """Handle CORS preflight for all privacy routes"""
+    return '', 204
+
+
+# ==========================================
 # GET /api/privacy - Get current user's privacy settings
 # ==========================================
 

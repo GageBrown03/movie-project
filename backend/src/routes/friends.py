@@ -10,6 +10,21 @@ friends = Blueprint('friends', __name__, url_prefix='/api/friends')
 
 
 # ==========================================
+# Explicit OPTIONS handler (prevent caching)
+# ==========================================
+@friends.route('/', methods=['OPTIONS'])
+@friends.route('/pending', methods=['OPTIONS'])
+@friends.route('/search', methods=['OPTIONS'])
+@friends.route('/request', methods=['OPTIONS'])
+@friends.route('/accept/<int:friendship_id>', methods=['OPTIONS'])
+@friends.route('/decline/<int:friendship_id>', methods=['OPTIONS'])
+@friends.route('/<int:friendship_id>', methods=['OPTIONS'])
+def handle_options(friendship_id=None):
+    """Handle CORS preflight for all friend routes"""
+    return '', 204
+
+
+# ==========================================
 # Helper Functions
 # ==========================================
 
