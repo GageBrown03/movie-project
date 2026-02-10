@@ -1,5 +1,5 @@
 <template>
-  <div class="all-media ">
+  <div class="all-media">
     <v-row class="mb-4 align-center" no-gutters>
       <v-col cols="12" sm="8" md="6">
         <v-text-field
@@ -133,10 +133,6 @@
 
     <div v-else>
       <!-- Grid View -->
-      <!-- 12 / 4 = 3 columns on mobile -->
-      <!-- 4 columns on small screens -->
-      <!-- 4 columns on medium -->
-      <!-- 6 columns on large -->
       <v-row v-if="viewMode === 'grid'">
         <v-col
           v-for="media in filteredMedia"
@@ -152,7 +148,7 @@
             flat
             @mouseenter="startHover(media)"
             @mouseleave="cancelHover"
-            @click="goToMedia(media.mediaId)"
+            @click="handleCardClick(media)"
           >
             <div class="poster-container">
               <v-img
@@ -164,38 +160,31 @@
                 <!-- Slim top scrim -->
                 <div class="top-scrim"></div>
 
-                <!-- Corner‑pinned badges -->
+                <!-- Corner badges -->
                 <div class="overlay-content">
-                  <!-- Top-left: Type badge (M / TV) -->
+                  <!-- Top-left: Type badge -->
                   <div
-                    class="badge-type badge-type--corner"
+                    class="badge-type"
                     :class="media.mediaType === 'movie' ? 'badge-type--movie' : 'badge-type--tv'"
-                    aria-label="Media type"
                   >
                     {{ media.mediaType === 'movie' ? 'M' : 'TV' }}
                   </div>
 
                   <!-- Top-right: Rating or Watchlist -->
                   <div class="badge-corner-right">
-                    <!-- Rating: compact numeric, star only on desktop -->
-                    <div v-if="media.rating" class="badge-rating" aria-label="User rating">
-                      <v-icon
-                        v-if="!isMobile"
-                        size="14"
-                        color="#FFC107"
-                        class="mr-1"
-                      >
+                    <!-- Rating badge -->
+                    <div v-if="media.rating" class="badge-rating">
+                      <v-icon class="badge-rating__star" color="#FFC107">
                         mdi-star
                       </v-icon>
-                      <span class="badge-rating__value gold-text">
+                      <span class="badge-rating__value">
                         {{ Number(media.rating).toFixed(1).replace('.0','') }}
                       </span>
                     </div>
 
-                    <!-- Watchlist: icon-only on mobile, tiny 'WL' on desktop -->
-                    <div v-else class="badge-watchlist" aria-label="Watchlist">
-                      <v-icon size="14" class="badge-watchlist__icon">mdi-bookmark</v-icon>
-                      <span v-if="!isMobile" class="badge-watchlist__text">WL</span>
+                    <!-- Watchlist badge (icon only) -->
+                    <div v-else class="badge-watchlist">
+                      <v-icon class="badge-watchlist__icon">mdi-bookmark</v-icon>
                     </div>
                   </div>
                 </div>
@@ -204,39 +193,34 @@
           </v-card>
         </v-col>
       </v-row>
+
       <!-- List View -->
       <v-list v-else lines="two" class="bg-transparent">
-
         <v-list-item
           v-for="media in filteredMedia"
           :key="media.mediaId"
-          @click="goToMedia(media.mediaId)"
+          @click="handleCardClick(media)"
           @mouseenter="startHover(media)"
           @mouseleave="cancelHover"
           link
           class="mb-2 rounded-lg border list-item-hoverable"
         >
-          <!-- Poster (tighter gap: mr-3 instead of mr-4) -->
+          <!-- Poster -->
           <template v-slot:prepend>
             <v-avatar size="80" rounded class="mr-3 list-avatar">
               <v-img v-if="media.posterUrl" :src="media.posterUrl" cover />
             </v-avatar>
           </template>
 
-          <!-- Content (Title + mobile meta row) -->
+          <!-- Content -->
           <div class="w-100">
-            <!-- Title: smaller font, keep clamp on mobile -->
-            <v-list-item-title
-              class="list-title text-subtitle-1 font-weight-bold"
-              :class="{ 'list-title--clamp': isMobile }"
-            >
+            <!-- Title -->
+            <v-list-item-title class="list-title text-subtitle-1 font-weight-bold">
               {{ media.title }}
-              <!-- REMOVED the type chip here to free horizontal space -->
             </v-list-item-title>
 
-            <!-- Mobile-only meta row (under title) -->
+            <!-- Mobile meta row (under title on mobile only) -->
             <div v-if="isMobile" class="list-meta-row">
-              <!-- Media type (compact) -->
               <v-chip
                 size="x-small"
                 :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
@@ -248,27 +232,25 @@
 
               <div class="spacer"></div>
 
-              <!-- Rating: compact numeric, no star on mobile -->
+              <!-- Rating compact -->
               <v-chip
                 v-if="media.rating"
                 size="x-small"
                 color="#121212"
                 variant="flat"
-                class="rating-label"
-                text-color="white"
+                class="rating-chip-mobile"
               >
                 <span class="gold-text font-weight-bold">
                   {{ Number(media.rating).toFixed(1).replace('.0','') }}/5
                 </span>
               </v-chip>
 
-              <!-- Watchlist: icon-only -->
+              <!-- Watchlist icon -->
               <v-chip
                 v-else
                 size="x-small"
                 color="info"
                 variant="flat"
-                class="watchlist-label"
                 title="Watchlist"
               >
                 <v-icon start size="16">mdi-bookmark</v-icon>
@@ -276,40 +258,50 @@
             </div>
           </div>
 
-          <!-- Desktop append (icon-only watchlist; rating with star).
-              Desktop KEEP type near title (unchanged), but you asked
-              only to move the type under the title on MOBILE. -->
+          <!-- Desktop append -->
           <template v-slot:append>
-            <div v-if="!isMobile" class="d-flex align-center">
+            <div v-if="!isMobile" class="d-flex align-center gap-2">
+              <!-- Type chip on desktop -->
+              <v-chip
+                size="small"
+                :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
+                class="text-white"
+                label
+              >
+                {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+              </v-chip>
+
+              <!-- Rating with star -->
               <v-chip
                 v-if="media.rating"
                 color="#121212"
                 variant="flat"
-                class="rating-label"
+                size="small"
+                class="rating-chip-desktop"
               >
-                <v-icon start color="#FFC107" size="16">mdi-star</v-icon>
+                <v-icon start color="#FFC107" size="18">mdi-star</v-icon>
                 <span class="gold-text font-weight-bold">
                   {{ Number(media.rating).toFixed(1).replace('.0','') }}/5
                 </span>
               </v-chip>
+
+              <!-- Watchlist (icon only - no WL text) -->
               <v-chip
                 v-else
                 color="info"
                 variant="flat"
-                class="watchlist-label"
+                size="small"
                 title="Watchlist"
               >
-                <v-icon start size="16">mdi-bookmark</v-icon>
-                <!-- No text label -->
+                <v-icon size="18">mdi-bookmark</v-icon>
               </v-chip>
             </div>
           </template>
-
         </v-list-item>
       </v-list>
     </div>
 
-    <!-- Hover Modal - Works for BOTH grid and list -->
+    <!-- Hover Modal - Desktop Only -->
     <v-dialog
       v-model="showHoverModal"
       max-width="900"
@@ -329,15 +321,21 @@
           height="450"
           cover
           class="align-end"
-          :image-props="{ class: 'zoom-animation' }"
           gradient="to top, rgba(18,18,18,1) 0%, rgba(18,18,18,0.7) 20%, rgba(18,18,18,0) 100%"
         >
           <div class="pa-8">
             <div class="d-flex align-center mb-2">
-              <v-chip size="small" :color="hoveredMedia.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" class="mr-3 text-white font-weight-black" label>
+              <v-chip 
+                size="small" 
+                :color="hoveredMedia.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
+                class="mr-3 text-white font-weight-black" 
+                label
+              >
                 {{ hoveredMedia.mediaType.toUpperCase() }}
               </v-chip>
-              <span v-if="hoveredMedia.releaseYear" class="text-h5 text-grey-lighten-1">{{ hoveredMedia.releaseYear }}</span>
+              <span v-if="hoveredMedia.releaseYear" class="text-h5 text-grey-lighten-1">
+                {{ hoveredMedia.releaseYear }}
+              </span>
             </div>
             <h2 class="text-h2 font-weight-black text-white mb-2">{{ hoveredMedia.title }}</h2>
           </div>
@@ -347,24 +345,50 @@
           <v-row>
             <v-col cols="12" md="8">
               <div class="d-flex align-center mb-6">
-                <v-chip v-if="hoveredMedia.rating" color="#121212" class="mr-4 rating-label" size="large" variant="flat">
+                <v-chip 
+                  v-if="hoveredMedia.rating" 
+                  color="#121212" 
+                  class="mr-4 rating-label" 
+                  size="large" 
+                  variant="flat"
+                >
                   <v-icon start color="#FFC107">mdi-star</v-icon>
                   <span class="gold-text font-weight-black text-h6">{{ hoveredMedia.rating }}/5</span>
                 </v-chip>
-                <v-chip v-else color="info" class="mr-4 watchlist-label" size="large" variant="flat">
+                <v-chip 
+                  v-else 
+                  color="info" 
+                  class="mr-4 watchlist-label" 
+                  size="large" 
+                  variant="flat"
+                >
                   <v-icon start>mdi-bookmark</v-icon>
                   <span class="font-weight-bold">Watchlist</span>
                 </v-chip>
-                <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}</v-chip>
+                <v-chip v-if="hoveredMedia.tmdbRating" variant="outlined" class="mr-2">
+                  TMDB {{ hoveredMedia.tmdbRating.toFixed(1) }}
+                </v-chip>
               </div>
-              <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-6" style="line-height: 1.6;">{{ hoveredMedia.plot || 'No plot description available.' }}</p>
+              <p class="text-h6 font-weight-regular text-grey-lighten-1 mb-6" style="line-height: 1.6;">
+                {{ hoveredMedia.plot || 'No plot description available.' }}
+              </p>
               <div class="d-flex flex-wrap gap-2">
-                <v-chip v-for="genre in hoveredMedia.genres" :key="genre" size="small" variant="tonal" class="mr-2">{{ genre }}</v-chip>
+                <v-chip 
+                  v-for="genre in hoveredMedia.genres" 
+                  :key="genre" 
+                  size="small" 
+                  variant="tonal" 
+                  class="mr-2"
+                >
+                  {{ genre }}
+                </v-chip>
               </div>
             </v-col>
             <v-col cols="12" md="4" class="border-s-sm border-opacity-10">
               <div class="text-overline text-grey-darken-1 mb-2">Cast</div>
-              <div class="text-body-1 mb-6">{{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}</div>
+              <div class="text-body-1 mb-6">
+                {{ hoveredMedia.cast?.slice(0, 5).map(c => c.name).join(', ') || 'N/A' }}
+              </div>
             </v-col>
           </v-row>
         </v-card-text>
@@ -378,7 +402,13 @@
       </v-card>
     </v-dialog>
 
-    <delete-confirm-dialog :show="showDeleteDialog" :movie-title="mediaToDelete?.title || ''" :deleting="isDeleting" @cancel="cancelDelete" @confirm="handleDelete" />
+    <delete-confirm-dialog 
+      :show="showDeleteDialog" 
+      :movie-title="mediaToDelete?.title || ''" 
+      :deleting="isDeleting" 
+      @cancel="cancelDelete" 
+      @confirm="handleDelete" 
+    />
   </div>
 </template>
 
@@ -389,6 +419,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog.vue';
 export default {
   name: 'AllMediaView',
   components: { DeleteConfirmDialog },
+  
   data() {
     return {
       mediaList: [],
@@ -406,7 +437,10 @@ export default {
       showDeleteDialog: false,
       mediaToDelete: null,
       isDeleting: false,
-      typeOptions: [{ title: 'Movies', value: 'movie' }, { title: 'TV Shows', value: 'tv' }],
+      typeOptions: [
+        { title: 'Movies', value: 'movie' }, 
+        { title: 'TV Shows', value: 'tv' }
+      ],
       ratingOptions: [5, 4, 3, 2, 1].map(r => ({ title: `${r} Stars`, value: r })),
       sortOptions: [
         { title: 'Recently Added', value: 'dateAdded' }, 
@@ -415,42 +449,70 @@ export default {
       ],
     };
   },
+  
   computed: {
-    hasActiveFilters() { return this.searchQuery || this.filterType || this.filterRating; },
+    hasActiveFilters() { 
+      return this.searchQuery || this.filterType || this.filterRating; 
+    },
+    
     filteredMedia() {
       let result = [...this.mediaList];
+      
       if (this.searchQuery) {
         const query = this.searchQuery.toLowerCase();
         result = result.filter(m => m.title.toLowerCase().includes(query));
       }
-      if (this.filterType) result = result.filter(m => m.mediaType === this.filterType);
-      if (this.filterRating !== null) result = result.filter(m => m.rating === this.filterRating);
+      
+      if (this.filterType) {
+        result = result.filter(m => m.mediaType === this.filterType);
+      }
+      
+      if (this.filterRating !== null) {
+        result = result.filter(m => m.rating === this.filterRating);
+      }
       
       switch (this.sortBy) {
-        case 'titleAsc': result.sort((a, b) => a.title.localeCompare(b.title)); break;
-        case 'ratingDesc': result.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
-        default: result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+        case 'titleAsc': 
+          result.sort((a, b) => a.title.localeCompare(b.title)); 
+          break;
+        case 'ratingDesc': 
+          result.sort((a, b) => (b.rating || 0) - (a.rating || 0)); 
+          break;
+        default: 
+          result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       }
+      
       return result;
     },
-    isMobile() { return this.$vuetify.display.mobile; }
+    
+    isMobile() { 
+      return this.$vuetify.display.mobile; 
+    }
   },
+  
   methods: {
     async getAllMedia() {
       this.loading = true;
-      try { this.mediaList = await mediaAPI.getAll(); } 
-      catch (err) { this.error = 'Failed to load media.'; } 
-      finally { this.loading = false; }
+      try { 
+        this.mediaList = await mediaAPI.getAll(); 
+      } catch (err) { 
+        this.error = 'Failed to load media.'; 
+      } finally { 
+        this.loading = false; 
+      }
     },
     
+    // Desktop hover modal
     startHover(media) {
       if (this.isMobile) return;
+      
       this.clearCloseTimeout();
       this.cancelHover();
+      
       this.hoverTimeout = setTimeout(() => {
         this.hoveredMedia = media;
         this.showHoverModal = true;
-      }, 400);
+      }, 500); // Slightly longer delay for better UX
     },
     
     cancelHover() { 
@@ -464,7 +526,7 @@ export default {
       this.closeTimeout = setTimeout(() => { 
         this.showHoverModal = false;
         this.hoveredMedia = null;
-      }, 150);
+      }, 200);
     },
     
     keepModalOpen() {
@@ -484,23 +546,44 @@ export default {
       this.clearCloseTimeout();
     },
     
+    // Click handler for both mobile and desktop
+    handleCardClick(media) {
+      if (this.isMobile) {
+        // Mobile: direct navigation
+        this.goToMedia(media.mediaId);
+      } else {
+        // Desktop: modal is already shown on hover, click navigates
+        this.goToMedia(media.mediaId);
+      }
+    },
+    
     goToMedia(mediaId) { 
       this.closeHoverModal(); 
       this.$router.push(`/movies/${mediaId}`); 
     },
     
-    confirmDelete(media) { this.mediaToDelete = media; this.showDeleteDialog = true; },
-    cancelDelete() { this.showDeleteDialog = false; this.mediaToDelete = null; },
+    confirmDelete(media) { 
+      this.mediaToDelete = media; 
+      this.showDeleteDialog = true; 
+    },
+    
+    cancelDelete() { 
+      this.showDeleteDialog = false; 
+      this.mediaToDelete = null; 
+    },
     
     async handleDelete() {
       if (!this.mediaToDelete) return;
+      
       this.isDeleting = true;
       try {
         await mediaAPI.delete(this.mediaToDelete.mediaId);
         this.mediaList = this.mediaList.filter(m => m.mediaId !== this.mediaToDelete.mediaId);
         this.showDeleteDialog = false;
         this.closeHoverModal();
-      } finally { this.isDeleting = false; }
+      } finally { 
+        this.isDeleting = false; 
+      }
     },
     
     clearFilters() { 
@@ -510,17 +593,21 @@ export default {
       this.sortBy = 'dateAdded'; 
     }
   },
-  created() { this.getAllMedia(); }
+  
+  created() { 
+    this.getAllMedia(); 
+  }
 };
 </script>
 
 <style scoped>
-:deep(.v-overlay__content) {
-  margin: 0 !important;
-  pointer-events: auto !important;
+/* === LAYOUT === */
+.all-media { 
+  max-width: 1600px; 
+  margin: 0 auto; 
+  padding-top: 16px; 
 }
 
-.all-media { max-width: 1600px; margin: 0 auto; padding-top: 16px; }
 .gap-3 { gap: 12px; }
 
 .search-bar :deep(.v-field__input) {
@@ -528,33 +615,60 @@ export default {
   padding-bottom: 10px !important;
 }
 
-/* Empty State Styling */
+/* === EMPTY STATE === */
 .empty-state-cinematic {
   background: radial-gradient(circle at center, rgba(var(--v-theme-primary), 0.08) 0%, transparent 75%);
   padding: 100px 0;
   border-radius: 24px;
 }
+
 .film-reel-svg {
   color: rgb(var(--v-theme-primary));
   filter: drop-shadow(0 0 15px rgba(var(--v-theme-primary), 0.4));
   animation: rotateReel 20s linear infinite;
 }
-@keyframes rotateReel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-.empty-icon-wrapper { perspective: 1000px; display: flex; justify-content: center; }
 
-/* Media Grid Styling */
-.media-card { cursor: pointer; transition: transform 0.3s ease; background: transparent !important; }
-.media-card:hover { transform: translateY(-8px); }
-.poster-container { position: relative; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+@keyframes rotateReel { 
+  from { transform: rotate(0deg); } 
+  to { transform: rotate(360deg); } 
+}
 
-/* Slim scrim for top-overlay */
+.empty-icon-wrapper { 
+  perspective: 1000px; 
+  display: flex; 
+  justify-content: center; 
+}
+
+/* === GRID VIEW === */
+.media-card { 
+  cursor: pointer; 
+  transition: transform 0.3s ease; 
+  background: transparent !important; 
+}
+
+.media-card:hover { 
+  transform: translateY(-8px); 
+}
+
+.poster-container { 
+  position: relative; 
+  aspect-ratio: 2/3; 
+  border-radius: 12px; 
+  overflow: hidden; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
+}
+
+/* Scrim */
 .top-scrim {
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 44px;
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  right: 0;
+  height: 60px;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.35) 70%,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.4) 70%,
     rgba(0, 0, 0, 0) 100%
   );
   z-index: 1;
@@ -562,161 +676,230 @@ export default {
 
 /* Badge overlay container */
 .overlay-content {
-  position: absolute; top: 0; left: 0; right: 0;
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  right: 0;
   z-index: 2;
   pointer-events: none;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-/* Corner pinning */
-.badge-type--corner {
-  position: absolute;
-  top: 1.5px;
-  left: 1.5px;
-}
-.badge-corner-right {
-  position: absolute;
-  top: 1.5px;
-  right: 1.5px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Badges */
-.gold-text { color: #FFC107 !important; }
-
+/* === DESKTOP BADGES (Default - Large) === */
 .badge-type {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 20px;
-  min-width: 20px;
-  padding: 0 4px;
-  border-radius: 4px;
-  font-size: 10px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 13px;
   line-height: 1;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.14);
-  background: #1976D2;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.7);
+  border: 1.5px solid rgba(255,255,255,0.2);
 }
-.badge-type--movie { background: #1976D2; }
-.badge-type--tv { background: #7B1FA2; }
 
-/* Rating + Watchlist corner badges */
-.badge-rating,
-.badge-watchlist {
+.badge-type--movie { 
+  background: #1976D2; 
+}
+
+.badge-type--tv { 
+  background: #7B1FA2; 
+}
+
+.badge-corner-right {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
-  background: #121212;
-  color: #fff;
+  gap: 6px;
+}
+
+/* Rating badge - Desktop */
+.badge-rating {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  background: rgba(18, 18, 18, 0.95);
+  backdrop-filter: blur(8px);
+  gap: 4px;
+}
+
+.badge-rating__star {
+  font-size: 18px !important;
 }
 
 .badge-rating__value {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1;
+  color: #FFC107;
 }
 
-/* WATCHLIST BADGE — FIXED TO BE NARROWER */
+/* Watchlist badge - Icon only (NO "WL" text) */
 .badge-watchlist {
-  background: rgba(33,150,243,0.12);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  padding: 0;
+  border-radius: 6px;
+  background: rgba(33, 150, 243, 0.2);
+  border: 1.5px solid rgba(33, 150, 243, 0.4);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
 }
 
-/* FIX: make bookmark container narrower + remove extra spacing */
-.badge-watchlist {
-  padding: 0 2px !important;   /* was 0 4px / 0 5px */
-}
 .badge-watchlist__icon {
-  margin: 0 !important;        /* removes leftover 4px margin */
-}
-.badge-watchlist__text {
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-  opacity: 0.9;
+  font-size: 18px !important;
+  color: #2196F3 !important;
 }
 
-/* List View Hover Styling */
-.list-item-hoverable { transition: background-color 0.2s ease; }
-.list-item-hoverable:hover { background-color: rgba(var(--v-theme-primary), 0.05); }
+.gold-text { 
+  color: #FFC107 !important; 
+}
 
-/* ---- Mobile tuning ---- */
+/* === LIST VIEW === */
+.list-item-hoverable { 
+  transition: background-color 0.2s ease; 
+}
+
+.list-item-hoverable:hover { 
+  background-color: rgba(var(--v-theme-primary), 0.05); 
+}
+
+.list-avatar { 
+  margin-right: 12px !important; 
+}
+
+.list-title { 
+  line-height: 1.3; 
+}
+
+.rating-chip-desktop .v-chip__content {
+  font-size: 14px;
+  gap: 4px;
+}
+
+/* === MODAL === */
+.hover-preview-large { 
+  border-radius: 20px !important; 
+  background-color: #121212 !important; 
+  overflow: hidden;
+  cursor: pointer;
+}
+
+:deep(.v-overlay__content) {
+  margin: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* === MOBILE OPTIMIZATIONS === */
 @media (max-width: 600px) {
-  .type-label .v-chip__content,
-  .rating-label .v-chip__content,
-  .watchlist-label .v-chip__content {
-    font-size: 11px; line-height: 1;
-  }
-
-  .badge-type,
-  .badge-rating,
-  .badge-watchlist {
-    height: 18px;
+  /* Smaller badges on mobile */
+  .badge-type {
+    height: 20px;
+    min-width: 20px;
     padding: 0 5px;
-    border-radius: 5px;
-  }
-
-  .badge-rating__value,
-  .badge-watchlist__text {
     font-size: 10px;
+    border-radius: 4px;
+    border-width: 1px;
   }
 
-  /* Touch-friendly card hover */
-  .media-card:hover { transform: translateY(-4px); }
-}
-
-/* ---- List view mobile layout ---- */
-@media (max-width: 600px) {
-  .list-title--clamp {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.15;
+  .badge-rating {
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 4px;
+    gap: 2px;
   }
 
+  .badge-rating__star {
+    font-size: 14px !important;
+  }
+
+  .badge-rating__value {
+    font-size: 11px;
+  }
+
+  .badge-watchlist {
+    height: 20px;
+    width: 20px;
+    border-radius: 4px;
+  }
+
+  .badge-watchlist__icon {
+    font-size: 14px !important;
+  }
+
+  /* Tighter scrim on mobile */
+  .top-scrim {
+    height: 40px;
+  }
+
+  .overlay-content {
+    padding: 4px;
+  }
+
+  /* List view mobile meta row */
   .list-meta-row {
-    display: flex; align-items: center;
-    margin-top: 6px; gap: 6px;
+    display: flex; 
+    align-items: center;
+    margin-top: 6px; 
+    gap: 6px;
   }
 
-  .list-meta-row .spacer { flex: 1 1 auto; }
-
-  .rating-label,
-  .watchlist-label {
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 6px;
+  .list-meta-row .spacer { 
+    flex: 1 1 auto; 
   }
 
-  .rating-label .v-chip__content,
-  .watchlist-label .v-chip__content {
-    font-size: 12px; line-height: 1;
+  .rating-chip-mobile .v-chip__content {
+    font-size: 12px;
+  }
+
+  /* Touch-friendly hover */
+  .media-card:active { 
+    transform: scale(0.98); 
   }
 }
 
-/* Desktop: keep bookmark icon-only in list view append */
-@media (min-width: 601px) {
-  .rating-label .v-chip__content { font-size: 13px; }
-  .watchlist-label .v-chip__content { font-size: 0; }
-  .watchlist-label .v-icon { margin-right: 0; }
+/* === TABLET (601px - 960px) === */
+@media (min-width: 601px) and (max-width: 960px) {
+  /* Medium-sized badges for tablets */
+  .badge-type {
+    height: 24px;
+    min-width: 24px;
+    font-size: 11px;
+  }
+
+  .badge-rating {
+    height: 24px;
+  }
+
+  .badge-rating__star {
+    font-size: 16px !important;
+  }
+
+  .badge-rating__value {
+    font-size: 12px;
+  }
+
+  .badge-watchlist {
+    height: 24px;
+    width: 24px;
+  }
+
+  .badge-watchlist__icon {
+    font-size: 16px !important;
+  }
 }
-
-/* List view spacing + Title rhythm */
-.list-avatar { margin-right: 10px !important; }
-.list-title { line-height: 1.25; }
-
-/* Modal Styling */
-.hover-preview-large { border-radius: 20px !important; background-color: #121212 !important; overflow: hidden; }
-.zoom-animation { animation: scaleBackground 12s linear infinite; transform-origin: center; }
-@keyframes scaleBackground { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 </style>
