@@ -140,10 +140,10 @@
       <v-row v-if="viewMode === 'grid'">
         <v-col
           v-for="media in filteredMedia"
-          :key="media.mediaId"       
-          cols="4"          
-          sm="3"          
-          md="3"          
+          :key="media.mediaId"
+          cols="4"
+          sm="3"
+          md="3"
           lg="2"
           xl="2"
         >
@@ -161,48 +161,41 @@
                 aspect-ratio="2/3"
                 cover
               >
-                <!-- Keep the same overlay style; only adjust watchlist text on mobile below -->
+                <!-- Slim top scrim -->
                 <div class="top-scrim"></div>
 
-                <div class="overlay-content pa-2">
-                  <div class="overlay-topbar">
-                    <!-- Type badge (M / TV) -->
-                    <div
-                      class="badge-type"
-                      :class="media.mediaType === 'movie' ? 'badge-type--movie' : 'badge-type--tv'"
-                      aria-label="Media type"
-                    >
-                      {{ media.mediaType === 'movie' ? 'M' : 'TV' }}
+                <!-- Corner‑pinned badges -->
+                <div class="overlay-content">
+                  <!-- Top-left: Type badge (M / TV) -->
+                  <div
+                    class="badge-type badge-type--corner"
+                    :class="media.mediaType === 'movie' ? 'badge-type--movie' : 'badge-type--tv'"
+                    aria-label="Media type"
+                  >
+                    {{ media.mediaType === 'movie' ? 'M' : 'TV' }}
+                  </div>
+
+                  <!-- Top-right: Rating or Watchlist -->
+                  <div class="badge-corner-right">
+                    <!-- Rating: compact numeric, star only on desktop -->
+                    <div v-if="media.rating" class="badge-rating" aria-label="User rating">
+                      <v-icon
+                        v-if="!isMobile"
+                        size="14"
+                        color="#FFC107"
+                        class="mr-1"
+                      >
+                        mdi-star
+                      </v-icon>
+                      <span class="badge-rating__value gold-text">
+                        {{ Number(media.rating).toFixed(1).replace('.0','') }}
+                      </span>
                     </div>
 
-                    <!-- Right-side status: rating or watchlist -->
-                    <div class="badge-right">
-                      <!-- Rating badge: compact numeric, optional star on desktop only -->
-                      <div v-if="media.rating" class="badge-rating" aria-label="User rating">
-                        <!-- Optional: Keep star on desktop only; remove on mobile -->
-                        <v-icon
-                          v-if="!isMobile"
-                          size="14"
-                          color="#FFC107"
-                          class="mr-1"
-                        >
-                          mdi-star
-                        </v-icon>
-                        <span class="badge-rating__value gold-text">
-                          {{ Number(media.rating).toFixed(1).replace('.0','') }}
-                        </span>
-                      </div>
-
-                      <!-- Watchlist badge: icon-only on mobile, tiny 'WL' on desktop -->
-                      <div v-else class="badge-watchlist" aria-label="Watchlist">
-                        <v-icon
-                          size="14"
-                          class="badge-watchlist__icon"
-                        >
-                          mdi-bookmark
-                        </v-icon>
-                        <span v-if="!isMobile" class="badge-watchlist__text">WL</span>
-                      </div>
+                    <!-- Watchlist: icon-only on mobile, tiny 'WL' on desktop -->
+                    <div v-else class="badge-watchlist" aria-label="Watchlist">
+                      <v-icon size="14" class="badge-watchlist__icon">mdi-bookmark</v-icon>
+                      <span v-if="!isMobile" class="badge-watchlist__text">WL</span>
                     </div>
                   </div>
                 </div>
@@ -211,7 +204,6 @@
           </v-card>
         </v-col>
       </v-row>
-
       <!-- List View -->
       <v-list v-else lines="two" class="bg-transparent">
 
@@ -554,249 +546,140 @@ export default {
 .media-card { cursor: pointer; transition: transform 0.3s ease; background: transparent !important; }
 .media-card:hover { transform: translateY(-8px); }
 .poster-container { position: relative; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-.top-scrim { position: absolute; top: 0; left: 0; right: 0; height: 60px; background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); z-index: 1; }
-.overlay-content { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
-.gold-text { color: #FFC107 !important; }
-.rating-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
-.watchlist-label { border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.8); }
 
-/* List View Hover Styling */
-.list-item-hoverable {
-  transition: background-color 0.2s ease;
-}
-
-.list-item-hoverable:hover {
-  background-color: rgba(var(--v-theme-primary), 0.05);
-}
-
-/* MOBILE STYLING FOR GRID VIEW */
-@media (max-width: 600px) {
-  /* Keep chip content compact on small screens */
-  .type-label .v-chip__content,
-  .rating-label .v-chip__content,
-  .watchlist-label .v-chip__content {
-    font-size: 11px;
-    line-height: 1;
-  }
-}
-
-/* ========== Compact top overlay for 3-column grid ========== */
-
-/* Reduce overlay height so it doesn’t block poster art/text */
+/* Top scrim — slim to avoid covering poster text/art */
 .top-scrim {
-  height: 44px; /* was 60px */
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 44px; /* reduced from 60px */
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.35) 70%,
-    rgba(0, 0, 0, 0) 100%
+    rgba(0,0,0,0.8) 0%,
+    rgba(0,0,0,0.35) 70%,
+    rgba(0,0,0,0) 100%
   );
+  z-index: 1;
 }
 
+/* Overlay for badges — pointer-events:none so card remains clickable everywhere */
 .overlay-content {
-  top: 0;
-  left: 0;
-  right: 0;
+  position: absolute; top: 0; left: 0; right: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
-/* Top bar layout (replaces chip row) */
-.overlay-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 4px; /* compact */
+/* Corner pinning (≈1.5px inset) */
+.badge-type--corner {
+  position: absolute;
+  top: 1.5px;
+  left: 1.5px;
 }
-
-/* Left: Type badge (M/TV) */
-.badge-type {
+.badge-corner-right {
+  position: absolute;
+  top: 1.5px;
+  right: 1.5px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 20px;
-  min-width: 20px;
-  padding: 0 4px;
+  gap: 4px;
+}
+
+/* Badges */
+.gold-text { color: #FFC107 !important; }
+
+.badge-type {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 20px; min-width: 20px; padding: 0 4px;
   border-radius: 4px;
-  font-size: 10px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: 0.3px;
+  font-size: 10px; line-height: 1; font-weight: 800; letter-spacing: 0.3px;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.6);
   border: 1px solid rgba(255,255,255,0.14);
   background: #1976D2; /* default movie color */
 }
-
 .badge-type--movie { background: #1976D2; }
 .badge-type--tv { background: #7B1FA2; }
 
-/* Right: container for rating/watchlist */
-.badge-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-
-/* Rating badge: small dark pill with gold number */
-.badge-rating {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 4px;
-  background: #121212;
-  color: #fff;
+.badge-rating,
+.badge-watchlist {
+  display: inline-flex; align-items: center;
+  height: 20px; padding: 0 4px; border-radius: 4px;
   border: 1px solid rgba(255,255,255,0.12);
   box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  background: #121212; color: #fff;
 }
 
-.badge-rating__value {
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-}
+.badge-rating__value { font-size: 10px; font-weight: 800; line-height: 1; }
 
-/* Watchlist badge: compact; icon-only on mobile through template v-if */
 .badge-watchlist {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 4px;
   background: rgba(33,150,243,0.12); /* info tonal */
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.12);
   box-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
+.badge-watchlist__icon { color: currentColor; margin-right: 4px; }
+.badge-watchlist__text { font-size: 11px; font-weight: 800; line-height: 1; opacity: 0.9; }
 
-.badge-watchlist__icon {
-  color: currentColor;
-  margin-right: 4px;
-}
+/* List View Hover Styling */
+.list-item-hoverable { transition: background-color 0.2s ease; }
+.list-item-hoverable:hover { background-color: rgba(var(--v-theme-primary), 0.05); }
 
-.badge-watchlist__text {
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-  opacity: 0.9;
-}
-
-/* ========== Mobile tuning for 3-column ========== */
+/* ---- Mobile tuning ---- */
 @media (max-width: 600px) {
-  .overlay-topbar {
-    padding: 4px 5px;
-  }
-
-  .badge-type {
-    height: 18px;
-    min-width: 18px;
-    padding: 0 5px;
-    border-radius: 5px;
-    font-size: 10px;
-  }
-
-  .badge-rating,
-  .badge-watchlist {
-    height: 18px;
-    padding: 0 5px;
-    border-radius: 5px;
-  }
-
-  .badge-rating__value,
-  .badge-watchlist__text {
-    font-size: 10px;
-  }
-
-  /* Make sure hover lift doesn’t fight tight columns on touch */
-  .media-card:hover {
-    transform: translateY(-4px);
-  }
-}
-
-/* Make sure list item content can layout vertically on mobile */
-@media (max-width: 600px) {
-  /* Title clamped to 2 lines with ellipsis */
-  .list-title--clamp {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;     /* two lines */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.25;
-  }
-
-  /* Row under the title, right-aligned for badges */
-  .list-meta-row {
-    display: flex;
-    align-items: center;
-    margin-top: 6px;
-    gap: 6px;
-  }
-
-  .list-meta-row .spacer {
-    flex: 1 1 auto;   /* pushes badges to the right */
-  }
-
-  /* Compact chips on mobile for list view */
-  .rating-label,
-  .watchlist-label {
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 6px;
-  }
-
+  /* Make chips’ internal text compact when used in list view rows */
+  .type-label .v-chip__content,
   .rating-label .v-chip__content,
   .watchlist-label .v-chip__content {
-    font-size: 12px;
-    line-height: 1;
+    font-size: 11px; line-height: 1;
   }
+
+  /* Corner badges slightly smaller on mobile */
+  .badge-type,
+  .badge-rating,
+  .badge-watchlist {
+    height: 18px; padding: 0 5px; border-radius: 5px;
+  }
+  .badge-rating__value,
+  .badge-watchlist__text { font-size: 10px; }
+
+  /* Avoid big lift on touch — gentler motion */
+  .media-card:hover { transform: translateY(-4px); }
 }
 
-/* Desktop tidying: keep icon-only watchlist in append slot */
-@media (min-width: 601px) {
-  .rating-label .v-chip__content {
-    font-size: 13px;
-  }
-  .watchlist-label .v-chip__content {
-    font-size: 0; /* hide text without removing the element */
-  }
-  .watchlist-label .v-icon {
-    margin-right: 0; /* ensures it's just the icon */
-  }
-}
-
-/* Tighter gap between poster and title */
-.list-avatar {
-  margin-right: 10px !important; /* overrides mr-3 if needed */
-}
-
-/* Smaller title (already using text-subtitle-1 on the element) */
-.list-title {
-  line-height: 1.25;
-}
-
-/* Mobile-only: tighter line-height + clamp stays */
+/* ---- List view: mobile layout helpers ---- */
 @media (max-width: 600px) {
+  /* Clamp long titles on mobile */
   .list-title--clamp {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 2; /* keep at 2 lines as per current setup */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.15; /* slightly tighter on mobile */
+    line-height: 1.15;
   }
 
-  /* Mobile meta row: include type on the left, indicators on the right */
   .list-meta-row {
-    display: flex;
-    align-items: center;
-    margin-top: 6px;
-    gap: 6px;
+    display: flex; align-items: center;
+    margin-top: 6px; gap: 6px;
   }
+  .list-meta-row .spacer { flex: 1 1 auto; }
 
-  /* Ensure the new type chip is compact on mobile */
-  .list-meta-row .v-chip {
-    height: 22px;
-    border-radius: 6px;
+  /* Compact chips in the mobile meta row */
+  .rating-label,
+  .watchlist-label {
+    height: 22px; padding: 0 8px; border-radius: 6px;
+  }
+  .rating-label .v-chip__content,
+  .watchlist-label .v-chip__content {
+    font-size: 12px; line-height: 1;
   }
 }
+
+/* Desktop tidying: keep watchlist icon-only in append slot */
+@media (min-width: 601px) {
+  .rating-label .v-chip__content { font-size: 13px; }
+  .watchlist-label .v-chip__content { font-size: 0; } /* hide any text, icon-only */
+  .watchlist-label .v-icon { margin-right: 0; }
+}
+
+/* List view spacing and title rhythm */
+.list-avatar { margin-right: 10px !important; } /* tighter than mr-3 if needed */
+.list-title { line-height: 1.25; }
 
 /* Modal Styling */
 .hover-preview-large { border-radius: 20px !important; background-color: #121212 !important; overflow: hidden; }
