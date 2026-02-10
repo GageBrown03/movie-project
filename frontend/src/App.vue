@@ -8,8 +8,6 @@
         
         <v-divider class="my-2" />
         
-        <!--  <v-list-subheader>Media</v-list-subheader>    -->
-        
         <v-list-item to="/media" prepend-icon="mdi-view-grid">
           <v-list-item-title>Browse Media</v-list-item-title>
         </v-list-item>
@@ -19,23 +17,17 @@
         </v-list-item>
         
         <v-divider class="my-2" />
-
-        
-        <!-- <v-list-subheader>Actions</v-list-subheader> -->
         
         <v-list-item to="/media/new" prepend-icon="mdi-plus">
           <v-list-item-title>Add Media</v-list-item-title>
         </v-list-item>
 
-        
-        <!-- In your navigation drawer -->
         <v-list-item to="/friends" prepend-icon="mdi-account-group">
           <v-list-item-title>Friends</v-list-item-title>
           <template v-slot:append v-if="pendingFriendRequests > 0">
             <v-badge :content="pendingFriendRequests" color="error" />
           </template>
         </v-list-item>
-        
 
         <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
           <v-list-item-title>What to Watch</v-list-item-title>
@@ -45,7 +37,12 @@
           <v-list-item-title>Discover</v-list-item-title>
         </v-list-item>
         
+        <v-divider class="my-2" />
         
+        <!-- Settings Menu -->
+        <v-list-item to="/settings/privacy" prepend-icon="mdi-shield-account">
+          <v-list-item-title>Privacy Settings</v-list-item-title>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
     
@@ -60,8 +57,12 @@
         <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
       
-      <!-- Logout Button (only show if logged in) -->
-      <v-btn v-if="isLoggedIn" @click="handleLogout" variant="text">
+      <!-- Login/Logout Button -->
+      <v-btn v-if="!isLoggedIn" to="/login" variant="text">
+        <v-icon start>mdi-login</v-icon>
+        Login
+      </v-btn>
+      <v-btn v-else @click="handleLogout" variant="text">
         <v-icon start>mdi-logout</v-icon>
         Logout
       </v-btn>
@@ -79,14 +80,17 @@
 import { authAPI } from '@/services/api-production';
 import { useTheme } from 'vuetify';
 
+// Get API base URL (same logic as api-production.js)
+const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
+
 export default {
   name: 'App',
   
   data() {
     return {
-      drawer: true,  // Start with drawer open
+      drawer: true,
       isLoggedIn: false,
-      pendingFriendRequests: 0 //Track pending friend requests for badge
+      pendingFriendRequests: 0
     };
   },
   
@@ -102,18 +106,14 @@ export default {
   },
   
   created() {
-    // Check if user is logged in when app loads
     this.checkAuth();
-    
-    // Load theme preference from localStorage
     this.loadTheme();
     
-    // Listen for route changes to update auth state
+    // Listen for route changes
     this.$watch(
       () => this.$route.path,
       () => {
         this.checkAuth();
-        // Reload friend requests on route change
         if (this.isLoggedIn) {
           this.loadPendingRequests();
         }
@@ -121,7 +121,6 @@ export default {
     );
   },
 
-  // ADD THIS HOOK TO LOAD PENDING FRIEND REQUESTS WHEN COMPONENT MOUNTS
   mounted() {
     if (this.isLoggedIn) {
       this.loadPendingRequests();
@@ -136,7 +135,6 @@ export default {
   },
 
   beforeUnmount() {
-    // Clean up interval
     if (this.pendingRequestsInterval) {
       clearInterval(this.pendingRequestsInterval);
     }
@@ -155,25 +153,31 @@ export default {
     },
     
     loadTheme() {
-      // Load saved theme preference (default to dark)
       const savedTheme = localStorage.getItem('theme') || 'dark';
       this.theme.global.name.value = savedTheme;
     },
 
-    // New method to load pending friend requests and set badge count
     async loadPendingRequests() {
-      // Only load if logged in
       if (!this.isLoggedIn) {
         this.pendingFriendRequests = 0;
         return;
       }
       
       try {
-        const response = await fetch('/api/friends/pending', {
+        const response = await fetch(`${API_BASE}/api/friends/pending`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         });
+        
+        // CRITICAL: Check content-type before parsing JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          // Response is not JSON (probably HTML error page)
+          console.warn('Pending requests endpoint returned non-JSON response');
+          this.pendingFriendRequests = 0;
+          return;
+        }
         
         if (response.ok) {
           const requests = await response.json();
@@ -181,11 +185,10 @@ export default {
             r => r.requestType === 'received'
           ).length;
         } else {
-          // If request fails (e.g., 401), clear badge
           this.pendingFriendRequests = 0;
         }
       } catch (err) {
-        console.error('Error loading pending requests:', err);
+        // Silently fail - don't spam console with errors
         this.pendingFriendRequests = 0;
       }
     },
@@ -200,7 +203,6 @@ export default {
 </script>
 
 <style>
-/* Smooth transition when switching themes */
 .v-application {
   transition: background-color 0.3s ease, color 0.3s ease;
 }

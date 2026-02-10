@@ -3,7 +3,26 @@
     <!-- Header -->
     <v-row class="mb-6 align-center">
       <v-col>
-        <h1 class="text-h3 font-weight-bold">Friends</h1>
+        <div class="d-flex align-center gap-3">
+          <h1 class="text-h3 font-weight-bold">Friends</h1>
+          <!-- Privacy Status Chip -->
+          <v-chip 
+            v-if="profileSearchable" 
+            color="success" 
+            size="small"
+            prepend-icon="mdi-check-circle"
+          >
+            Profile Public
+          </v-chip>
+          <v-chip 
+            v-else 
+            color="warning" 
+            size="small"
+            prepend-icon="mdi-lock"
+          >
+            Profile Hidden
+          </v-chip>
+        </div>
         <p class="text-subtitle-1 text-medium-emphasis">
           Connect with friends to compare ratings and discover new movies
         </p>
@@ -19,18 +38,51 @@
       </v-col>
     </v-row>
 
-    <!-- Settings Link Alert -->
-    <v-alert type="info" variant="tonal" class="mb-4">
-      <div class="d-flex align-center">
-        <div class="flex-grow-1">
-          <strong>Make sure your profile is searchable!</strong>
-          <div class="text-caption">Others won't be able to find you if your profile is hidden.</div>
-        </div>
-        <v-btn to="/settings/privacy" variant="outlined" size="small">
-          Privacy Settings
-        </v-btn>
-      </div>
-    </v-alert>
+    <!-- Quick Actions Row -->
+    <v-row class="mb-4">
+      <!-- Pending Requests Alert -->
+      <v-col cols="12" md="6" v-if="pendingRequests.received.length > 0">
+        <v-alert
+          type="info"
+          variant="tonal"
+          prominent
+        >
+          <v-row align="center" no-gutters>
+            <v-col>
+              <div class="text-h6">
+                {{ pendingRequests.received.length}} pending 
+                {{ pendingRequests.received.length === 1 ? 'request' : 'requests' }}
+              </div>
+            </v-col>
+            <v-col cols="auto">
+              <v-btn to="/friends/requests" variant="outlined" size="small">
+                View Requests
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-alert>
+      </v-col>
+
+      <!-- Privacy Warning - ONLY SHOW IF NOT SEARCHABLE -->
+      <v-col cols="12" :md="pendingRequests.received.length > 0 ? 6 : 12" v-if="!profileSearchable">
+        <v-alert
+          type="warning"
+          variant="tonal"
+        >
+          <v-row align="center" no-gutters>
+            <v-col>
+              <div class="text-subtitle-1 font-weight-bold">Profile Hidden</div>
+              <div class="text-caption">Others can't find you in search</div>
+            </v-col>
+            <v-col cols="auto">
+              <v-btn to="/settings/privacy" variant="outlined" size="small">
+                Update Settings
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-alert>
+      </v-col>
+    </v-row>
 
     <!-- Loading State -->
     <v-row v-if="loading" justify="center" class="my-12">
@@ -183,6 +235,11 @@ export default {
       loading: false,
       error: null,
       friends: [],
+      pendingRequests: {
+        received: [],
+        sent: []
+      },
+      profileSearchable: true,
       
       showAddFriendDialog: false,
       searchUsername: '',
@@ -202,6 +259,8 @@ export default {
   
   created() {
     this.loadFriends();
+    this.loadPendingRequests();
+    this.loadPrivacyStatus();
   },
   
   methods: {
@@ -225,6 +284,41 @@ export default {
         this.error = err.message || 'Failed to load friends';
       } finally {
         this.loading = false;
+      }
+    },
+    
+    async loadPendingRequests() {
+      try {
+        const response = await fetch(`${API_BASE}/api/friends/pending`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const requests = await response.json();
+          this.pendingRequests.received = requests.filter(r => r.requestType === 'received');
+          this.pendingRequests.sent = requests.filter(r => r.requestType === 'sent');
+        }
+      } catch (err) {
+        console.error('Error loading pending requests:', err);
+      }
+    },
+    
+    async loadPrivacyStatus() {
+      try {
+        const response = await fetch(`${API_BASE}/api/privacy`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const settings = await response.json();
+          this.profileSearchable = settings.privacyProfileSearchable;
+        }
+      } catch (err) {
+        console.error('Error loading privacy settings:', err);
       }
     },
     
