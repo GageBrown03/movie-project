@@ -224,34 +224,36 @@
           link
           class="mb-2 rounded-lg border list-item-hoverable"
         >
-          <!-- Poster -->
+          <!-- Poster (tighter gap: mr-3 instead of mr-4) -->
           <template v-slot:prepend>
-            <v-avatar size="80" rounded class="mr-4">
+            <v-avatar size="80" rounded class="mr-3 list-avatar">
               <v-img v-if="media.posterUrl" :src="media.posterUrl" cover />
             </v-avatar>
           </template>
 
           <!-- Content (Title + mobile meta row) -->
           <div class="w-100">
-            <!-- Title -->
+            <!-- Title: smaller font, keep clamp on mobile -->
             <v-list-item-title
-              class="list-title text-h6 font-weight-bold"
+              class="list-title text-subtitle-1 font-weight-bold"
               :class="{ 'list-title--clamp': isMobile }"
             >
               {{ media.title }}
-              <!-- Keep type near the title but very compact -->
+              <!-- REMOVED the type chip here to free horizontal space -->
+            </v-list-item-title>
+
+            <!-- Mobile-only meta row (under title) -->
+            <div v-if="isMobile" class="list-meta-row">
+              <!-- Media type (compact) -->
               <v-chip
                 size="x-small"
                 :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
-                class="ml-2 text-white"
+                class="text-white"
                 label
               >
                 {{ media.mediaType.toUpperCase() }}
               </v-chip>
-            </v-list-item-title>
 
-            <!-- Mobile-only meta row (under title, right aligned) -->
-            <div v-if="isMobile" class="list-meta-row">
               <div class="spacer"></div>
 
               <!-- Rating: compact numeric, no star on mobile -->
@@ -275,13 +277,16 @@
                 color="info"
                 variant="flat"
                 class="watchlist-label"
+                title="Watchlist"
               >
                 <v-icon start size="16">mdi-bookmark</v-icon>
               </v-chip>
             </div>
           </div>
 
-          <!-- Desktop append (icon-only watchlist; rating compact with star) -->
+          <!-- Desktop append (icon-only watchlist; rating with star).
+              Desktop KEEP type near title (unchanged), but you asked
+              only to move the type under the title on MOBILE. -->
           <template v-slot:append>
             <div v-if="!isMobile" class="d-flex align-center">
               <v-chip
@@ -303,7 +308,7 @@
                 title="Watchlist"
               >
                 <v-icon start size="16">mdi-bookmark</v-icon>
-                <!-- No 'Watchlist' text on desktop per your request -->
+                <!-- No text label -->
               </v-chip>
             </div>
           </template>
@@ -755,6 +760,41 @@ export default {
   }
   .watchlist-label .v-icon {
     margin-right: 0; /* ensures it's just the icon */
+  }
+}
+
+/* Tighter gap between poster and title */
+.list-avatar {
+  margin-right: 10px !important; /* overrides mr-3 if needed */
+}
+
+/* Smaller title (already using text-subtitle-1 on the element) */
+.list-title {
+  line-height: 1.25;
+}
+
+/* Mobile-only: tighter line-height + clamp stays */
+@media (max-width: 600px) {
+  .list-title--clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.15; /* slightly tighter on mobile */
+  }
+
+  /* Mobile meta row: include type on the left, indicators on the right */
+  .list-meta-row {
+    display: flex;
+    align-items: center;
+    margin-top: 6px;
+    gap: 6px;
+  }
+
+  /* Ensure the new type chip is compact on mobile */
+  .list-meta-row .v-chip {
+    height: 22px;
+    border-radius: 6px;
   }
 }
 
