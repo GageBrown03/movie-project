@@ -17,6 +17,9 @@ app = Flask(__name__)
 # Configure app
 app.config.from_object(Config)
 
+# CRITICAL: Disable trailing slash redirects (prevents 308 redirects)
+app.url_map.strict_slashes = False
+
 # ==========================================
 # CRITICAL: CORS Configuration FIRST
 # ==========================================
@@ -49,6 +52,10 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
+
+# Handle proxy headers from Railway
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Initialize database
 db.init_app(app)
