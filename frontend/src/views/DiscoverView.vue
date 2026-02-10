@@ -87,7 +87,7 @@
             v-for="media in fiveStarRecommendations.slice(0, 6)" 
             :key="media.tmdbId"
             cols="6"
-            sm="4"~
+            sm="4"
             md="2"
           >
             <recommendation-card 
