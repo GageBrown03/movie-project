@@ -1,9 +1,9 @@
 <template>
   <div class="home">
     <div class="hero-section">
-      <h1 class="text-h2 font-weight-bold mb-4">Welcome to Your Digital Library</h1>
+      <h1 class="text-h2 font-weight-bold mb-4">Welcome to myMDB</h1>
       <p class="text-h6 text-medium-emphasis mb-8">
-        Track and rate your favorite Movies and TV Shows in your Personal Digital Library!
+        Track and rate your favorite Movies and TV Shows in your very own Media DataBase!
       </p>
       
       <!-- Quick Action Buttons -->
