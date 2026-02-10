@@ -538,7 +538,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 6px; /* compact */
+  padding: 2px 4px; /* compact */
 }
 
 /* Left: Type badge (M/TV) */
@@ -548,9 +548,9 @@ export default {
   justify-content: center;
   height: 20px;
   min-width: 20px;
-  padding: 0 6px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -567,7 +567,7 @@ export default {
 .badge-right {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
 }
 
 /* Rating badge: small dark pill with gold number */
@@ -575,8 +575,8 @@ export default {
   display: inline-flex;
   align-items: center;
   height: 20px;
-  padding: 0 6px;
-  border-radius: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
   background: #121212;
   color: #fff;
   border: 1px solid rgba(255,255,255,0.12);
@@ -584,7 +584,7 @@ export default {
 }
 
 .badge-rating__value {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1;
 }
