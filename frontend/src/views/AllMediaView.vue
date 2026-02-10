@@ -165,44 +165,45 @@
                 <div class="top-scrim"></div>
 
                 <div class="overlay-content pa-2">
-                  <div class="d-flex justify-space-between align-center">
-
-                    <!-- Movie / TV Chip -->
-                    <v-chip
-                      size="x-small"
-                      :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
-                      class="type-label font-weight-black text-white"
-                      variant="flat"
-                      label
+                  <div class="overlay-topbar">
+                    <!-- Type badge (M / TV) -->
+                    <div
+                      class="badge-type"
+                      :class="media.mediaType === 'movie' ? 'badge-type--movie' : 'badge-type--tv'"
+                      aria-label="Media type"
                     >
-                      {{ media.mediaType.toUpperCase() }}
-                    </v-chip>
+                      {{ media.mediaType === 'movie' ? 'M' : 'TV' }}
+                    </div>
 
-                    <!-- Rating Chip -->
-                    <v-chip
-                      v-if="media.rating"
-                      size="small"
-                      color="#121212"
-                      class="rating-label font-weight-black"
-                      variant="flat"
-                      text-color="white"
-                    >
-                      <v-icon start size="14" color="#FFC107">mdi-star</v-icon>
-                      <span class="gold-text">{{ media.rating }}/5</span>
-                    </v-chip>
+                    <!-- Right-side status: rating or watchlist -->
+                    <div class="badge-right">
+                      <!-- Rating badge: compact numeric, optional star on desktop only -->
+                      <div v-if="media.rating" class="badge-rating" aria-label="User rating">
+                        <!-- Optional: Keep star on desktop only; remove on mobile -->
+                        <v-icon
+                          v-if="!isMobile"
+                          size="14"
+                          color="#FFC107"
+                          class="mr-1"
+                        >
+                          mdi-star
+                        </v-icon>
+                        <span class="badge-rating__value gold-text">
+                          {{ Number(media.rating).toFixed(1).replace('.0','') }}
+                        </span>
+                      </div>
 
-                    <!-- Watchlist Chip -->
-                    <v-chip
-                      v-else
-                      size="small"
-                      color="info"
-                      class="watchlist-label font-weight-black"
-                      variant="flat"
-                    >
-                      <v-icon start size="14">mdi-bookmark</v-icon>
-                      <span v-if="!isMobile">Watchlist</span>
-                    </v-chip>
-
+                      <!-- Watchlist badge: icon-only on mobile, tiny 'WL' on desktop -->
+                      <div v-else class="badge-watchlist" aria-label="Watchlist">
+                        <v-icon
+                          size="14"
+                          class="badge-watchlist__icon"
+                        >
+                          mdi-bookmark
+                        </v-icon>
+                        <span v-if="!isMobile" class="badge-watchlist__text">WL</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </v-img>
@@ -513,6 +514,137 @@ export default {
   }
 }
 
+/* ========== Compact top overlay for 3-column grid ========== */
+
+/* Reduce overlay height so it doesn’t block poster art/text */
+.top-scrim {
+  height: 44px; /* was 60px */
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.35) 70%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.overlay-content {
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Top bar layout (replaces chip row) */
+.overlay-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px; /* compact */
+}
+
+/* Left: Type badge (M/TV) */
+.badge-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.14);
+  background: #1976D2; /* default movie color */
+}
+
+.badge-type--movie { background: #1976D2; }
+.badge-type--tv { background: #7B1FA2; }
+
+/* Right: container for rating/watchlist */
+.badge-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Rating badge: small dark pill with gold number */
+.badge-rating {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #121212;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.badge-rating__value {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Watchlist badge: compact; icon-only on mobile through template v-if */
+.badge-watchlist {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: rgba(33,150,243,0.12); /* info tonal */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.badge-watchlist__icon {
+  color: currentColor;
+  margin-right: 4px;
+}
+
+.badge-watchlist__text {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+/* ========== Mobile tuning for 3-column ========== */
+@media (max-width: 600px) {
+  .overlay-topbar {
+    padding: 4px 5px;
+  }
+
+  .badge-type {
+    height: 18px;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 5px;
+    font-size: 10px;
+  }
+
+  .badge-rating,
+  .badge-watchlist {
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 5px;
+  }
+
+  .badge-rating__value,
+  .badge-watchlist__text {
+    font-size: 10px;
+  }
+
+  /* Make sure hover lift doesn’t fight tight columns on touch */
+  .media-card:hover {
+    transform: translateY(-4px);
+  }
+}
 
 /* Modal Styling */
 .hover-preview-large { border-radius: 20px !important; background-color: #121212 !important; overflow: hidden; }
