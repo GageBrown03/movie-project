@@ -30,7 +30,7 @@
         </v-list-item>
 
         <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
-          <v-list-item-title>What to Watch</v-list-item-title>
+          <v-list-item-title>Pick for me</v-list-item-title>
         </v-list-item>
 
         <v-list-item to="/discover" prepend-icon="mdi-compass">
