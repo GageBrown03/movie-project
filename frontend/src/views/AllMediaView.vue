@@ -133,14 +133,18 @@
 
     <div v-else>
       <!-- Grid View -->
+      <!-- 12 / 4 = 3 columns on mobile -->
+      <!-- 4 columns on small screens -->
+      <!-- 4 columns on medium -->
+      <!-- 6 columns on large -->
       <v-row v-if="viewMode === 'grid'">
         <v-col
           v-for="media in filteredMedia"
-          :key="media.mediaId"
-          cols="4"     <!-- 12 / 4 = 3 columns on mobile -->
-          sm="3"       <!-- 4 columns on small screens -->
-          md="3"       <!-- 4 columns on medium -->
-          lg="2"       <!-- 6 columns on large -->
+          :key="media.mediaId"       
+          cols="4"          
+          sm="3"          
+          md="3"          
+          lg="2"
           xl="2"
         >
           <v-card
@@ -159,8 +163,11 @@
               >
                 <!-- Keep the same overlay style; only adjust watchlist text on mobile below -->
                 <div class="top-scrim"></div>
+
                 <div class="overlay-content pa-2">
                   <div class="d-flex justify-space-between align-center">
+
+                    <!-- Movie / TV Chip -->
                     <v-chip
                       size="x-small"
                       :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
@@ -171,7 +178,7 @@
                       {{ media.mediaType.toUpperCase() }}
                     </v-chip>
 
-                    <!-- Rating or Watchlist Badge -->
+                    <!-- Rating Chip -->
                     <v-chip
                       v-if="media.rating"
                       size="small"
@@ -184,7 +191,7 @@
                       <span class="gold-text">{{ media.rating }}/5</span>
                     </v-chip>
 
-                    <!-- Watchlist: icon-only on mobile; text + icon on larger screens -->
+                    <!-- Watchlist Chip -->
                     <v-chip
                       v-else
                       size="small"
@@ -195,6 +202,7 @@
                       <v-icon start size="14">mdi-bookmark</v-icon>
                       <span v-if="!isMobile">Watchlist</span>
                     </v-chip>
+
                   </div>
                 </div>
               </v-img>
