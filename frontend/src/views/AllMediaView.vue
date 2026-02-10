@@ -134,7 +134,15 @@
     <div v-else>
       <!-- Grid View -->
       <v-row v-if="viewMode === 'grid'">
-        <v-col v-for="media in filteredMedia" :key="media.mediaId" cols="12" sm="6" md="4" lg="3">
+        <v-col
+          v-for="media in filteredMedia"
+          :key="media.mediaId"
+          cols="4"     <!-- 12 / 4 = 3 columns on mobile -->
+          sm="3"       <!-- 4 columns on small screens -->
+          md="3"       <!-- 4 columns on medium -->
+          lg="2"       <!-- 6 columns on large -->
+          xl="2"
+        >
           <v-card
             class="media-card"
             flat
@@ -143,22 +151,49 @@
             @click="goToMedia(media.mediaId)"
           >
             <div class="poster-container">
-              <v-img v-if="media.posterUrl" :src="media.posterUrl" aspect-ratio="2/3" cover class="poster-image">
+              <v-img
+                v-if="media.posterUrl"
+                :src="media.posterUrl"
+                aspect-ratio="2/3"
+                cover
+              >
+                <!-- Keep the same overlay style; only adjust watchlist text on mobile below -->
                 <div class="top-scrim"></div>
                 <div class="overlay-content pa-2">
                   <div class="d-flex justify-space-between align-center">
-                    <v-chip size="x-small" :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" class="type-label font-weight-black text-white" variant="flat" label>
+                    <v-chip
+                      size="x-small"
+                      :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
+                      class="type-label font-weight-black text-white"
+                      variant="flat"
+                      label
+                    >
                       {{ media.mediaType.toUpperCase() }}
                     </v-chip>
-                    
+
                     <!-- Rating or Watchlist Badge -->
-                    <v-chip v-if="media.rating" size="small" color="#121212" class="rating-label font-weight-black" variant="flat">
+                    <v-chip
+                      v-if="media.rating"
+                      size="small"
+                      color="#121212"
+                      class="rating-label font-weight-black"
+                      variant="flat"
+                      text-color="white"
+                    >
                       <v-icon start size="14" color="#FFC107">mdi-star</v-icon>
                       <span class="gold-text">{{ media.rating }}/5</span>
                     </v-chip>
-                    <v-chip v-else size="small" color="info" class="watchlist-label font-weight-black" variant="flat">
+
+                    <!-- Watchlist: icon-only on mobile; text + icon on larger screens -->
+                    <v-chip
+                      v-else
+                      size="small"
+                      color="info"
+                      class="watchlist-label font-weight-black"
+                      variant="flat"
+                    >
                       <v-icon start size="14">mdi-bookmark</v-icon>
-                      <span>Watchlist</span>
+                      <span v-if="!isMobile">Watchlist</span>
                     </v-chip>
                   </div>
                 </div>
@@ -458,6 +493,18 @@ export default {
 .list-item-hoverable:hover {
   background-color: rgba(var(--v-theme-primary), 0.05);
 }
+
+/* MOBILE STYLING FOR GRID VIEW */
+@media (max-width: 600px) {
+  /* Keep chip content compact on small screens */
+  .type-label .v-chip__content,
+  .rating-label .v-chip__content,
+  .watchlist-label .v-chip__content {
+    font-size: 11px;
+    line-height: 1;
+  }
+}
+
 
 /* Modal Styling */
 .hover-preview-large { border-radius: 20px !important; background-color: #121212 !important; overflow: hidden; }
