@@ -3,23 +3,13 @@
     <v-navigation-drawer v-model="drawer" app>
       <v-list>
         <v-list-item to="/" prepend-icon="mdi-home">
-          <v-list-item-title>Home</v-list-item-title>
+          <v-list-item-title>myMDB</v-list-item-title>
         </v-list-item>
-        
+
         <v-divider class="my-2" />
-        
+
         <v-list-item to="/media" prepend-icon="mdi-view-grid">
-          <v-list-item-title>Browse Media</v-list-item-title>
-        </v-list-item>
-        
-        <v-list-item to="/analytics" prepend-icon="mdi-chart-line">
-          <v-list-item-title>Analytics</v-list-item-title>
-        </v-list-item>
-        
-        <v-divider class="my-2" />
-        
-        <v-list-item to="/media/new" prepend-icon="mdi-plus">
-          <v-list-item-title>Add Media</v-list-item-title>
+          <v-list-item-title>Library</v-list-item-title>
         </v-list-item>
 
         <v-list-item to="/friends" prepend-icon="mdi-account-group">
@@ -29,6 +19,12 @@
           </template>
         </v-list-item>
 
+        <v-divider class="my-2" />
+
+        <v-list-item to="/analytics" prepend-icon="mdi-chart-line">
+          <v-list-item-title>Analytics</v-list-item-title>
+        </v-list-item>
+
         <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
           <v-list-item-title>Pick for me</v-list-item-title>
         </v-list-item>
@@ -36,27 +32,45 @@
         <v-list-item to="/discover" prepend-icon="mdi-compass">
           <v-list-item-title>Discover</v-list-item-title>
         </v-list-item>
-        
+
         <v-divider class="my-2" />
-        
-        <!-- Settings Menu -->
+
+        <!-- Settings Menu 
         <v-list-item to="/settings/privacy" prepend-icon="mdi-shield-account">
           <v-list-item-title>Privacy Settings</v-list-item-title>
         </v-list-item>
+        -->
       </v-list>
+
+      <!-- 👇 Fixed footer area of the drawer -->
+      <template #append>
+        <v-divider />
+        <v-list density="comfortable">
+          <v-list-item
+            to="/settings/privacy"
+            prepend-icon="mdi-shield-account"
+            title="Privacy Settings"
+          />
+        </v-list>
+      </template>
     </v-navigation-drawer>
     
     <v-app-bar app color="primary" dark>
       <v-app-bar-nav-icon @click="drawer = !drawer" />
-      <v-app-bar-title>myMDB</v-app-bar-title>
-      
+
+      <v-app-bar-title class="clickable-title">
+        <router-link to="/" class="title-link" aria-label="Go to Home">
+          myMDB
+        </router-link>
+      </v-app-bar-title>
+
       <v-spacer />
-      
+
       <!-- Theme Toggle -->
-      <v-btn icon @click="toggleTheme">
+      <v-btn icon @click="toggleTheme" aria-label="Toggle theme">
         <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
-      
+
       <!-- Login/Logout Button -->
       <v-btn v-if="!isLoggedIn" to="/login" variant="text">
         <v-icon start>mdi-login</v-icon>
@@ -206,4 +220,14 @@ export default {
 .v-application {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+.title-link {
+  color: inherit;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.clickable-title {
+  cursor: pointer;
+}
+
 </style>
