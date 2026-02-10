@@ -15,9 +15,13 @@ friends = Blueprint('friends', __name__, url_prefix='/api/friends')
 
 def normalize_user_ids(user_id_1, user_id_2):
     """Ensure user_id_1 < user_id_2 for normalized storage"""
-    if user_id_1 < user_id_2:
-        return user_id_1, user_id_2
-    return user_id_2, user_id_1
+    # CRITICAL: Convert to int (get_jwt_identity returns string!)
+    id1 = int(user_id_1)
+    id2 = int(user_id_2)
+    
+    if id1 < id2:
+        return id1, id2
+    return id2, id1
 
 
 def get_friendship(user_id_1, user_id_2):
@@ -45,7 +49,7 @@ def are_friends(user_id_1, user_id_2):
 def get_friends():
     """Get all accepted friends for current user"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         
         # Query friendships where user is either user_id_1 or user_id_2
         friendships = Friendship.query.filter(
@@ -90,7 +94,7 @@ def get_friends():
 def get_pending_requests():
     """Get all pending friend requests (sent and received)"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         
         friendships = Friendship.query.filter(
             db.or_(
@@ -135,7 +139,7 @@ def get_pending_requests():
 def send_friend_request():
     """Send a friend request to another user"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         data = request.get_json()
         
         username = data.get('username')
@@ -206,7 +210,7 @@ def send_friend_request():
 def accept_friend_request(friendship_id):
     """Accept a friend request"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         
         friendship = Friendship.query.get(friendship_id)
         
@@ -242,7 +246,7 @@ def accept_friend_request(friendship_id):
 def decline_friend_request(friendship_id):
     """Decline a friend request"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         
         friendship = Friendship.query.get(friendship_id)
         
@@ -277,7 +281,7 @@ def decline_friend_request(friendship_id):
 def remove_friend(friendship_id):
     """Remove a friend or cancel friend request"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         
         friendship = Friendship.query.get(friendship_id)
         
@@ -306,7 +310,7 @@ def remove_friend(friendship_id):
 def search_users():
     """Search for users by username"""
     try:
-        current_user_id = get_jwt_identity()
+        current_user_id = int(get_jwt_identity())  # Convert to int
         query = request.args.get('q', '')
         
         print(f"Search query: '{query}' from user {current_user_id}")
