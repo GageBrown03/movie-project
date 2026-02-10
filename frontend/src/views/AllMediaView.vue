@@ -212,41 +212,102 @@
         </v-col>
       </v-row>
 
-      <!-- List View - NOW WITH HOVER SUPPORT -->
+      <!-- List View -->
       <v-list v-else lines="two" class="bg-transparent">
-        <v-list-item 
-          v-for="media in filteredMedia" 
-          :key="media.mediaId" 
-          @click="goToMedia(media.mediaId)" 
+
+        <v-list-item
+          v-for="media in filteredMedia"
+          :key="media.mediaId"
+          @click="goToMedia(media.mediaId)"
           @mouseenter="startHover(media)"
           @mouseleave="cancelHover"
-          link 
+          link
           class="mb-2 rounded-lg border list-item-hoverable"
         >
+          <!-- Poster -->
           <template v-slot:prepend>
             <v-avatar size="80" rounded class="mr-4">
               <v-img v-if="media.posterUrl" :src="media.posterUrl" cover />
             </v-avatar>
           </template>
-          
-          <v-list-item-title class="text-h6 font-weight-bold">
-            {{ media.title }}
-            <v-chip :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" size="x-small" class="ml-2 text-white" label>
-              {{ media.mediaType.toUpperCase() }}
-            </v-chip>
-          </v-list-item-title>
-          
+
+          <!-- Content (Title + mobile meta row) -->
+          <div class="w-100">
+            <!-- Title -->
+            <v-list-item-title
+              class="list-title text-h6 font-weight-bold"
+              :class="{ 'list-title--clamp': isMobile }"
+            >
+              {{ media.title }}
+              <!-- Keep type near the title but very compact -->
+              <v-chip
+                size="x-small"
+                :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
+                class="ml-2 text-white"
+                label
+              >
+                {{ media.mediaType.toUpperCase() }}
+              </v-chip>
+            </v-list-item-title>
+
+            <!-- Mobile-only meta row (under title, right aligned) -->
+            <div v-if="isMobile" class="list-meta-row">
+              <div class="spacer"></div>
+
+              <!-- Rating: compact numeric, no star on mobile -->
+              <v-chip
+                v-if="media.rating"
+                size="x-small"
+                color="#121212"
+                variant="flat"
+                class="rating-label"
+                text-color="white"
+              >
+                <span class="gold-text font-weight-bold">
+                  {{ Number(media.rating).toFixed(1).replace('.0','') }}/5
+                </span>
+              </v-chip>
+
+              <!-- Watchlist: icon-only -->
+              <v-chip
+                v-else
+                size="x-small"
+                color="info"
+                variant="flat"
+                class="watchlist-label"
+              >
+                <v-icon start size="16">mdi-bookmark</v-icon>
+              </v-chip>
+            </div>
+          </div>
+
+          <!-- Desktop append (icon-only watchlist; rating compact with star) -->
           <template v-slot:append>
-            <!-- Show rating OR watchlist indicator -->
-            <v-chip v-if="media.rating" color="#121212" variant="flat" class="rating-label">
-              <v-icon start color="#FFC107" size="small">mdi-star</v-icon>
-              <span class="gold-text font-weight-bold">{{ media.rating }}/5</span>
-            </v-chip>
-            <v-chip v-else color="info" variant="flat" class="watchlist-label">
-              <v-icon start size="small">mdi-bookmark</v-icon>
-              <span class="font-weight-bold">Watchlist</span>
-            </v-chip>
+            <div v-if="!isMobile" class="d-flex align-center">
+              <v-chip
+                v-if="media.rating"
+                color="#121212"
+                variant="flat"
+                class="rating-label"
+              >
+                <v-icon start color="#FFC107" size="16">mdi-star</v-icon>
+                <span class="gold-text font-weight-bold">
+                  {{ Number(media.rating).toFixed(1).replace('.0','') }}/5
+                </span>
+              </v-chip>
+              <v-chip
+                v-else
+                color="info"
+                variant="flat"
+                class="watchlist-label"
+                title="Watchlist"
+              >
+                <v-icon start size="16">mdi-bookmark</v-icon>
+                <!-- No 'Watchlist' text on desktop per your request -->
+              </v-chip>
+            </div>
           </template>
+
         </v-list-item>
       </v-list>
     </div>
@@ -594,12 +655,12 @@ export default {
   display: inline-flex;
   align-items: center;
   height: 20px;
-  padding: 0 6px;
-  border-radius: 6px;
+  padding: 0 4px;
+  border-radius: 4px;
   background: rgba(33,150,243,0.12); /* info tonal */
   color: #fff;
   border: 1px solid rgba(255,255,255,0.12);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
 .badge-watchlist__icon {
@@ -643,6 +704,57 @@ export default {
   /* Make sure hover lift doesn’t fight tight columns on touch */
   .media-card:hover {
     transform: translateY(-4px);
+  }
+}
+
+/* Make sure list item content can layout vertically on mobile */
+@media (max-width: 600px) {
+  /* Title clamped to 2 lines with ellipsis */
+  .list-title--clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* two lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.25;
+  }
+
+  /* Row under the title, right-aligned for badges */
+  .list-meta-row {
+    display: flex;
+    align-items: center;
+    margin-top: 6px;
+    gap: 6px;
+  }
+
+  .list-meta-row .spacer {
+    flex: 1 1 auto;   /* pushes badges to the right */
+  }
+
+  /* Compact chips on mobile for list view */
+  .rating-label,
+  .watchlist-label {
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
+  }
+
+  .rating-label .v-chip__content,
+  .watchlist-label .v-chip__content {
+    font-size: 12px;
+    line-height: 1;
+  }
+}
+
+/* Desktop tidying: keep icon-only watchlist in append slot */
+@media (min-width: 601px) {
+  .rating-label .v-chip__content {
+    font-size: 13px;
+  }
+  .watchlist-label .v-chip__content {
+    font-size: 0; /* hide text without removing the element */
+  }
+  .watchlist-label .v-icon {
+    margin-right: 0; /* ensures it's just the icon */
   }
 }
 
