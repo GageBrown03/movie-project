@@ -4,9 +4,7 @@
     <v-row class="mb-6 align-center">
       <v-col>
         <h1 class="text-h3 font-weight-bold">Discover</h1>
-        <p class="text-subtitle-1 text-medium-emphasis">
-          Personalized recommendations based on your collection
-        </p>
+        
       </v-col>
     </v-row>
 
@@ -16,21 +14,19 @@
     </v-row>
 
     <div v-else>
-      <!-- Based on Your 5-Star Ratings -->
-      <section v-if="fiveStarMedia.length > 0" class="mb-8">
+      <!-- Trending This Week -->
+      <section class="mb-8">
         <div class="section-header mb-4">
           <h2 class="text-h5 font-weight-bold">
-            <v-icon color="amber" class="mr-2">mdi-star</v-icon>
-            Because You Loved These
+            <v-icon color="error" class="mr-2">mdi-trending-up</v-icon>
+            Trending This Week
           </h2>
-          <p class="text-caption text-medium-emphasis">
-            Based on your 5-star ratings
-          </p>
+          
         </div>
 
         <v-row>
           <v-col 
-            v-for="media in fiveStarRecommendations.slice(0, 6)" 
+            v-for="media in trendingRecommendations.slice(0, 6)" 
             :key="media.tmdbId"
             cols="6"
             sm="4"
@@ -74,6 +70,35 @@
         </v-row>
       </section>
 
+      <!-- Based on Your Ratings -->
+      <section v-if="fiveStarMedia.length > 0" class="mb-8">
+        <div class="section-header mb-4">
+          <h2 class="text-h5 font-weight-bold">
+            <v-icon color="amber" class="mr-2">mdi-star</v-icon>
+            Based on What You Loved
+          </h2>
+          <p class="text-caption text-medium-emphasis">
+            
+          </p>
+        </div>
+
+        <v-row>
+          <v-col 
+            v-for="media in fiveStarRecommendations.slice(0, 6)" 
+            :key="media.tmdbId"
+            cols="6"
+            sm="4"~
+            md="2"
+          >
+            <recommendation-card 
+              :item="media"
+              :is-in-collection="isInCollection(media.tmdbId)"
+              @click="handleCardClick(media)"
+            />
+          </v-col>
+        </v-row>
+      </section>
+
       <!-- Based on Your Favorite Actors -->
       <section v-if="topActors.length > 0" class="mb-8">
         <div class="section-header mb-4">
@@ -81,9 +106,7 @@
             <v-icon color="secondary" class="mr-2">mdi-account-star</v-icon>
             Featuring Your Favorite Actors
           </h2>
-          <p class="text-caption text-medium-emphasis">
-            Starring {{ topActors.slice(0, 3).map(a => a.name).join(', ') }}
-          </p>
+          
         </div>
 
         <v-row>
@@ -103,35 +126,7 @@
         </v-row>
       </section>
 
-      <!-- Trending This Week -->
-      <section class="mb-8">
-        <div class="section-header mb-4">
-          <h2 class="text-h5 font-weight-bold">
-            <v-icon color="error" class="mr-2">mdi-trending-up</v-icon>
-            Trending This Week
-          </h2>
-          <p class="text-caption text-medium-emphasis">
-            What everyone is watching
-          </p>
-        </div>
-
-        <v-row>
-          <v-col 
-            v-for="media in trendingRecommendations.slice(0, 6)" 
-            :key="media.tmdbId"
-            cols="6"
-            sm="4"
-            md="2"
-          >
-            <recommendation-card 
-              :item="media"
-              :is-in-collection="isInCollection(media.tmdbId)"
-              @click="handleCardClick(media)"
-            />
-          </v-col>
-        </v-row>
-      </section>
-
+      
       <!-- Hidden Gems (High TMDB, Not in Your Collection) -->
       <section v-if="hiddenGems.length > 0" class="mb-8">
         <div class="section-header mb-4">
@@ -139,9 +134,7 @@
             <v-icon color="info" class="mr-2">mdi-diamond-stone</v-icon>
             Hidden Gems
           </h2>
-          <p class="text-caption text-medium-emphasis">
-            Highly rated films you haven't discovered yet
-          </p>
+          
         </div>
 
         <v-row>

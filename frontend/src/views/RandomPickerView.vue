@@ -56,74 +56,84 @@
       </v-col>
     </v-row>
     <div v-else>
-      <v-card class="mb-6" elevation="2">
-        <v-card-title class="text-h6">
-          <v-icon start>mdi-filter</v-icon>
-          Filters (Optional)
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" sm="6" md="3">
-              <v-select
-                v-model="filters.type"
-                :items="typeOptions"
-                label="Type"
-                variant="outlined"
-                density="comfortable"
-                clearable
-              />
-            </v-col>
+      <v-expansion-panels 
+        -model="filtersPanel"
+        multiple
+        variant="accordion"
+        density="compact"
+        elevation="2"
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-title>
+            <v-icon start>mdi-filter</v-icon>
+            Filters (Optional)
+          </v-expansion-panel-title>
 
-            <v-col cols="12" sm="6" md="3">
-              <v-select
-                v-model="filters.genre"
-                :items="availableGenres"
-                label="Genre"
-                variant="outlined"
-                density="comfortable"
-                clearable
-              />
-            </v-col>
+          <v-expansion-panel-text>
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="filters.type"
+                  :items="typeOptions"
+                  label="Type"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                />
+              </v-col>
 
-            <v-col cols="12" sm="6" md="3">
-              <v-select
-                v-model="filters.runtime"
-                :items="runtimeOptions"
-                label="Runtime"
-                variant="outlined"
-                density="comfortable"
-                clearable
-                :disabled="filters.type === 'tv'"
-              />
-            </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="filters.genre"
+                  :items="availableGenres"
+                  label="Genre"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                />
+              </v-col>
 
-            <v-col cols="12" sm="6" md="3">
-              <v-select
-                v-model="filters.decade"
-                :items="decadeOptions"
-                label="Decade"
-                variant="outlined"
-                density="comfortable"
-                clearable
-              />
-            </v-col>
-          </v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="filters.runtime"
+                  :items="runtimeOptions"
+                  label="Runtime"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                  :disabled="filters.type === 'tv'"
+                />
+              </v-col>
 
-          <div class="d-flex justify-space-between align-center">
-            <v-chip v-if="hasActiveFilters" size="small">
-              {{ filteredWatchlist.length }} matches
-            </v-chip>
-            <v-btn
-              v-if="hasActiveFilters"
-              variant="text"
-              size="small"
-              @click="clearFilters"
-            >
-              Clear Filters
-            </v-btn>
-          </div>
-        </v-card-text>
-      </v-card>
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="filters.decade"
+                  :items="decadeOptions"
+                  label="Decade"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                />
+              </v-col>
+            </v-row>
+
+            <div class="d-flex justify-space-between align-center">
+              <v-chip v-if="hasActiveFilters" size="small">
+                {{ filteredWatchlist.length }} matches
+              </v-chip>
+
+              <v-btn
+                v-if="hasActiveFilters"
+                variant="text"
+                size="small"
+                @click="clearFilters"
+              >
+                Clear Filters
+              </v-btn>
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
 
       <v-row v-if="!pickedMedia" justify="center" class="my-12">
         <v-col cols="12" sm="8" md="6" class="text-center">
@@ -356,6 +366,8 @@
 
 <script>
 import { mediaAPI } from '@/services/api-production';
+const filtersPanel = ref([]); // collapsed on load
+// If you want it open by default: const filtersPanel = ref([0]);
 
 export default {
   name: 'RandomPickerView',

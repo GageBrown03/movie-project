@@ -5,7 +5,7 @@
         <v-text-field
           v-model="searchQuery"
           prepend-inner-icon="mdi-magnify"
-          label="Search collection..."
+          label="Search your collection..."
           variant="solo-filled"
           flat
           density="comfortable"
