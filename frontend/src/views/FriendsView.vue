@@ -278,19 +278,26 @@ export default {
           body: JSON.stringify({ username: user.username })
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
           this.snackbarMessage = 'Friend request sent!';
           this.snackbarColor = 'success';
           this.showSnackbar = true;
+          
+          // Update the user's status in search results
+          user.friendshipStatus = 'pending';
+          
           this.closeAddDialog();
         } else {
-          this.snackbarMessage = 'Failed to send request';
-          this.snackbarColor = 'error';
+          // Show the actual error message from backend
+          this.snackbarMessage = data.error || 'Failed to send request';
+          this.snackbarColor = 'warning';
           this.showSnackbar = true;
         }
       } catch (err) {
         console.error('Error sending request:', err);
-        this.snackbarMessage = 'Failed to send request';
+        this.snackbarMessage = 'Network error - please try again';
         this.snackbarColor = 'error';
         this.showSnackbar = true;
       } finally {

@@ -36,10 +36,19 @@ CORS(
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True,
             "expose_headers": ["Content-Type", "Authorization"],
-            "max_age": 3600  # Cache preflight for 1 hour
+            "max_age": 0  # Disable preflight caching temporarily
         }
     }
 )
+
+# Explicitly handle OPTIONS for all routes
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'https://movie-project-six-eta.vercel.app')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # Initialize database
 db.init_app(app)
