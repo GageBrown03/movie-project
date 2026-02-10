@@ -1,6 +1,5 @@
 <template>
   <div class="random-picker">
-    <!-- Header -->
     <v-row class="mb-6 align-center">
       <v-col>
         <h1 class="text-h3 font-weight-bold">What Should I Watch?</h1>
@@ -10,28 +9,53 @@
       </v-col>
     </v-row>
 
-    <!-- Loading State -->
     <v-row v-if="loading" justify="center" class="my-12">
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-row>
 
-    <!-- FIXED: Empty Watchlist State with Add Button -->
-    <v-empty-state
-      v-else-if="watchlist.length === 0"
-      icon="mdi-bookmark-outline"
-      title="Your Watchlist is Empty"
-      text="Add some movies or TV shows to your watchlist first, then come back here to let us pick something for you!"
-    >
-      <template v-slot:actions>
-        <v-btn color="primary" size="large" to="/media/new" prepend-icon="mdi-plus">
-          Add to Watchlist
-        </v-btn>
-      </template>
-    </v-empty-state>
+    <v-row v-else-if="watchlist.length === 0" justify="center" class="my-8">
+      <v-col cols="12" md="10" lg="8">
+        <v-sheet
+          class="d-flex flex-column align-center justify-center text-center pa-10 pa-md-16 rounded-xl empty-dashed-border"
+          color="surface-light"
+        >
+          <div class="icon-bg-circle mb-6">
+            <v-icon icon="mdi-filmstrip-off" size="80" color="primary" />
+          </div>
+          
+          <h2 class="text-h4 font-weight-bold mb-3">Your watchlist is looking a bit light</h2>
+          
+          <p class="text-body-1 text-medium-emphasis mb-8" style="max-width: 500px">
+            We can't work our magic until you give us some options. 
+            Add movies or TV shows you've been meaning to watch, and we'll help you decide.
+          </p>
 
-    <!-- Picker Content -->
+          <div class="d-flex flex-wrap justify-center gap-4">
+            <v-btn
+              color="primary"
+              size="x-large"
+              to="/media/new"
+              prepend-icon="mdi-plus"
+              elevation="4"
+              class="px-8"
+            >
+              Add Media
+            </v-btn>
+
+            <v-btn
+              variant="outlined"
+              size="x-large"
+              to="/discover"
+              prepend-icon="mdi-compass-outline"
+              class="px-8"
+            >
+              Browse Trending
+            </v-btn>
+          </div>
+        </v-sheet>
+      </v-col>
+    </v-row>
     <div v-else>
-      <!-- Filters Card -->
       <v-card class="mb-6" elevation="2">
         <v-card-title class="text-h6">
           <v-icon start>mdi-filter</v-icon>
@@ -39,7 +63,6 @@
         </v-card-title>
         <v-card-text>
           <v-row>
-            <!-- Type Filter -->
             <v-col cols="12" sm="6" md="3">
               <v-select
                 v-model="filters.type"
@@ -51,7 +74,6 @@
               />
             </v-col>
 
-            <!-- Genre Filter -->
             <v-col cols="12" sm="6" md="3">
               <v-select
                 v-model="filters.genre"
@@ -63,7 +85,6 @@
               />
             </v-col>
 
-            <!-- Runtime Filter (Movies only) -->
             <v-col cols="12" sm="6" md="3">
               <v-select
                 v-model="filters.runtime"
@@ -76,7 +97,6 @@
               />
             </v-col>
 
-            <!-- Decade Filter -->
             <v-col cols="12" sm="6" md="3">
               <v-select
                 v-model="filters.decade"
@@ -105,7 +125,6 @@
         </v-card-text>
       </v-card>
 
-      <!-- FIXED: Pick Button with Centered Text -->
       <v-row v-if="!pickedMedia" justify="center" class="my-12">
         <v-col cols="12" sm="8" md="6" class="text-center">
           <v-btn
@@ -127,10 +146,8 @@
         </v-col>
       </v-row>
 
-      <!-- Picked Media Card -->
       <v-card v-if="pickedMedia" class="picked-card mb-6" elevation="8">
         <v-row no-gutters>
-          <!-- Backdrop/Poster -->
           <v-col cols="12">
             <div class="picked-hero">
               <v-img
@@ -183,15 +200,12 @@
             </div>
           </v-col>
 
-          <!-- Details -->
           <v-col cols="12">
             <v-card-text class="pa-6">
-              <!-- Plot -->
               <p v-if="pickedMedia.plot" class="text-h6 mb-4" style="line-height: 1.6;">
                 {{ pickedMedia.plot }}
               </p>
 
-              <!-- Genres -->
               <div v-if="pickedMedia.genres" class="mb-4">
                 <v-chip
                   v-for="genre in getGenreArray(pickedMedia.genres)"
@@ -204,19 +218,16 @@
                 </v-chip>
               </div>
 
-              <!-- Director/Creator -->
               <p v-if="pickedMedia.director" class="text-body-1 mb-2">
                 <strong>{{ pickedMedia.mediaType === 'tv' ? 'Created by' : 'Director' }}:</strong> 
                 {{ pickedMedia.director }}
               </p>
 
-              <!-- Cast -->
               <p v-if="pickedMedia.cast && pickedMedia.cast.length > 0" class="text-body-1 mb-4">
                 <strong>Cast:</strong> 
                 {{ pickedMedia.cast.slice(0, 5).map(c => c.name).join(', ') }}
               </p>
 
-              <!-- Action Buttons -->
               <v-divider class="my-4" />
               <v-row>
                 <v-col cols="12" sm="6">
@@ -258,7 +269,6 @@
         </v-row>
       </v-card>
 
-      <!-- Quick Stats -->
       <v-row v-if="!pickedMedia">
         <v-col cols="12" sm="6" md="3">
           <v-card variant="outlined">
@@ -295,7 +305,6 @@
       </v-row>
     </div>
 
-    <!-- Rating Dialog -->
     <v-dialog v-model="showRatingDialog" max-width="500">
       <v-card>
         <v-card-title>Rate {{ pickedMedia?.title }}</v-card-title>
@@ -318,7 +327,6 @@
             class="mt-4"
           />
 
-          <!-- TV-specific -->
           <v-text-field
             v-if="pickedMedia?.mediaType === 'tv' && pickedMedia?.numberOfSeasons"
             v-model.number="seasonsWatched"
@@ -511,7 +519,8 @@ export default {
         genre: null,
         runtime: null,
         decade: null,
-      };
+      },
+      this.loadWatchlist();
     },
     
     markAsWatched() {
@@ -568,6 +577,26 @@ export default {
 .random-picker {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+/* NEW: Dashed border for empty state */
+.empty-dashed-border {
+  border: 2px dashed rgba(var(--v-theme-on-surface), 0.2) !important;
+}
+
+/* NEW: Background circle for icon */
+.icon-bg-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: rgba(var(--v-theme-primary), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-4 {
+  gap: 16px;
 }
 
 /* FIXED: Button with centered text */
