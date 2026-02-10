@@ -547,27 +547,27 @@ export default {
 .media-card:hover { transform: translateY(-8px); }
 .poster-container { position: relative; aspect-ratio: 2/3; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
 
-/* Top scrim — slim to avoid covering poster text/art */
+/* Slim scrim for top-overlay */
 .top-scrim {
   position: absolute; top: 0; left: 0; right: 0;
-  height: 44px; /* reduced from 60px */
+  height: 44px;
   background: linear-gradient(
     to bottom,
-    rgba(0,0,0,0.8) 0%,
-    rgba(0,0,0,0.35) 70%,
-    rgba(0,0,0,0) 100%
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.35) 70%,
+    rgba(0, 0, 0, 0) 100%
   );
   z-index: 1;
 }
 
-/* Overlay for badges — pointer-events:none so card remains clickable everywhere */
+/* Badge overlay container */
 .overlay-content {
   position: absolute; top: 0; left: 0; right: 0;
   z-index: 2;
   pointer-events: none;
 }
 
-/* Corner pinning (≈1.5px inset) */
+/* Corner pinning */
 .badge-type--corner {
   position: absolute;
   top: 1.5px;
@@ -586,35 +586,64 @@ export default {
 .gold-text { color: #FFC107 !important; }
 
 .badge-type {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 20px; min-width: 20px; padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 20px;
+  padding: 0 4px;
   border-radius: 4px;
-  font-size: 10px; line-height: 1; font-weight: 800; letter-spacing: 0.3px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.3px;
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.6);
   border: 1px solid rgba(255,255,255,0.14);
-  background: #1976D2; /* default movie color */
+  background: #1976D2;
 }
 .badge-type--movie { background: #1976D2; }
 .badge-type--tv { background: #7B1FA2; }
 
+/* Rating + Watchlist corner badges */
 .badge-rating,
 .badge-watchlist {
-  display: inline-flex; align-items: center;
-  height: 20px; padding: 0 4px; border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 4px;
   border: 1px solid rgba(255,255,255,0.12);
   box-shadow: 0 2px 8px rgba(0,0,0,0.8);
-  background: #121212; color: #fff;
+  background: #121212;
+  color: #fff;
 }
 
-.badge-rating__value { font-size: 10px; font-weight: 800; line-height: 1; }
+.badge-rating__value {
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
 
+/* WATCHLIST BADGE — FIXED TO BE NARROWER */
 .badge-watchlist {
-  background: rgba(33,150,243,0.12); /* info tonal */
+  background: rgba(33,150,243,0.12);
   box-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
-.badge-watchlist__icon { color: currentColor; margin-right: 4px; }
-.badge-watchlist__text { font-size: 11px; font-weight: 800; line-height: 1; opacity: 0.9; }
+
+/* FIX: make bookmark container narrower + remove extra spacing */
+.badge-watchlist {
+  padding: 0 2px !important;   /* was 0 4px / 0 5px */
+}
+.badge-watchlist__icon {
+  margin: 0 !important;        /* removes leftover 4px margin */
+}
+.badge-watchlist__text {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0.9;
+}
 
 /* List View Hover Styling */
 .list-item-hoverable { transition: background-color 0.2s ease; }
@@ -622,32 +651,34 @@ export default {
 
 /* ---- Mobile tuning ---- */
 @media (max-width: 600px) {
-  /* Make chips’ internal text compact when used in list view rows */
   .type-label .v-chip__content,
   .rating-label .v-chip__content,
   .watchlist-label .v-chip__content {
     font-size: 11px; line-height: 1;
   }
 
-  /* Corner badges slightly smaller on mobile */
   .badge-type,
   .badge-rating,
   .badge-watchlist {
-    height: 18px; padding: 0 5px; border-radius: 5px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 5px;
   }
-  .badge-rating__value,
-  .badge-watchlist__text { font-size: 10px; }
 
-  /* Avoid big lift on touch — gentler motion */
+  .badge-rating__value,
+  .badge-watchlist__text {
+    font-size: 10px;
+  }
+
+  /* Touch-friendly card hover */
   .media-card:hover { transform: translateY(-4px); }
 }
 
-/* ---- List view: mobile layout helpers ---- */
+/* ---- List view mobile layout ---- */
 @media (max-width: 600px) {
-  /* Clamp long titles on mobile */
   .list-title--clamp {
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* keep at 2 lines as per current setup */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.15;
@@ -657,28 +688,31 @@ export default {
     display: flex; align-items: center;
     margin-top: 6px; gap: 6px;
   }
+
   .list-meta-row .spacer { flex: 1 1 auto; }
 
-  /* Compact chips in the mobile meta row */
   .rating-label,
   .watchlist-label {
-    height: 22px; padding: 0 8px; border-radius: 6px;
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 6px;
   }
+
   .rating-label .v-chip__content,
   .watchlist-label .v-chip__content {
     font-size: 12px; line-height: 1;
   }
 }
 
-/* Desktop tidying: keep watchlist icon-only in append slot */
+/* Desktop: keep bookmark icon-only in list view append */
 @media (min-width: 601px) {
   .rating-label .v-chip__content { font-size: 13px; }
-  .watchlist-label .v-chip__content { font-size: 0; } /* hide any text, icon-only */
+  .watchlist-label .v-chip__content { font-size: 0; }
   .watchlist-label .v-icon { margin-right: 0; }
 }
 
-/* List view spacing and title rhythm */
-.list-avatar { margin-right: 10px !important; } /* tighter than mr-3 if needed */
+/* List view spacing + Title rhythm */
+.list-avatar { margin-right: 10px !important; }
 .list-title { line-height: 1.25; }
 
 /* Modal Styling */
