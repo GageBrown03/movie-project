@@ -1,5 +1,5 @@
 <template>
-  <div class="all-media">
+  <div class="all-media ">
     <v-row class="mb-4 align-center" no-gutters>
       <v-col cols="12" sm="8" md="6">
         <v-text-field
