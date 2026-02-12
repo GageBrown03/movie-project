@@ -1,6 +1,6 @@
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from src.models import db, Media, MediaType, MediaStatus
+from src.models import db, Media, MediaType, MediaStatus, Activity
 from src.routes.activity_routes import create_activity, check_milestones
 from src.utils.actor_utils import add_cast_to_media
 
@@ -160,7 +160,7 @@ def create_media():
             user_id=user_id,
             activity_type=activity_type,
             media_id=new_media.media_id,
-            data={'rating': new_media.rating} if new_media.rating else None
+            metadata={'rating': new_media.rating} if new_media.rating else None
         )
         
         # Check for milestones
@@ -238,7 +238,7 @@ def update_media(media_id: int):
             user_id=user_id,
             activity_type='rating',
             media_id=media.media_id,
-            data={'rating': media.rating}
+            metadata={'rating': media.rating}
         )
     
     return jsonify(media.to_dict(include_cast=True))
@@ -254,6 +254,11 @@ def delete_media(media_id: int):
     if not existing_media:
         return jsonify({'error': 'Media not found or unauthorized'}), 404
     
+    # FIXED: Delete all activities related to this media
+    Activity.query.filter_by(media_id=media_id).delete()
+    
+    # Delete the media
     db.session.delete(existing_media)
     db.session.commit()
+    
     return jsonify(existing_media.to_dict())

@@ -28,10 +28,15 @@
       
       <!-- Menu Items -->
       <v-list-item to="/settings/privacy" prepend-icon="mdi-shield-account">
-        <v-list-item-title> Settings</v-list-item-title>
+        <v-list-item-title>Privacy Settings</v-list-item-title>
       </v-list-item>
       
-      
+      <v-list-item prepend-icon="mdi-cog">
+        <v-list-item-title>Account Settings</v-list-item-title>
+        <template v-slot:append>
+          <v-chip size="x-small" color="grey" variant="text">Soon</v-chip>
+        </template>
+      </v-list-item>
       
       <v-divider />
       
@@ -52,7 +57,7 @@
 </template>
 
 <script>
-import { mediaAPI } from '@/services/api-production';
+import { authAPI, mediaAPI } from '@/services/api-production';
 
 export default {
   name: 'UserMenu',
@@ -61,7 +66,7 @@ export default {
   
   data() {
     return {
-      username: '',
+      username: 'User',
       stats: {
         total: 0,
         watched: 0,
@@ -82,22 +87,21 @@ export default {
   },
   
   methods: {
-    loadUserInfo() {
-      // Get username from localStorage or JWT
-      const storedUsername = localStorage.getItem('username');
-      if (storedUsername) {
-        this.username = storedUsername;
-      } else {
-        // Fallback: decode JWT to get username
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            this.username = payload.sub || payload.username || 'User';
-            localStorage.setItem('username', this.username);
-          } catch (e) {
-            this.username = 'User';
-          }
+    async loadUserInfo() {
+      try {
+        // FIXED: Use the /auth/me endpoint to get current user
+        const user = await authAPI.getCurrentUser();
+        this.username = user.username || 'User';
+        
+        // Save to localStorage for faster future loads
+        localStorage.setItem('username', this.username);
+      } catch (err) {
+        console.error('Error loading user info:', err);
+        
+        // Fallback to localStorage if API fails
+        const storedUsername = localStorage.getItem('username');
+        if (storedUsername) {
+          this.username = storedUsername;
         }
       }
     },

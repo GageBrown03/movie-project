@@ -207,15 +207,15 @@ export default {
     },
 
     isClickable() {
-      return true; // All activities clickable
+      return this.activity.media && this.activity.media.mediaId; // Only media activities clickable
     }
   },
 
   methods: {
     handleCardClick() {
-      // Always navigate to user profile
-      if (this.activity.user.username) {
-        this.$router.push(`/user/${this.activity.user.username}`);
+      // Navigate to media detail (only for rating/watchlist activities)
+      if (this.activity.media && this.activity.media.mediaId) {
+        this.$router.push(`/media/${this.activity.media.mediaId}`);
       }
     },
 
