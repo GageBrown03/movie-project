@@ -8,11 +8,10 @@
       cover
       @click="$emit('view-details', item)"
     >
-      <!-- In collection badge -->
       <div v-if="isInCollection" class="collection-badge">
-        <v-chip size="small" color="success" variant="flat">
-          <v-icon start size="small">mdi-check</v-icon>
-          In Library
+        <v-chip size="small" :color="collectionStatus.color" variant="flat">
+          <v-icon start size="small">{{ collectionStatus.icon }}</v-icon>
+          {{ collectionStatus.label }}
         </v-chip>
       </div>
     </v-img>
@@ -28,7 +27,6 @@
       </div>
     </v-img>
 
-    <!-- Title -->
     <v-card-text class="pa-2 pb-0">
       <p class="text-caption font-weight-bold text-truncate mb-1" :title="item.title">
         {{ item.title }}
@@ -38,7 +36,6 @@
       </p>
     </v-card-text>
 
-    <!-- Quick Actions -->
     <v-card-actions v-if="!isInCollection" class="pa-2 pt-0 flex-column gap-1">
       <v-btn
         size="x-small"
@@ -65,7 +62,6 @@
       </v-btn>
     </v-card-actions>
 
-    <!-- Already in collection -->
     <v-card-actions v-else class="pa-2 pt-0">
       <v-btn
         size="x-small"
@@ -78,70 +74,80 @@
     </v-card-actions>
   </v-card>
 
-  <!-- Mobile List View -->
-  <v-list-item v-else class="mobile-quick-item mb-2 rounded-lg border">
-    <template v-slot:prepend>
-      <v-avatar size="80" rounded class="mr-3" @click="$emit('view-details', item)">
-        <v-img v-if="item.posterUrl" :src="item.posterUrl" cover />
-        <v-icon v-else size="40">mdi-movie-outline</v-icon>
-      </v-avatar>
-    </template>
-
-    <v-list-item-title class="text-body-2 font-weight-bold">
-      {{ item.title }}
-      <v-chip
-        v-if="isInCollection"
-        size="x-small"
-        color="success"
-        class="ml-1"
-      >
-        In Library
-      </v-chip>
-    </v-list-item-title>
-    
-    <v-list-item-subtitle class="text-caption">
-      {{ item.mediaType === 'movie' ? 'Movie' : 'TV' }} • {{ item.releaseYear || 'N/A' }}
-    </v-list-item-subtitle>
-
-    <!-- Mobile Quick Actions -->
-    <template v-slot:append>
-      <div class="d-flex flex-column gap-1">
-        <v-btn
-          v-if="!isInCollection"
-          size="x-small"
-          color="info"
-          icon
-          variant="tonal"
-          @click="$emit('quick-add-watchlist', item)"
-          :loading="loading === 'watchlist'"
-        >
-          <v-icon size="16">mdi-bookmark-plus</v-icon>
-        </v-btn>
-        
-        <v-btn
-          v-if="!isInCollection"
-          size="x-small"
-          color="primary"
-          icon
-          variant="tonal"
-          @click="$emit('quick-add-rated', item)"
-          :loading="loading === 'rated'"
-        >
-          <v-icon size="16">mdi-star</v-icon>
-        </v-btn>
-        
-        <v-btn
-          v-if="isInCollection"
-          size="x-small"
-          icon
-          variant="outlined"
-          @click="$emit('view-existing', item)"
-        >
-          <v-icon size="16">mdi-eye</v-icon>
-        </v-btn>
+  <!-- IMPROVED: Mobile Card View with Title -->
+  <v-card v-else class="media-quick-card-mobile" hover @click="handleMobileClick">
+    <v-img
+      v-if="item.posterUrl"
+      :src="item.posterUrl"
+      :aspect-ratio="0.7"
+      cover
+      class="mobile-poster"
+    >
+      <!-- Status badge on poster -->
+      <div v-if="isInCollection" class="collection-badge-mobile">
+        <v-chip size="x-small" :color="collectionStatus.color" variant="flat">
+          <v-icon size="12">{{ collectionStatus.icon }}</v-icon>
+        </v-chip>
       </div>
-    </template>
-  </v-list-item>
+    </v-img>
+
+    <v-img
+      v-else
+      src="/placeholder-poster.png"
+      :aspect-ratio="0.7"
+      class="mobile-poster"
+    >
+      <div class="d-flex align-center justify-center fill-height bg-grey-darken-3">
+        <v-icon size="48" color="grey">mdi-image-off</v-icon>
+      </div>
+    </v-img>
+
+    <!-- Title underneath poster -->
+    <v-card-text class="pa-2">
+      <p class="text-caption font-weight-bold mobile-title" :title="item.title">
+        {{ item.title }}
+      </p>
+      <p class="text-caption text-medium-emphasis">
+        {{ item.releaseYear || 'N/A' }}
+      </p>
+    </v-card-text>
+
+    <!-- Quick action buttons -->
+    <v-card-actions v-if="!isInCollection" class="pa-2 pt-0 justify-center gap-1">
+      <v-btn
+        size="x-small"
+        color="info"
+        icon
+        variant="tonal"
+        @click.stop="$emit('quick-add-watchlist', item)"
+        :loading="loading === 'watchlist'"
+      >
+        <v-icon size="16">mdi-bookmark-plus</v-icon>
+      </v-btn>
+      
+      <v-btn
+        size="x-small"
+        color="primary"
+        icon
+        variant="tonal"
+        @click.stop="$emit('quick-add-rated', item)"
+        :loading="loading === 'rated'"
+      >
+        <v-icon size="16">mdi-star</v-icon>
+      </v-btn>
+    </v-card-actions>
+
+    <v-card-actions v-else class="pa-2 pt-0">
+      <v-btn
+        size="x-small"
+        variant="outlined"
+        block
+        @click.stop="$emit('view-existing', item)"
+      >
+        View
+      </v-btn>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <script>
@@ -157,8 +163,12 @@ export default {
       type: Boolean,
       default: false
     },
+    collectionInfo: {
+      type: Object,
+      default: null
+    },
     loading: {
-      type: String, // 'watchlist' | 'rated' | null
+      type: String,
       default: null
     },
     isMobile: {
@@ -172,11 +182,46 @@ export default {
     'quick-add-rated',
     'view-details',
     'view-existing'
-  ]
+  ],
+
+  computed: {
+    collectionStatus() {
+      if (!this.collectionInfo) {
+        return { icon: 'mdi-check', label: 'In Library', color: 'success' };
+      }
+
+      if (this.collectionInfo.type === 'rated') {
+        return {
+          icon: 'mdi-star',
+          label: `${this.collectionInfo.rating}★`,
+          color: 'success'
+        };
+      } else if (this.collectionInfo.type === 'watchlist') {
+        return {
+          icon: 'mdi-bookmark',
+          label: 'Watchlist',
+          color: 'info'
+        };
+      }
+
+      return { icon: 'mdi-check', label: 'In Library', color: 'success' };
+    }
+  },
+
+  methods: {
+    handleMobileClick() {
+      if (!this.isInCollection) {
+        this.$emit('quick-add-rated', this.item);
+      } else {
+        this.$emit('view-existing', this.item);
+      }
+    }
+  }
 };
 </script>
 
 <style scoped>
+/* Desktop card */
 .media-quick-card {
   cursor: pointer;
   transition: all 0.2s ease;
@@ -195,11 +240,40 @@ export default {
   justify-content: center;
 }
 
-.mobile-quick-item {
-  background: rgb(var(--v-theme-surface));
-}
-
 .gap-1 {
   gap: 4px;
+}
+
+/* IMPROVED: Mobile card styling */
+.media-quick-card-mobile {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.media-quick-card-mobile:active {
+  transform: scale(0.98);
+}
+
+.mobile-poster {
+  border-radius: 8px 8px 0 0;
+}
+
+.collection-badge-mobile {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.mobile-title {
+  /* Show 2 lines max on mobile */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+  min-height: 2.6em;
 }
 </style>

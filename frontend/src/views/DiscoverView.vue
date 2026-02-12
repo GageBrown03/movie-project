@@ -1,13 +1,11 @@
 <template>
   <div class="discover-view">
-    <!-- Header -->
     <v-row class="mb-6 align-center">
       <v-col>
         <h1 class="text-h3 font-weight-bold">Discover</h1>
       </v-col>
     </v-row>
 
-    <!-- Loading State -->
     <v-row v-if="loading" justify="center" class="my-12">
       <v-progress-circular indeterminate size="64" color="primary" />
     </v-row>
@@ -32,7 +30,8 @@
           >
             <media-quick-add-card
               :item="media"
-              :is-in-collection="isInCollection(media.tmdbId)"
+              :is-in-collection="!!getLibraryStatus(media.tmdbId)"
+              :collection-info="getLibraryStatus(media.tmdbId)"
               :loading="loadingStates[media.tmdbId]"
               :is-mobile="isMobile"
               @quick-add-watchlist="quickAddToWatchlist"
@@ -65,7 +64,8 @@
           >
             <media-quick-add-card
               :item="media"
-              :is-in-collection="isInCollection(media.tmdbId)"
+              :is-in-collection="!!getLibraryStatus(media.tmdbId)"
+              :collection-info="getLibraryStatus(media.tmdbId)"
               :loading="loadingStates[media.tmdbId]"
               :is-mobile="isMobile"
               @quick-add-watchlist="quickAddToWatchlist"
@@ -95,7 +95,8 @@
           >
             <media-quick-add-card
               :item="media"
-              :is-in-collection="isInCollection(media.tmdbId)"
+              :is-in-collection="!!getLibraryStatus(media.tmdbId)"
+              :collection-info="getLibraryStatus(media.tmdbId)"
               :loading="loadingStates[media.tmdbId]"
               :is-mobile="isMobile"
               @quick-add-watchlist="quickAddToWatchlist"
@@ -125,7 +126,8 @@
           >
             <media-quick-add-card
               :item="media"
-              :is-in-collection="isInCollection(media.tmdbId)"
+              :is-in-collection="!!getLibraryStatus(media.tmdbId)"
+              :collection-info="getLibraryStatus(media.tmdbId)"
               :loading="loadingStates[media.tmdbId]"
               :is-mobile="isMobile"
               @quick-add-watchlist="quickAddToWatchlist"
@@ -155,7 +157,8 @@
           >
             <media-quick-add-card
               :item="media"
-              :is-in-collection="isInCollection(media.tmdbId)"
+              :is-in-collection="!!getLibraryStatus(media.tmdbId)"
+              :collection-info="getLibraryStatus(media.tmdbId)"
               :loading="loadingStates[media.tmdbId]"
               :is-mobile="isMobile"
               @quick-add-watchlist="quickAddToWatchlist"
@@ -181,7 +184,7 @@
       </v-empty-state>
     </div>
 
-    <!-- Rating Dialog (reused from AddMediaDialog) -->
+    <!-- Rating Dialog -->
     <v-dialog v-model="showRatingDialog" max-width="500">
       <v-card v-if="itemToRate">
         <v-card-title>Rate {{ itemToRate.title }}</v-card-title>
@@ -223,7 +226,7 @@
           <v-btn
             color="primary"
             @click="saveWithRating"
-            :loading="saving"
+            :loading="savingRating"
             :disabled="!userRating"
           >
             Add to Library
@@ -235,6 +238,9 @@
     <!-- Success Snackbar -->
     <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000">
       {{ snackbarMessage }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="showSnackbar = false">Close</v-btn>
+      </template>
     </v-snackbar>
   </div>
 </template>
@@ -257,9 +263,8 @@ export default {
     return {
       loading: false,
       userCollection: [],
-      loadingStates: {}, // Track which items are being added
+      loadingStates: {},
       
-      // Recommendation categories
       fiveStarMedia: [],
       fiveStarRecommendations: [],
       favoriteGenre: null,
@@ -269,14 +274,12 @@ export default {
       trendingRecommendations: [],
       hiddenGems: [],
       
-      // Rating dialog
       showRatingDialog: false,
       itemToRate: null,
       userRating: null,
       userNotes: '',
-      saving: false,
+      savingRating: false,
 
-      // Snackbar
       showSnackbar: false,
       snackbarMessage: '',
       snackbarColor: 'success'
@@ -305,13 +308,9 @@ export default {
       this.loading = true;
       
       try {
-        // Load user collection
         this.userCollection = await mediaAPI.getAll();
-        
-        // Analyze collection
         await this.analyzeFavorites();
         
-        // Load different recommendation types in parallel
         await Promise.all([
           this.loadFiveStarRecommendations(),
           this.loadGenreRecommendations(),
@@ -328,10 +327,8 @@ export default {
     },
     
     analyzeFavorites() {
-      // Get 5-star rated media
       this.fiveStarMedia = this.userCollection.filter(m => m.rating === 5);
       
-      // Find favorite genre
       const genreCounts = {};
       this.userCollection.forEach(m => {
         if (m.genres) {
@@ -346,7 +343,6 @@ export default {
         .sort((a, b) => b[1] - a[1])[0];
       this.favoriteGenre = topGenre ? topGenre[0] : null;
       
-      // Find top actors
       const actorCounts = {};
       this.userCollection.forEach(m => {
         if (m.cast && Array.isArray(m.cast)) {
@@ -383,7 +379,7 @@ export default {
           );
           
           this.fiveStarRecommendations = similar.filter(
-            item => !this.isInCollection(item.tmdbId)
+            item => !this.getLibraryStatus(item.tmdbId)
           );
         } catch (err) {
           console.error('Error loading 5-star recommendations:', err);
@@ -401,7 +397,7 @@ export default {
         const recommendations = await recommendationsAPI.getByGenre(genreId, 'movie');
         
         this.genreRecommendations = recommendations.filter(
-          item => !this.isInCollection(item.tmdbId)
+          item => !this.getLibraryStatus(item.tmdbId)
         );
       } catch (err) {
         console.error('Error loading genre recommendations:', err);
@@ -417,7 +413,7 @@ export default {
         const recommendations = await recommendationsAPI.getByActor(topActor.id);
         
         this.actorRecommendations = recommendations.filter(
-          item => !this.isInCollection(item.tmdbId)
+          item => !this.getLibraryStatus(item.tmdbId)
         );
       } catch (err) {
         console.error('Error loading actor recommendations:', err);
@@ -429,7 +425,7 @@ export default {
         const trending = await recommendationsAPI.getTrending('all', 'week');
         
         this.trendingRecommendations = trending.filter(
-          item => !this.isInCollection(item.tmdbId)
+          item => !this.getLibraryStatus(item.tmdbId)
         );
       } catch (err) {
         console.error('Error loading trending:', err);
@@ -441,7 +437,7 @@ export default {
         const recommendations = await recommendationsAPI.getByGenre(18, 'movie');
         
         this.hiddenGems = recommendations
-          .filter(item => !this.isInCollection(item.tmdbId))
+          .filter(item => !this.getLibraryStatus(item.tmdbId))
           .filter(item => item.tmdbRating >= 7.5)
           .slice(0, 12);
       } catch (err) {
@@ -449,13 +445,21 @@ export default {
       }
     },
     
-    isInCollection(tmdbId) {
-      return this.userCollection.some(m => m.tmdbId === tmdbId);
+    // IMPROVED: Get library status with rating info
+    getLibraryStatus(tmdbId) {
+      const existing = this.userCollection.find(m => m.tmdbId === tmdbId);
+      if (!existing) return null;
+      
+      if (existing.status === 'watched' && existing.rating) {
+        return { type: 'rated', rating: existing.rating };
+      } else if (existing.status === 'want_to_watch') {
+        return { type: 'watchlist' };
+      }
+      return { type: 'in-library' };
     },
     
-    // Quick add to watchlist
     async quickAddToWatchlist(item) {
-      this.loadingStates[item.tmdbId] = 'watchlist'  // Direct assignment
+      this.loadingStates[item.tmdbId] = 'watchlist';
 
       try {
         const mediaData = {
@@ -479,11 +483,10 @@ export default {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        delete this.loadingStates[item.tmdbId]         // Direct delete
+        delete this.loadingStates[item.tmdbId];
       }
     },
 
-    // Open rating dialog
     openRatingDialog(item) {
       this.itemToRate = item;
       this.userRating = null;
@@ -498,21 +501,26 @@ export default {
       this.userNotes = '';
     },
 
-    // Save with rating
+    // FIXED: Store values before closing dialog
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
 
-      this.loadingStates[item.tmdbId] = 'watchlist'  // Direct assignment
-      this.saving = true;
+      // Store values BEFORE any async operations
+      const itemTitle = this.itemToRate.title;
+      const itemRating = this.userRating;
+      const itemTmdbId = this.itemToRate.tmdbId;
+      const itemNotes = this.userNotes;
+
+      this.savingRating = true;
 
       try {
         const mediaData = {
-          title: this.itemToRate.title,
+          title: itemTitle,
           media_type: this.itemToRate.mediaType,
-          tmdb_id: this.itemToRate.tmdbId,
+          tmdb_id: itemTmdbId,
           status: 'watched',
-          rating: this.userRating,
-          notes: this.userNotes || null,
+          rating: itemRating,
+          notes: itemNotes || null,
           release_year: this.itemToRate.releaseYear,
           plot: this.itemToRate.plot,
           poster_url: this.itemToRate.posterUrl,
@@ -523,15 +531,17 @@ export default {
         const created = await mediaAPI.create(mediaData);
         this.userCollection.push(created);
 
+        // Close dialog BEFORE showing message
         this.closeRatingDialog();
-        this.$router.push(`/media/${created.mediaId}`);
+        
+        // Use stored values (not this.itemToRate which is now null)
+        this.showMessage(`Rated "${itemTitle}" - ${itemRating} stars!`, 'success');
 
       } catch (err) {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        delete this.loadingStates[item.tmdbId]         // Direct delete
-        this.saving = false;
+        this.savingRating = false;
       }
     },
 

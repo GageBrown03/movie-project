@@ -4,6 +4,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, User, Friendship, FriendshipStatus
+from src.routes.activity_routes import create_activity
 from datetime import datetime
 
 friends = Blueprint('friends', __name__, url_prefix='/api/friends')
@@ -244,6 +245,22 @@ def accept_friend_request(friendship_id):
         friendship.status = FriendshipStatus.ACCEPTED
         friendship.accepted_at = datetime.utcnow()
         db.session.commit()
+        
+        # ACTIVITY TRACKING: Create activities for both users
+        # Activity for current user (accepter)
+        create_activity(
+            user_id=current_user_id,
+            activity_type='friend_added',
+            friend_user_id=friendship.user_id_1 if friendship.user_id_2 == current_user_id else friendship.user_id_2
+        )
+        
+        # Activity for requester
+        other_user_id = friendship.user_id_1 if friendship.user_id_2 == current_user_id else friendship.user_id_2
+        create_activity(
+            user_id=other_user_id,
+            activity_type='friend_added',
+            friend_user_id=current_user_id
+        )
         
         return jsonify({'message': 'Friend request accepted'}), 200
     except Exception as e:

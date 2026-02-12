@@ -81,12 +81,16 @@ from src.routes.friends import friends
 from src.routes.privacy import privacy
 from src.routes.compare import compare
 
+# Phase 3: Activity routes
+from src.routes.activity_routes import activity_bp
+
 app.register_blueprint(auth_router)
 app.register_blueprint(media_router)
 app.register_blueprint(tmdb_router)
 app.register_blueprint(friends)
 app.register_blueprint(privacy)
 app.register_blueprint(compare)
+app.register_blueprint(activity_bp)  # NEW
 
 print("✅ Blueprints registered:")
 print("  - auth_router")
@@ -95,6 +99,7 @@ print("  - tmdb_router")
 print("  - friends (/api/friends)")
 print("  - privacy (/api/privacy)")
 print("  - compare (/api/compare)")
+print("  - activity_bp (/api/activity)")  # NEW
 
 
 # ==========================================

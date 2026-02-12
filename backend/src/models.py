@@ -366,3 +366,58 @@ class MediaCast(db.Model):
         self.actor_id = actor_id
         self.character = character
         self.order = order
+        
+        
+class Activity(db.Model):
+    __tablename__ = 'activities'
+    
+    activity_id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
+    activity_type = db.Column(db.String(50), nullable=False)  # 'rating', 'watchlist', 'friend_added', 'milestone'
+    
+    # Related entity IDs (nullable - depends on activity type)
+    media_id = db.Column(db.Integer, db.ForeignKey('media.media_id'), nullable=True)
+    friend_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
+    
+    # Activity data (stored as JSON)
+    data = db.Column(db.JSON, nullable=True)  # rating value, milestone type, etc.
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='activities')
+    media = db.relationship('Media', backref='activities')
+    friend = db.relationship('User', foreign_keys=[friend_user_id])
+    
+    def to_dict(self):
+        """Convert activity to dictionary for API responses"""
+        result = {
+            'activityId': self.activity_id,
+            'userId': self.user_id,
+            'activityType': self.activity_type,
+            'data': self.data,
+            'createdAt': self.created_at.isoformat(),
+            'user': {
+                'userId': self.user.user_id,
+                'username': self.user.username
+            }
+        }
+        
+        # Add media details if present
+        if self.media:
+            result['media'] = {
+                'mediaId': self.media.media_id,
+                'title': self.media.title,
+                'mediaType': self.media.media_type,
+                'posterUrl': self.media.poster_url,
+                'releaseYear': self.media.release_year
+            }
+        
+        # Add friend details if present
+        if self.friend:
+            result['friend'] = {
+                'userId': self.friend.user_id,
+                'username': self.friend.username
+            }
+        
+        return result

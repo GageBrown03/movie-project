@@ -20,7 +20,6 @@
 
       <v-divider />
 
-      <!-- Search Section -->
       <v-card-text class="pa-4">
         <v-text-field
           v-model="searchQuery"
@@ -36,13 +35,11 @@
           :loading="searching"
         />
 
-        <!-- Loading State -->
         <div v-if="searching" class="text-center py-12">
           <v-progress-circular indeterminate size="64" color="primary" />
           <p class="text-body-1 mt-4">Searching TMDB...</p>
         </div>
 
-        <!-- Empty State -->
         <v-empty-state
           v-else-if="!searchResults.length && searchQuery && !searching"
           icon="mdi-magnify-close"
@@ -50,13 +47,12 @@
           text="Try a different search term"
         />
 
-        <!-- Results with Quick Actions -->
         <div v-else-if="searchResults.length" class="mt-4">
           <p class="text-caption text-medium-emphasis mb-3">
             {{ searchResults.length }} results found
           </p>
 
-          <!-- Desktop: Card Grid -->
+          <!-- Desktop Grid -->
           <v-row v-if="!isMobile">
             <v-col
               v-for="item in searchResults"
@@ -67,7 +63,6 @@
               lg="2"
             >
               <v-card class="result-card" hover>
-                <!-- Poster -->
                 <v-img
                   v-if="item.posterUrl"
                   :src="item.posterUrl"
@@ -75,11 +70,25 @@
                   cover
                   @click="viewDetails(item)"
                 >
-                  <!-- Already in collection badge -->
-                  <div v-if="isInCollection(item.tmdbId)" class="collection-badge">
-                    <v-chip size="small" color="success" variant="flat">
-                      <v-icon start size="small">mdi-check</v-icon>
-                      In Library
+                  <!-- IMPROVED: Better library status badges -->
+                  <div v-if="getLibraryStatus(item.tmdbId)" class="collection-badge">
+                    <v-chip
+                      v-if="getLibraryStatus(item.tmdbId).type === 'rated'"
+                      size="small"
+                      color="success"
+                      variant="flat"
+                    >
+                      <v-icon start size="small">mdi-star</v-icon>
+                      {{ getLibraryStatus(item.tmdbId).rating }}★
+                    </v-chip>
+                    <v-chip
+                      v-else
+                      size="small"
+                      color="info"
+                      variant="flat"
+                    >
+                      <v-icon start size="small">mdi-bookmark</v-icon>
+                      Watchlist
                     </v-chip>
                   </div>
                 </v-img>
@@ -95,7 +104,6 @@
                   </div>
                 </v-img>
 
-                <!-- Title -->
                 <v-card-text class="pa-2 pb-0">
                   <p class="text-caption font-weight-bold text-truncate mb-1" :title="item.title">
                     {{ item.title }}
@@ -105,10 +113,9 @@
                   </p>
                 </v-card-text>
 
-                <!-- Quick Action Buttons -->
                 <v-card-actions class="pa-2 pt-0">
                   <v-btn
-                    v-if="!isInCollection(item.tmdbId)"
+                    v-if="!getLibraryStatus(item.tmdbId)"
                     size="x-small"
                     color="info"
                     variant="tonal"
@@ -132,7 +139,7 @@
                 
                 <v-card-actions class="pa-2 pt-0">
                   <v-btn
-                    v-if="!isInCollection(item.tmdbId)"
+                    v-if="!getLibraryStatus(item.tmdbId)"
                     size="x-small"
                     color="primary"
                     variant="tonal"
@@ -147,7 +154,7 @@
             </v-col>
           </v-row>
 
-          <!-- Mobile: Compact List -->
+          <!-- Mobile List -->
           <v-list v-else class="mobile-results">
             <v-list-item
               v-for="item in searchResults"
@@ -163,13 +170,22 @@
 
               <v-list-item-title class="text-body-2 font-weight-bold">
                 {{ item.title }}
+                <!-- IMPROVED: Better status chips -->
                 <v-chip
-                  v-if="isInCollection(item.tmdbId)"
+                  v-if="getLibraryStatus(item.tmdbId)?.type === 'rated'"
                   size="x-small"
                   color="success"
                   class="ml-1"
                 >
-                  In Library
+                  {{ getLibraryStatus(item.tmdbId).rating }}★
+                </v-chip>
+                <v-chip
+                  v-else-if="getLibraryStatus(item.tmdbId)?.type === 'watchlist'"
+                  size="x-small"
+                  color="info"
+                  class="ml-1"
+                >
+                  Watchlist
                 </v-chip>
               </v-list-item-title>
               
@@ -177,11 +193,10 @@
                 {{ item.mediaType === 'movie' ? 'Movie' : 'TV' }} • {{ item.releaseYear }}
               </v-list-item-subtitle>
 
-              <!-- Mobile Quick Actions -->
               <template v-slot:append>
                 <div class="d-flex flex-column gap-1">
                   <v-btn
-                    v-if="!isInCollection(item.tmdbId)"
+                    v-if="!getLibraryStatus(item.tmdbId)"
                     size="x-small"
                     color="info"
                     icon
@@ -192,7 +207,7 @@
                     <v-icon size="16">mdi-bookmark-plus</v-icon>
                   </v-btn>
                   <v-btn
-                    v-if="!isInCollection(item.tmdbId)"
+                    v-if="!getLibraryStatus(item.tmdbId)"
                     size="x-small"
                     color="primary"
                     icon
@@ -202,7 +217,7 @@
                     <v-icon size="16">mdi-star</v-icon>
                   </v-btn>
                   <v-btn
-                    v-if="isInCollection(item.tmdbId)"
+                    v-if="getLibraryStatus(item.tmdbId)"
                     size="x-small"
                     icon
                     variant="outlined"
@@ -216,7 +231,6 @@
           </v-list>
         </div>
 
-        <!-- Initial State -->
         <v-empty-state
           v-else
           icon="mdi-movie-search"
@@ -269,7 +283,7 @@
           <v-btn
             color="primary"
             @click="saveWithRating"
-            :loading="loadingStates[itemToRate?.tmdbId] === 'rated'"
+            :loading="savingRating"
             :disabled="!userRating"
           >
             Add to Library
@@ -308,16 +322,15 @@ export default {
       searchQuery: '',
       searching: false,
       searchResults: [],
-      loadingStates: {}, // Vue 3: No need for $set
+      loadingStates: {},
       userCollection: [],
       
-      // Rating dialog
       showRatingDialog: false,
       itemToRate: null,
       userRating: null,
       userNotes: '',
+      savingRating: false,
       
-      // Snackbar
       showSnackbar: false,
       snackbarMessage: '',
       snackbarColor: 'success'
@@ -365,7 +378,6 @@ export default {
 
       try {
         const allResults = await tmdbAPI.search(this.searchQuery);
-        // FIXED: Increase from 12 to 30 results
         this.searchResults = allResults.slice(0, 30);
       } catch (err) {
         console.error('Search error:', err);
@@ -376,9 +388,20 @@ export default {
       }
     },
 
-    // FIXED: Quick add to watchlist (Vue 3 compatible)
+    // IMPROVED: Get library status with type and rating
+    getLibraryStatus(tmdbId) {
+      const existing = this.userCollection.find(m => m.tmdbId === tmdbId);
+      if (!existing) return null;
+      
+      if (existing.status === 'watched' && existing.rating) {
+        return { type: 'rated', rating: existing.rating };
+      } else if (existing.status === 'want_to_watch') {
+        return { type: 'watchlist' };
+      }
+      return { type: 'in-library' };
+    },
+
     async quickAdd(item, status) {
-      // Vue 3: Direct assignment instead of $set
       this.loadingStates[item.tmdbId] = 'watchlist';
 
       try {
@@ -395,21 +418,15 @@ export default {
         };
 
         const created = await mediaAPI.create(mediaData);
-
-        // Update local collection
         this.userCollection.push(created);
-
-        // Show success message
+        
         this.showMessage(`Added "${item.title}" to watchlist!`, 'success');
-
-        // Emit event
         this.$emit('media-added', created);
 
       } catch (err) {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        // Vue 3: Direct delete instead of $delete
         delete this.loadingStates[item.tmdbId];
       }
     },
@@ -428,20 +445,24 @@ export default {
       this.userNotes = '';
     },
 
-    // FIXED: Save with rating - STAY ON PAGE
+    // FIXED: Store title/rating before closing dialog
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
 
-      // Vue 3: Direct assignment
-      this.loadingStates[this.itemToRate.tmdbId] = 'rated';
+      // Store values BEFORE closing dialog
+      const itemTitle = this.itemToRate.title;
+      const itemRating = this.userRating;
+      const itemTmdbId = this.itemToRate.tmdbId;
+
+      this.savingRating = true;
 
       try {
         const mediaData = {
           title: this.itemToRate.title,
           media_type: this.itemToRate.mediaType,
-          tmdb_id: this.itemToRate.tmdbId,
+          tmdb_id: itemTmdbId,
           status: 'watched',
-          rating: this.userRating,
+          rating: itemRating,
           notes: this.userNotes || null,
           release_year: this.itemToRate.releaseYear,
           plot: this.itemToRate.plot,
@@ -451,35 +472,26 @@ export default {
         };
 
         const created = await mediaAPI.create(mediaData);
-
-        // Update collection
         this.userCollection.push(created);
 
-        // FIXED: Don't navigate - stay on page!
-        // Show success message
-        this.showMessage(`Rated "${this.itemToRate.title}" - ${this.userRating} stars!`, 'success');
-
-        // Close dialog
+        // Close dialog FIRST
         this.closeRatingDialog();
-
-        // Emit event
+        
+        // THEN show message (using stored values)
+        this.showMessage(`Rated "${itemTitle}" - ${itemRating} stars!`, 'success');
+        
         this.$emit('media-added', created);
 
       } catch (err) {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        // Vue 3: Direct delete
-        delete this.loadingStates[this.itemToRate.tmdbId];
+        this.savingRating = false;
       }
     },
 
     viewDetails(item) {
       this.openRatingDialog(item);
-    },
-
-    isInCollection(tmdbId) {
-      return this.userCollection.some(m => m.tmdbId === tmdbId);
     },
 
     goToExisting(tmdbId) {
@@ -517,10 +529,9 @@ export default {
 </script>
 
 <style scoped>
-/* FIXED: Better positioning - covers search bar */
 :deep(.add-media-dialog) {
   align-self: flex-start !important;
-  margin-top: 80px !important; /* Below header */
+  margin-top: 80px !important;
 }
 
 .dialog-card {

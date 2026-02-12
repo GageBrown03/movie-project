@@ -14,63 +14,83 @@
           class="search-bar"
         />
       </v-col>
-      <v-spacer />
     </v-row>
 
+    <!-- IMPROVED: Mobile-friendly filters -->
     <v-row class="mb-6 align-center" no-gutters>
-      <div class="d-flex flex-wrap align-center gap-3 w-100">
-        <v-select
-          v-model="filterType"
-          :items="typeOptions"
-          label="Type"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-          style="max-width: 130px;"
-        />
-        <v-select
-          v-model="filterRating"
-          :items="ratingOptions"
-          label="Rating"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-          style="max-width: 130px;"
-        />
-        <v-select
-          v-model="sortBy"
-          :items="sortOptions"
-          label="Sort"
-          variant="outlined"
-          density="compact"
-          hide-details
-          style="max-width: 170px;"
-        />
+      <v-col cols="12">
+        <div class="filters-container">
+          <!-- IMPROVED: Horizontal scroll on mobile, flex-wrap on desktop -->
+          <div :class="['filters-row', { 'filters-mobile': isMobile }]">
+            <v-select
+              v-model="filterType"
+              :items="typeOptions"
+              label="Type"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              class="filter-select"
+            />
 
-        <v-btn 
-          v-if="hasActiveFilters" 
-          variant="text" 
-          color="grey" 
-          size="small" 
-          prepend-icon="mdi-filter-off-outline"
-          @click="clearFilters"
-          class="text-none"
-        >
-          Reset
-        </v-btn>
+            <!-- NEW: Status Filter -->
+            <v-select
+              v-model="filterStatus"
+              :items="statusOptions"
+              label="Status"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              class="filter-select"
+            />
 
-        <v-spacer />
+            <v-select
+              v-model="filterRating"
+              :items="ratingOptions"
+              label="Rating"
+              variant="outlined"
+              density="compact"
+              hide-details
+              clearable
+              class="filter-select"
+            />
 
-        <div class="d-flex align-center">
-          <span class="text-caption text-grey mr-4">{{ filteredMedia.length }} items</span>
-          <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary">
-            <v-btn value="grid" icon="mdi-view-grid-outline" size="small" />
-            <v-btn value="list" icon="mdi-view-list" size="small" />
-          </v-btn-toggle>
+            <v-select
+              v-model="sortBy"
+              :items="sortOptions"
+              label="Sort"
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="filter-select"
+            />
+
+            <v-btn 
+              v-if="hasActiveFilters" 
+              variant="text" 
+              color="grey" 
+              size="small" 
+              prepend-icon="mdi-filter-off-outline"
+              @click="clearFilters"
+              class="text-none filter-reset"
+            >
+              Reset
+            </v-btn>
+          </div>
+
+          <v-spacer v-if="!isMobile" />
+
+          <!-- View toggle & count -->
+          <div class="view-controls">
+            <span class="text-caption text-grey mr-3">{{ filteredMedia.length }} items</span>
+            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary">
+              <v-btn value="grid" icon="mdi-view-grid-outline" size="small" />
+              <v-btn value="list" icon="mdi-view-list" size="small" />
+            </v-btn-toggle>
+          </div>
         </div>
-      </div>
+      </v-col>
     </v-row>
     
     <v-row v-if="loading" justify="center" class="my-12">
@@ -145,12 +165,9 @@
                 aspect-ratio="2/3"
                 cover
               >
-                <!-- Slim top scrim -->
                 <div class="top-scrim"></div>
 
-                <!-- Corner badges -->
                 <div class="overlay-content">
-                  <!-- Top-left: Type badge -->
                   <div
                     class="badge-type"
                     :class="media.mediaType === 'movie' ? 'badge-type--movie' : 'badge-type--tv'"
@@ -158,9 +175,7 @@
                     {{ media.mediaType === 'movie' ? 'M' : 'TV' }}
                   </div>
 
-                  <!-- Top-right: Rating or Watchlist -->
                   <div class="badge-corner-right">
-                    <!-- Rating badge -->
                     <div v-if="media.rating" class="badge-rating">
                       <v-icon class="badge-rating__star" color="#FFC107">
                         mdi-star
@@ -170,7 +185,6 @@
                       </span>
                     </div>
 
-                    <!-- Watchlist badge (icon only) -->
                     <div v-else class="badge-watchlist">
                       <v-icon class="badge-watchlist__icon">mdi-bookmark</v-icon>
                     </div>
@@ -193,21 +207,17 @@
           link
           class="mb-2 rounded-lg border list-item-hoverable"
         >
-          <!-- Poster -->
           <template v-slot:prepend>
             <v-avatar size="80" rounded class="mr-3 list-avatar">
               <v-img v-if="media.posterUrl" :src="media.posterUrl" cover />
             </v-avatar>
           </template>
 
-          <!-- Content -->
           <div class="w-100">
-            <!-- Title -->
             <v-list-item-title class="list-title text-subtitle-1 font-weight-bold">
               {{ media.title }}
             </v-list-item-title>
 
-            <!-- Mobile meta row (under title on mobile only) -->
             <div v-if="isMobile" class="list-meta-row">
               <v-chip
                 size="x-small"
@@ -220,7 +230,6 @@
 
               <div class="spacer"></div>
 
-              <!-- Rating compact -->
               <v-chip
                 v-if="media.rating"
                 size="x-small"
@@ -233,7 +242,6 @@
                 </span>
               </v-chip>
 
-              <!-- Watchlist icon -->
               <v-chip
                 v-else
                 size="x-small"
@@ -246,10 +254,8 @@
             </div>
           </div>
 
-          <!-- Desktop append -->
           <template v-slot:append>
             <div v-if="!isMobile" class="d-flex align-center gap-2">
-              <!-- Type chip on desktop -->
               <v-chip
                 size="small"
                 :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'"
@@ -259,7 +265,6 @@
                 {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
               </v-chip>
 
-              <!-- Rating with star -->
               <v-chip
                 v-if="media.rating"
                 color="#121212"
@@ -273,7 +278,6 @@
                 </span>
               </v-chip>
 
-              <!-- Watchlist (icon only - no WL text) -->
               <v-chip
                 v-else
                 color="info"
@@ -289,7 +293,7 @@
       </v-list>
     </div>
 
-    <!-- Hover Modal - Desktop Only -->
+    <!-- Hover Modal -->
     <v-dialog
       v-model="showHoverModal"
       max-width="900"
@@ -415,6 +419,7 @@ export default {
       error: null,
       searchQuery: '',
       filterType: null,
+      filterStatus: null, // NEW
       filterRating: null,
       sortBy: 'dateAdded',
       viewMode: 'grid',
@@ -429,18 +434,27 @@ export default {
         { title: 'Movies', value: 'movie' }, 
         { title: 'TV Shows', value: 'tv' }
       ],
-      ratingOptions: [5, 4, 3, 2, 1].map(r => ({ title: `${r} Stars`, value: r })),
-      sortOptions: [
-        { title: 'Recently Added', value: 'dateAdded' }, 
-        { title: 'Title (A-Z)', value: 'titleAsc' }, 
-        { title: 'Rating (High to Low)', value: 'ratingDesc' }
+      // NEW: Status filter options
+      statusOptions: [
+        { title: 'Watched', value: 'watched' },
+        { title: 'Watchlist', value: 'want_to_watch' }
       ],
+      ratingOptions: [5, 4, 3, 2, 1].map(r => ({ title: `${r} Stars`, value: r })),
+      // IMPROVED: Shortened mobile labels
+      sortOptions: [
+        { title: isMobile => isMobile ? 'Recent' : 'Recently Added', value: 'dateAdded' }, 
+        { title: 'Title (A-Z)', value: 'titleAsc' }, 
+        { title: isMobile => isMobile ? 'Rating' : 'Rating (High to Low)', value: 'ratingDesc' }
+      ].map(opt => ({
+        title: typeof opt.title === 'function' ? opt.title(this.$vuetify?.display?.mobile) : opt.title,
+        value: opt.value
+      })),
     };
   },
   
   computed: {
     hasActiveFilters() { 
-      return this.searchQuery || this.filterType || this.filterRating; 
+      return this.searchQuery || this.filterType || this.filterStatus || this.filterRating; 
     },
     
     filteredMedia() {
@@ -453,6 +467,11 @@ export default {
       
       if (this.filterType) {
         result = result.filter(m => m.mediaType === this.filterType);
+      }
+
+      // NEW: Status filter
+      if (this.filterStatus) {
+        result = result.filter(m => m.status === this.filterStatus);
       }
       
       if (this.filterRating !== null) {
@@ -490,7 +509,6 @@ export default {
       }
     },
     
-    // Desktop hover modal
     startHover(media) {
       if (this.isMobile) return;
       
@@ -500,7 +518,7 @@ export default {
       this.hoverTimeout = setTimeout(() => {
         this.hoveredMedia = media;
         this.showHoverModal = true;
-      }, 500); // Slightly longer delay for better UX
+      }, 500);
     },
     
     cancelHover() { 
@@ -534,13 +552,10 @@ export default {
       this.clearCloseTimeout();
     },
     
-    // Click handler for both mobile and desktop
     handleCardClick(media) {
       if (this.isMobile) {
-        // Mobile: direct navigation
         this.goToMedia(media.mediaId);
       } else {
-        // Desktop: modal is already shown on hover, click navigates
         this.goToMedia(media.mediaId);
       }
     },
@@ -576,7 +591,8 @@ export default {
     
     clearFilters() { 
       this.searchQuery = ''; 
-      this.filterType = null; 
+      this.filterType = null;
+      this.filterStatus = null; // NEW
       this.filterRating = null; 
       this.sortBy = 'dateAdded'; 
     }
@@ -596,7 +612,62 @@ export default {
   padding-top: 16px; 
 }
 
-.gap-3 { gap: 12px; }
+/* IMPROVED: Mobile-friendly filters */
+.filters-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Mobile: Horizontal scroll */
+.filters-mobile {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.filters-mobile::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.filter-select {
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.filter-reset {
+  flex-shrink: 0;
+}
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+@media (max-width: 600px) {
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .view-controls {
+    justify-content: space-between;
+    margin-left: 0;
+    margin-top: 8px;
+  }
+}
 
 .search-bar :deep(.v-field__input) {
   padding-top: 10px !important;
@@ -646,7 +717,6 @@ export default {
   box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
 }
 
-/* Scrim */
 .top-scrim {
   position: absolute; 
   top: 0; 
@@ -662,7 +732,6 @@ export default {
   z-index: 1;
 }
 
-/* Badge overlay container */
 .overlay-content {
   position: absolute; 
   top: 0; 
@@ -708,7 +777,6 @@ export default {
   gap: 6px;
 }
 
-/* Rating badge - Desktop */
 .badge-rating {
   display: inline-flex;
   align-items: center;
@@ -733,7 +801,6 @@ export default {
   color: #FFC107;
 }
 
-/* Watchlist badge - Icon only (NO "WL" text) */
 .badge-watchlist {
   display: inline-flex;
   align-items: center;
@@ -794,7 +861,6 @@ export default {
 
 /* === MOBILE OPTIMIZATIONS === */
 @media (max-width: 600px) {
-  /* Smaller badges on mobile */
   .badge-type {
     height: 20px;
     min-width: 20px;
@@ -829,7 +895,6 @@ export default {
     font-size: 14px !important;
   }
 
-  /* Tighter scrim on mobile */
   .top-scrim {
     height: 40px;
   }
@@ -838,7 +903,6 @@ export default {
     padding: 4px;
   }
 
-  /* List view mobile meta row */
   .list-meta-row {
     display: flex; 
     align-items: center;
@@ -854,7 +918,6 @@ export default {
     font-size: 12px;
   }
 
-  /* Touch-friendly hover */
   .media-card:active { 
     transform: scale(0.98); 
   }
@@ -862,7 +925,6 @@ export default {
 
 /* === TABLET (601px - 960px) === */
 @media (min-width: 601px) and (max-width: 960px) {
-  /* Medium-sized badges for tablets */
   .badge-type {
     height: 24px;
     min-width: 24px;

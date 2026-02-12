@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Media, MediaType, MediaStatus
+from src.routes.activity_routes import create_activity, check_milestones
 from src.utils.actor_utils import add_cast_to_media
 
 media_router = Blueprint('media', __name__, url_prefix='/media')
@@ -153,7 +154,19 @@ def create_media():
         
         db.session.commit()
         
-        return jsonify(new_media.to_dict(include_cast=True)), 201
+        # ACTIVITY TRACKING: Create activity for this addition
+        activity_type = 'rating' if new_media.status == MediaStatus.WATCHED else 'watchlist'
+        create_activity(
+            user_id=user_id,
+            activity_type=activity_type,
+            media_id=new_media.media_id,
+            data={'rating': new_media.rating} if new_media.rating else None
+        )
+        
+        # Check for milestones
+        check_milestones(user_id)
+        
+        return jsonify(new_media.to_dict(include_cast=True)), 201  
         
     except Exception as e:
         db.session.rollback()
@@ -218,6 +231,16 @@ def update_media(media_id: int):
             setattr(media, db_key, data[frontend_key])
     
     db.session.commit()
+    
+    # ACTIVITY TRACKING: If rating was added/changed, create activity
+    if 'rating' in data and data['rating'] is not None:
+        create_activity(
+            user_id=user_id,
+            activity_type='rating',
+            media_id=media.media_id,
+            data={'rating': media.rating}
+        )
+    
     return jsonify(media.to_dict(include_cast=True))
 
 
