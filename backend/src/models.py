@@ -373,24 +373,20 @@ class Activity(db.Model):
     
     activity_id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
-    activity_type = db.Column(db.String(50), nullable=False)  # 'rating', 'watchlist', 'friend_added', 'milestone'
+    activity_type = db.Column(db.String(50), nullable=False)
     
-    # Related entity IDs (nullable - depends on activity type)
     media_id = db.Column(db.Integer, db.ForeignKey('media.media_id'), nullable=True)
     friend_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=True)
     
-    # Activity data (stored as JSON)
-    data = db.Column(db.JSON, nullable=True)  # rating value, milestone type, etc.
-    
+    data = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     
-    # Relationships
-    user = db.relationship('User', foreign_keys=[user_id], backref='activities')
-    media = db.relationship('Media', backref='activities')
+    # NO BACKREF - this fixes the conflict!
+    user = db.relationship('User', foreign_keys=[user_id])
+    media = db.relationship('Media')
     friend = db.relationship('User', foreign_keys=[friend_user_id])
     
     def to_dict(self):
-        """Convert activity to dictionary for API responses"""
         result = {
             'activityId': self.activity_id,
             'userId': self.user_id,
@@ -403,17 +399,18 @@ class Activity(db.Model):
             }
         }
         
-        # Add media details if present
         if self.media:
+            media_type = self.media.media_type
+            media_type_str = media_type.value if hasattr(media_type, 'value') else str(media_type)
+            
             result['media'] = {
                 'mediaId': self.media.media_id,
                 'title': self.media.title,
-                'mediaType': self.media.media_type,
+                'mediaType': media_type_str,
                 'posterUrl': self.media.poster_url,
                 'releaseYear': self.media.release_year
             }
         
-        # Add friend details if present
         if self.friend:
             result['friend'] = {
                 'userId': self.friend.user_id,
