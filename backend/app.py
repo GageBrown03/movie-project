@@ -79,7 +79,7 @@ from src.routes.tmdb_router import tmdb_router
 
 # Week 2 routes
 from src.routes.friends import friends
-from src.routes.privacy import privacy
+from src.routes.privacy import privacy_bp as privacy
 from src.routes.compare import compare
 
 # Phase 3: Activity routes
