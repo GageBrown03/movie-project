@@ -12,7 +12,8 @@ import DiscoverView from '../views/DiscoverView.vue';
 import FriendsView from '../views/FriendsView.vue';
 import FriendRequestsView from '../views/FriendRequestsView.vue';
 import PrivacySettingsView from '../views/PrivacySettingsView.vue'; 
-import CompareRatingsView from '../views/CompareRatingsView.vue'; 
+import CompareRatingsView from '../views/CompareRatingsView.vue';
+import UserProfileView from '../views/UserProfileView.vue';  // NEW
 
 const routes = [
   {
@@ -81,6 +82,20 @@ const routes = [
     component: FriendRequestsView,
     meta: { requiresAuth: true }
   },
+  // User Profile (NEW)
+  {
+    path: '/user/:username',
+    name: 'user-profile',
+    component: UserProfileView,
+    meta: { requiresAuth: true }
+  },
+  // Compare Ratings (UPDATED - simpler path)
+  {
+    path: '/compare/:username',
+    name: 'compare-ratings',
+    component: CompareRatingsView,
+    meta: { requiresAuth: true }
+  },
   // Legacy /movies routes - redirect to /media
   {
     path: '/movies',
@@ -103,12 +118,8 @@ const routes = [
   },
   {// Add Routing for privacy settings
      path: '/settings/privacy',
+     name: 'privacy-settings',
      component: PrivacySettingsView,
-     meta: { requiresAuth: true }
-   },
-   {
-     path: '/friends/:username/compare',
-     component: CompareRatingsView,
      meta: { requiresAuth: true }
    }
 ];

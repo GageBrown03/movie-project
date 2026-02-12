@@ -7,6 +7,7 @@ from flask_migrate import Migrate
 from src.config import Config
 from src.models import db, bcrypt
 from sqlalchemy import text
+from src.routes.user_profile import user_profile_bp
 
 # Load environment variables
 load_dotenv()
@@ -91,6 +92,7 @@ app.register_blueprint(friends)
 app.register_blueprint(privacy)
 app.register_blueprint(compare)
 app.register_blueprint(activity_bp)  # NEW
+app.register_blueprint(user_profile_bp)
 
 print("✅ Blueprints registered:")
 print("  - auth_router")
@@ -100,7 +102,7 @@ print("  - friends (/api/friends)")
 print("  - privacy (/api/privacy)")
 print("  - compare (/api/compare)")
 print("  - activity_bp (/api/activity)")  # NEW
-
+print("  - user_profile_bp (/api/profile)")
 
 # ==========================================
 # Health Check

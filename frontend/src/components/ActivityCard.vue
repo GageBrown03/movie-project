@@ -2,7 +2,7 @@
   <v-card 
     class="activity-card mb-3" 
     :class="{ 'clickable': isClickable }"
-    @click="handleClick"
+    @click="handleCardClick"
     hover
   >
     <v-card-text class="pa-4">
@@ -47,9 +47,12 @@
 
         <!-- Activity Content -->
         <div class="activity-content flex-grow-1">
-          <!-- User Info -->
+          <!-- User Info - CLICKABLE -->
           <div class="d-flex align-center mb-1">
-            <span class="font-weight-bold text-body-1 mr-1">
+            <span 
+              class="font-weight-bold text-body-1 mr-1 username-link"
+              @click.stop="goToUserProfile"
+            >
               {{ activity.user.username }}
             </span>
             <span class="text-body-2 text-medium-emphasis">
@@ -81,9 +84,15 @@
             />
           </div>
 
-          <!-- Friend Name (for friend_added) -->
+          <!-- Friend Name (for friend_added) - CLICKABLE -->
           <div v-if="activity.activityType === 'friend_added' && activity.friend" class="mb-1">
-            <v-chip size="small" variant="tonal" color="secondary">
+            <v-chip 
+              size="small" 
+              variant="tonal" 
+              color="secondary"
+              class="clickable-chip"
+              @click.stop="goToFriendProfile"
+            >
               <v-icon start size="small">mdi-account</v-icon>
               {{ activity.friend.username }}
             </v-chip>
@@ -198,18 +207,27 @@ export default {
     },
 
     isClickable() {
-      return this.activity.media || this.activity.friend;
+      return this.activity.media; // Only media activities clickable on card
     }
   },
 
   methods: {
-    handleClick() {
+    handleCardClick() {
       if (this.activity.media) {
         // Navigate to media detail
         this.$router.push(`/media/${this.activity.media.mediaId}`);
-      } else if (this.activity.friend && this.activity.activityType === 'friend_added') {
-        // Could navigate to friend's profile (future feature)
-        console.log('Navigate to friend profile:', this.activity.friend.userId);
+      }
+    },
+
+    goToUserProfile() {
+      if (this.activity.user.username) {
+        this.$router.push(`/user/${this.activity.user.username}`);
+      }
+    },
+
+    goToFriendProfile() {
+      if (this.activity.friend?.username) {
+        this.$router.push(`/user/${this.activity.friend.username}`);
       }
     }
   }
@@ -252,6 +270,28 @@ export default {
 .activity-badge {
   flex-shrink: 0;
   margin-left: 8px;
+}
+
+/* Clickable username */
+.username-link {
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.username-link:hover {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: underline;
+}
+
+/* Clickable friend chip */
+.clickable-chip {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.clickable-chip:hover {
+  transform: scale(1.05);
 }
 
 /* Mobile optimizations */

@@ -128,6 +128,8 @@
           <friend-card 
             :friend="friend"
             @remove="confirmRemove(friend)"
+            @compare="goToCompare(friend)"
+            @profile="goToProfile(friend)"
           />
         </v-col>
       </v-row>
@@ -379,12 +381,9 @@ export default {
           this.snackbarColor = 'success';
           this.showSnackbar = true;
           
-          // Update the user's status in search results
           user.friendshipStatus = 'pending';
-          
           this.closeAddDialog();
         } else {
-          // Show the actual error message from backend
           this.snackbarMessage = data.error || 'Failed to send request';
           this.snackbarColor = 'warning';
           this.showSnackbar = true;
@@ -434,6 +433,15 @@ export default {
       this.showAddFriendDialog = false;
       this.searchUsername = '';
       this.searchResults = [];
+    },
+
+    // NEW: Navigation methods
+    goToCompare(friend) {
+      this.$router.push(`/compare/${friend.friendUsername}`);
+    },
+
+    goToProfile(friend) {
+      this.$router.push(`/user/${friend.friendUsername}`);
     }
   }
 };
