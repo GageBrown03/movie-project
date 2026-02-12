@@ -28,23 +28,7 @@
       
       <!-- Menu Items -->
       <v-list-item to="/settings/privacy" prepend-icon="mdi-shield-account">
-        <v-list-item-title>Privacy Settings</v-list-item-title>
-      </v-list-item>
-      
-      <v-list-item prepend-icon="mdi-cog">
-        <v-list-item-title>Account Settings</v-list-item-title>
-        <template v-slot:append>
-          <v-chip size="x-small" color="grey" variant="text">Soon</v-chip>
-        </template>
-      </v-list-item>
-      
-      <v-divider />
-      
-      <v-list-item prepend-icon="mdi-help-circle">
-        <v-list-item-title>Help & Support</v-list-item-title>
-        <template v-slot:append>
-          <v-chip size="x-small" color="grey" variant="text">Soon</v-chip>
-        </template>
+        <v-list-item-title>Profile</v-list-item-title>
       </v-list-item>
       
       <v-divider />
