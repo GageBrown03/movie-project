@@ -1,158 +1,153 @@
 # backend/src/routes/privacy.py
-# Privacy settings API routes for Flask - WITH ERROR HANDLING
-
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, User
 
-privacy = Blueprint('privacy', __name__, url_prefix='/api/privacy')
+privacy_bp = Blueprint('privacy', __name__, url_prefix='/api/privacy')
 
 
-# ==========================================
-# Explicit OPTIONS handler (prevent caching)
-# ==========================================
-@privacy.route('/', methods=['OPTIONS'])
-@privacy.route('/check/<int:target_user_id>', methods=['OPTIONS'])
-def handle_options(target_user_id=None):
-    """Handle CORS preflight for all privacy routes"""
-    return '', 204
-
-
-# ==========================================
-# GET /api/privacy - Get current user's privacy settings
-# ==========================================
-
-@privacy.route('/', methods=['GET'])
+@privacy_bp.route('', methods=['GET'])
 @jwt_required()
 def get_privacy_settings():
-    """Get current user's privacy settings"""
+    """Get current user's privacy settings and profile info"""
     try:
-        current_user_id = get_jwt_identity()
-        
-        user = User.query.get(current_user_id)
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
         return jsonify({
-            'privacyCollection': user.privacy_collection or 'private',
-            'privacyRatings': user.privacy_ratings or 'private',
-            'privacyStats': user.privacy_stats or 'private',
-            'privacyProfileSearchable': user.privacy_profile_searchable if user.privacy_profile_searchable is not None else False,
-            'emailNotificationsFriendRequests': user.email_notifications_friend_requests if user.email_notifications_friend_requests is not None else True,
+            'displayName': user.display_name,
+            'bio': user.bio,
+            'privacyCollection': user.privacy_collection,
+            'privacyRatings': user.privacy_ratings,
+            'privacyStats': user.privacy_stats,
+            'privacyProfileSearchable': user.privacy_profile_searchable,
         }), 200
+        
     except Exception as e:
-        print(f"Error in get_privacy_settings: {str(e)}")
-        return jsonify({'error': 'Failed to load privacy settings', 'message': str(e)}), 500
+        print(f"Error getting privacy settings: {e}")
+        return jsonify({'error': 'Failed to get privacy settings'}), 500
 
 
-# ==========================================
-# PUT /api/privacy - Update privacy settings
-# ==========================================
-
-@privacy.route('/', methods=['PUT'])
+@privacy_bp.route('', methods=['PUT'])
 @jwt_required()
 def update_privacy_settings():
-    """Update current user's privacy settings"""
+    """Update privacy settings and profile info"""
     try:
-        current_user_id = get_jwt_identity()
-        data = request.get_json()
-        
-        user = User.query.get(current_user_id)
+        user_id = int(get_jwt_identity())
+        user = User.query.get(user_id)
         
         if not user:
             return jsonify({'error': 'User not found'}), 404
         
-        # Validate privacy levels
-        valid_levels = ['private', 'friends', 'public']
+        data = request.get_json()
+        
+        # Update profile info
+        if 'displayName' in data:
+            user.display_name = data['displayName']
+        
+        if 'bio' in data:
+            user.bio = data['bio']
         
         # Update privacy settings
         if 'privacyCollection' in data:
-            if data['privacyCollection'] not in valid_levels:
-                return jsonify({'error': 'Invalid privacy level for collection'}), 400
+            if data['privacyCollection'] not in ['private', 'friends', 'public']:
+                return jsonify({'error': 'Invalid privacy setting'}), 400
             user.privacy_collection = data['privacyCollection']
         
         if 'privacyRatings' in data:
-            if data['privacyRatings'] not in valid_levels:
-                return jsonify({'error': 'Invalid privacy level for ratings'}), 400
+            if data['privacyRatings'] not in ['private', 'friends', 'public']:
+                return jsonify({'error': 'Invalid privacy setting'}), 400
             user.privacy_ratings = data['privacyRatings']
         
         if 'privacyStats' in data:
-            if data['privacyStats'] not in valid_levels:
-                return jsonify({'error': 'Invalid privacy level for stats'}), 400
+            if data['privacyStats'] not in ['private', 'friends', 'public']:
+                return jsonify({'error': 'Invalid privacy setting'}), 400
             user.privacy_stats = data['privacyStats']
         
         if 'privacyProfileSearchable' in data:
             user.privacy_profile_searchable = bool(data['privacyProfileSearchable'])
         
-        if 'emailNotificationsFriendRequests' in data:
-            user.email_notifications_friend_requests = bool(data['emailNotificationsFriendRequests'])
-        
-        # Save changes
         db.session.commit()
         
         return jsonify({
-            'message': 'Privacy settings updated',
+            'message': 'Settings updated successfully',
+            'displayName': user.display_name,
+            'bio': user.bio,
             'privacyCollection': user.privacy_collection,
             'privacyRatings': user.privacy_ratings,
             'privacyStats': user.privacy_stats,
             'privacyProfileSearchable': user.privacy_profile_searchable,
-            'emailNotificationsFriendRequests': user.email_notifications_friend_requests,
         }), 200
+        
     except Exception as e:
-        print(f"Error in update_privacy_settings: {str(e)}")
+        print(f"Error updating privacy settings: {e}")
         db.session.rollback()
-        return jsonify({'error': 'Failed to update privacy settings', 'message': str(e)}), 500
+        return jsonify({'error': 'Failed to update privacy settings'}), 500
 
 
-# ==========================================
-# GET /api/privacy/check/:user_id - Check what you can see about another user
-# ==========================================
-
-@privacy.route('/check/<int:target_user_id>', methods=['GET'])
+@privacy_bp.route('/check/<int:target_user_id>', methods=['GET'])
 @jwt_required()
-def check_privacy(target_user_id):
+def check_permissions(target_user_id):
     """
-    Check what the current user can see about target_user_id
-    Returns permissions object
+    Check what the current user can see about a target user.
+    Used by friend system to determine visibility.
     """
     try:
-        current_user_id = get_jwt_identity()
-        
-        # Can always see own data
-        if current_user_id == target_user_id:
-            return jsonify({
-                'canSeeCollection': True,
-                'canSeeRatings': True,
-                'canSeeStats': True,
-                'canSeeNotes': True,
-            }), 200
-        
+        current_user_id = int(get_jwt_identity())
         target_user = User.query.get(target_user_id)
         
         if not target_user:
             return jsonify({'error': 'User not found'}), 404
         
+        # If viewing own profile, can see everything
+        if current_user_id == target_user_id:
+            return jsonify({
+                'canViewCollection': True,
+                'canViewRatings': True,
+                'canViewStats': True,
+            }), 200
+        
         # Check if they're friends
-        from src.routes.friends import are_friends
-        friends = are_friends(current_user_id, target_user_id)
+        from src.models import Friendship, FriendshipStatus
+        from sqlalchemy import or_, and_
+        
+        friendship = Friendship.query.filter(
+            and_(
+                or_(
+                    and_(Friendship.user_id_1 == current_user_id, Friendship.user_id_2 == target_user_id),
+                    and_(Friendship.user_id_1 == target_user_id, Friendship.user_id_2 == current_user_id)
+                ),
+                Friendship.status == FriendshipStatus.ACCEPTED
+            )
+        ).first()
+        
+        are_friends = friendship is not None
         
         # Determine permissions based on privacy settings
-        def check_permission(privacy_level):
-            if privacy_level == 'public':
-                return True
-            elif privacy_level == 'friends':
-                return friends
-            else:  # private
-                return False
+        can_view_collection = (
+            target_user.privacy_collection == 'public' or
+            (target_user.privacy_collection == 'friends' and are_friends)
+        )
+        
+        can_view_ratings = (
+            target_user.privacy_ratings == 'public' or
+            (target_user.privacy_ratings == 'friends' and are_friends)
+        )
+        
+        can_view_stats = (
+            target_user.privacy_stats == 'public' or
+            (target_user.privacy_stats == 'friends' and are_friends)
+        )
         
         return jsonify({
-            'canSeeCollection': check_permission(target_user.privacy_collection or 'private'),
-            'canSeeRatings': check_permission(target_user.privacy_ratings or 'private'),
-            'canSeeStats': check_permission(target_user.privacy_stats or 'private'),
-            'canSeeNotes': False,  # Notes are always private
-            'isFriend': friends,
+            'canViewCollection': can_view_collection,
+            'canViewRatings': can_view_ratings,
+            'canViewStats': can_view_stats,
         }), 200
+        
     except Exception as e:
-        print(f"Error in check_privacy: {str(e)}")
-        return jsonify({'error': 'Failed to check permissions', 'message': str(e)}), 500
+        print(f"Error checking permissions: {e}")
+        return jsonify({'error': 'Failed to check permissions'}), 500
