@@ -345,5 +345,53 @@ export const compareAPI = {
   }
 };
 
+// Activity API (NEW - Phase 3)
+export const activityAPI = {
+  async getFeed(filter = 'all', limit = 50, offset = 0) {
+    const params = new URLSearchParams({
+      filter,
+      limit: limit.toString(),
+      offset: offset.toString()
+    });
+    
+    const res = await fetch(`${API_BASE}/api/activity/feed?${params}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to fetch activity feed');
+    }
+    
+    return res.json();
+  },
+
+  async getStats() {
+    const res = await fetch(`${API_BASE}/api/activity/stats`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to fetch activity stats');
+    }
+    
+    return res.json();
+  },
+
+  async getUserActivity(userId, limit = 50) {
+    const res = await fetch(`${API_BASE}/api/activity/user/${userId}?limit=${limit}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.error || 'Failed to fetch user activity');
+    }
+    
+    return res.json();
+  }
+};
+
 // Legacy alias for backward compatibility (can remove later)
 export const movieAPI = mediaAPI;
