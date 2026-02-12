@@ -1,12 +1,12 @@
 <template>
   <v-dialog
     v-model="isOpen"
-    max-width="900"
+    max-width="1000"
     scrollable
     @click:outside="close"
   >
     <v-card>
-      <v-card-title class="d-flex align-center pa-4">
+      <v-card-title class="d-flex align-center pa-4 sticky-header">
         <v-icon class="mr-2">mdi-plus-circle</v-icon>
         <span class="text-h5">Add Media</span>
         <v-spacer />
@@ -30,6 +30,7 @@
           @click:clear="clearSearch"
           hint="Press Enter to search"
           persistent-hint
+          :loading="searching"
         />
 
         <!-- Loading State -->
@@ -46,63 +47,170 @@
           text="Try a different search term"
         />
 
-        <!-- Results Grid -->
-        <v-row v-else-if="searchResults.length" class="mt-4">
-          <v-col
-            v-for="item in searchResults"
-            :key="item.id"
-            cols="6"
-            sm="4"
-            md="3"
-          >
-            <v-card
-              :class="['result-card', { 'result-card--selected': isInCollection(item.id) }]"
-              @click="selectItem(item)"
-              hover
+        <!-- IMPROVED: Results with Quick Actions -->
+        <div v-else-if="searchResults.length" class="mt-4">
+          <p class="text-caption text-medium-emphasis mb-2">
+            {{ searchResults.length }} results found
+          </p>
+
+          <!-- Desktop: Card Grid with Quick Actions -->
+          <v-row v-if="!isMobile">
+            <v-col
+              v-for="item in searchResults"
+              :key="item.tmdbId"
+              cols="6"
+              sm="4"
+              md="3"
             >
-              <v-img
-                v-if="item.poster_path"
-                :src="`https://image.tmdb.org/t/p/w342${item.poster_path}`"
-                aspect-ratio="2/3"
-                cover
-              >
-                <template v-slot:placeholder>
-                  <div class="d-flex align-center justify-center fill-height">
-                    <v-progress-circular indeterminate color="primary" />
+              <v-card class="result-card" hover>
+                <!-- Poster -->
+                <v-img
+                  v-if="item.posterUrl"
+                  :src="item.posterUrl"
+                  aspect-ratio="2/3"
+                  cover
+                  @click="viewDetails(item)"
+                >
+                  <!-- Already in collection badge -->
+                  <div v-if="isInCollection(item.tmdbId)" class="collection-badge">
+                    <v-chip size="small" color="success" variant="flat">
+                      <v-icon start size="small">mdi-check</v-icon>
+                      In Library
+                    </v-chip>
                   </div>
-                </template>
+                </v-img>
 
-                <!-- Already in collection badge -->
-                <div v-if="isInCollection(item.id)" class="collection-badge">
-                  <v-chip size="small" color="success" variant="flat">
-                    <v-icon start size="small">mdi-check</v-icon>
-                    In Collection
-                  </v-chip>
+                <v-img
+                  v-else
+                  src="/placeholder-poster.png"
+                  aspect-ratio="2/3"
+                  @click="viewDetails(item)"
+                >
+                  <div class="d-flex align-center justify-center fill-height bg-grey-darken-3">
+                    <v-icon size="64" color="grey">mdi-image-off</v-icon>
+                  </div>
+                </v-img>
+
+                <!-- Title -->
+                <v-card-text class="pa-2 pb-0">
+                  <p class="text-caption font-weight-bold text-truncate mb-1">
+                    {{ item.title }}
+                  </p>
+                  <p class="text-caption text-medium-emphasis">
+                    {{ item.releaseYear }}
+                  </p>
+                </v-card-text>
+
+                <!-- Quick Action Buttons -->
+                <v-card-actions class="pa-2 pt-0">
+                  <v-btn
+                    v-if="!isInCollection(item.tmdbId)"
+                    size="x-small"
+                    color="info"
+                    variant="tonal"
+                    block
+                    @click="quickAdd(item, 'want_to_watch')"
+                    :loading="adding === `${item.tmdbId}-watchlist`"
+                  >
+                    <v-icon start size="14">mdi-bookmark-plus</v-icon>
+                    Watchlist
+                  </v-btn>
+                  <v-btn
+                    v-else
+                    size="x-small"
+                    variant="outlined"
+                    block
+                    @click="goToExisting(item.tmdbId)"
+                  >
+                    View
+                  </v-btn>
+                </v-card-actions>
+                
+                <v-card-actions class="pa-2 pt-0">
+                  <v-btn
+                    v-if="!isInCollection(item.tmdbId)"
+                    size="x-small"
+                    color="primary"
+                    variant="tonal"
+                    block
+                    @click="openRatingDialog(item)"
+                  >
+                    <v-icon start size="14">mdi-star</v-icon>
+                    Rate
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <!-- Mobile: Compact List with Quick Actions -->
+          <v-list v-else class="mobile-results">
+            <v-list-item
+              v-for="item in searchResults"
+              :key="item.tmdbId"
+              class="mb-2 result-list-item"
+            >
+              <template v-slot:prepend>
+                <v-avatar size="80" rounded class="mr-3" @click="viewDetails(item)">
+                  <v-img v-if="item.posterUrl" :src="item.posterUrl" cover />
+                  <v-icon v-else size="40">mdi-movie-outline</v-icon>
+                </v-avatar>
+              </template>
+
+              <v-list-item-title class="text-body-2 font-weight-bold">
+                {{ item.title }}
+                <v-chip
+                  v-if="isInCollection(item.tmdbId)"
+                  size="x-small"
+                  color="success"
+                  class="ml-1"
+                >
+                  In Library
+                </v-chip>
+              </v-list-item-title>
+              
+              <v-list-item-subtitle class="text-caption">
+                {{ item.mediaType === 'movie' ? 'Movie' : 'TV' }} • {{ item.releaseYear }}
+              </v-list-item-subtitle>
+
+              <!-- Mobile Quick Actions -->
+              <template v-slot:append>
+                <div class="d-flex flex-column gap-1">
+                  <v-btn
+                    v-if="!isInCollection(item.tmdbId)"
+                    size="x-small"
+                    color="info"
+                    icon
+                    variant="tonal"
+                    @click="quickAdd(item, 'want_to_watch')"
+                    :loading="adding === `${item.tmdbId}-watchlist`"
+                  >
+                    <v-icon size="16">mdi-bookmark-plus</v-icon>
+                  </v-btn>
+                  <v-btn
+                    v-if="!isInCollection(item.tmdbId)"
+                    size="x-small"
+                    color="primary"
+                    icon
+                    variant="tonal"
+                    @click="openRatingDialog(item)"
+                  >
+                    <v-icon size="16">mdi-star</v-icon>
+                  </v-btn>
+                  <v-btn
+                    v-if="isInCollection(item.tmdbId)"
+                    size="x-small"
+                    icon
+                    variant="outlined"
+                    @click="goToExisting(item.tmdbId)"
+                  >
+                    <v-icon size="16">mdi-eye</v-icon>
+                  </v-btn>
                 </div>
-              </v-img>
-
-              <v-img
-                v-else
-                src="/placeholder-poster.png"
-                aspect-ratio="2/3"
-                cover
-              >
-                <div class="d-flex align-center justify-center fill-height bg-grey-darken-3">
-                  <v-icon size="64" color="grey">mdi-image-off</v-icon>
-                </div>
-              </v-img>
-
-              <v-card-text class="pa-2">
-                <p class="text-caption font-weight-bold text-truncate mb-1">
-                  {{ item.title || item.name }}
-                </p>
-                <p class="text-caption text-medium-emphasis">
-                  {{ getReleaseYear(item) }}
-                </p>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+              </template>
+            </v-list-item>
+          </v-list>
+        </div>
 
         <!-- Initial State -->
         <v-empty-state
@@ -113,58 +221,68 @@
           class="my-8"
         />
       </v-card-text>
+    </v-card>
 
-      <!-- Quick Add Actions (when item selected) -->
-      <v-card-actions v-if="selectedItem" class="pa-4 bg-surface-light">
-        <div class="w-100">
-          <div class="d-flex align-center mb-3">
-            <v-avatar size="48" rounded class="mr-3">
-              <v-img
-                v-if="selectedItem.poster_path"
-                :src="`https://image.tmdb.org/t/p/w92${selectedItem.poster_path}`"
-              />
+    <!-- Rating Dialog (for "Rate" button) -->
+    <v-dialog v-model="showRatingDialog" max-width="500">
+      <v-card v-if="itemToRate">
+        <v-card-title>Rate {{ itemToRate.title }}</v-card-title>
+        <v-card-text>
+          <div class="d-flex align-center mb-4">
+            <v-avatar size="60" rounded class="mr-3">
+              <v-img v-if="itemToRate.posterUrl" :src="itemToRate.posterUrl" />
             </v-avatar>
-            <div class="flex-grow-1">
-              <p class="text-body-1 font-weight-bold mb-0">
-                {{ selectedItem.title || selectedItem.name }}
-              </p>
+            <div>
+              <p class="text-body-1 font-weight-bold mb-0">{{ itemToRate.title }}</p>
               <p class="text-caption text-medium-emphasis">
-                {{ selectedItem.media_type === 'movie' ? 'Movie' : 'TV Show' }} • {{ getReleaseYear(selectedItem) }}
+                {{ itemToRate.mediaType === 'movie' ? 'Movie' : 'TV Show' }} • {{ itemToRate.releaseYear }}
               </p>
             </div>
           </div>
 
-          <div class="d-flex gap-2">
-            <v-btn
-              color="primary"
-              variant="flat"
-              prepend-icon="mdi-eye-check"
-              @click="quickAdd('watched')"
-              :loading="adding"
-              block
-            >
-              Mark as Watched
-            </v-btn>
-            <v-btn
-              color="info"
-              variant="flat"
-              prepend-icon="mdi-bookmark-plus"
-              @click="quickAdd('want_to_watch')"
-              :loading="adding"
-              block
-            >
-              Add to Watchlist
-            </v-btn>
-          </div>
-        </div>
-      </v-card-actions>
-    </v-card>
+          <v-rating
+            v-model="userRating"
+            color="primary"
+            size="large"
+            hover
+          />
+          <p class="text-caption mt-2">
+            {{ userRating ? `${userRating} out of 5 stars` : 'Tap to rate' }}
+          </p>
+
+          <v-textarea
+            v-model="userNotes"
+            label="Personal notes (optional)"
+            variant="outlined"
+            rows="2"
+            class="mt-4"
+            placeholder="What did you think?"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeRatingDialog">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            @click="saveWithRating"
+            :loading="adding === `${itemToRate.tmdbId}-rated`"
+            :disabled="!userRating"
+          >
+            Add to Library
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Success Snackbar -->
+    <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000">
+      {{ snackbarMessage }}
+    </v-snackbar>
   </v-dialog>
 </template>
 
 <script>
-import { tmdbAPI } from '@/services/tmdb';
-import { mediaAPI } from '@/services/api-production';
+import { tmdbAPI, mediaAPI } from '@/services/api-production';
 
 export default {
   name: 'AddMediaDialog',
@@ -183,9 +301,19 @@ export default {
       searchQuery: '',
       searching: false,
       searchResults: [],
-      selectedItem: null,
-      adding: false,
-      userCollection: []
+      adding: null, // Tracks which item is being added (tmdbId-action)
+      userCollection: [],
+      
+      // Rating dialog
+      showRatingDialog: false,
+      itemToRate: null,
+      userRating: null,
+      userNotes: '',
+      
+      // Snackbar
+      showSnackbar: false,
+      snackbarMessage: '',
+      snackbarColor: 'success'
     };
   },
 
@@ -197,6 +325,10 @@ export default {
       set(val) {
         this.$emit('update:modelValue', val);
       }
+    },
+    
+    isMobile() {
+      return this.$vuetify.display.mobile;
     }
   },
 
@@ -223,105 +355,165 @@ export default {
       if (!this.searchQuery || this.searchQuery.trim().length < 2) return;
 
       this.searching = true;
-      this.selectedItem = null;
 
       try {
-        const results = await tmdbAPI.searchMulti(this.searchQuery);
-        // Filter to only movies and TV shows
-        this.searchResults = results.filter(
-          item => item.media_type === 'movie' || item.media_type === 'tv'
-        ).slice(0, 12); // Limit to 12 results
+        this.searchResults = await tmdbAPI.search(this.searchQuery);
       } catch (err) {
         console.error('Search error:', err);
         this.searchResults = [];
+        this.showMessage('Search failed. Please try again.', 'error');
       } finally {
         this.searching = false;
       }
     },
 
-    selectItem(item) {
-      // If already in collection, navigate to it
-      if (this.isInCollection(item.id)) {
-        const existing = this.userCollection.find(m => m.tmdbId === item.id);
-        if (existing) {
-          this.$router.push(`/movies/${existing.mediaId}`);
-          this.close();
-        }
-        return;
-      }
-
-      this.selectedItem = item;
-    },
-
-    async quickAdd(status) {
-      if (!this.selectedItem) return;
-
-      this.adding = true;
+    // Quick add to watchlist (1-click)
+    async quickAdd(item, status) {
+      const addKey = `${item.tmdbId}-watchlist`;
+      this.adding = addKey;
 
       try {
         const mediaData = {
-          title: this.selectedItem.title || this.selectedItem.name,
-          media_type: this.selectedItem.media_type,
-          tmdb_id: this.selectedItem.id,
+          title: item.title,
+          media_type: item.mediaType,
+          tmdb_id: item.tmdbId,
           status: status,
-          release_year: this.getReleaseYear(this.selectedItem),
-          plot: this.selectedItem.overview,
-          poster_url: this.selectedItem.poster_path
-            ? `https://image.tmdb.org/t/p/w342${this.selectedItem.poster_path}`
-            : null,
-          backdrop_url: this.selectedItem.backdrop_path
-            ? `https://image.tmdb.org/t/p/w1280${this.selectedItem.backdrop_path}`
-            : null,
-          tmdb_rating: this.selectedItem.vote_average
+          release_year: item.releaseYear,
+          plot: item.plot,
+          poster_url: item.posterUrl,
+          backdrop_url: item.backdropUrl,
+          tmdb_rating: item.tmdbRating
         };
 
         const created = await mediaAPI.create(mediaData);
 
-        // Emit success event
-        this.$emit('media-added', created);
+        // Update local collection
+        this.userCollection.push(created);
 
-        // Navigate to the new media page
-        this.$router.push(`/movies/${created.mediaId}`);
-        this.close();
+        // Show success message
+        this.showMessage(`Added "${item.title}" to watchlist!`, 'success');
+
+        // Emit event
+        this.$emit('media-added', created);
 
       } catch (err) {
         console.error('Error adding media:', err);
-        alert('Failed to add media. Please try again.');
+        this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        this.adding = false;
+        this.adding = null;
       }
+    },
+
+    // Open rating dialog
+    openRatingDialog(item) {
+      this.itemToRate = item;
+      this.userRating = null;
+      this.userNotes = '';
+      this.showRatingDialog = true;
+    },
+
+    closeRatingDialog() {
+      this.showRatingDialog = false;
+      this.itemToRate = null;
+      this.userRating = null;
+      this.userNotes = '';
+    },
+
+    // Save with rating
+    async saveWithRating() {
+      if (!this.itemToRate || !this.userRating) return;
+
+      const addKey = `${this.itemToRate.tmdbId}-rated`;
+      this.adding = addKey;
+
+      try {
+        const mediaData = {
+          title: this.itemToRate.title,
+          media_type: this.itemToRate.mediaType,
+          tmdb_id: this.itemToRate.tmdbId,
+          status: 'watched',
+          rating: this.userRating,
+          notes: this.userNotes || null,
+          release_year: this.itemToRate.releaseYear,
+          plot: this.itemToRate.plot,
+          poster_url: this.itemToRate.posterUrl,
+          backdrop_url: this.itemToRate.backdropUrl,
+          tmdb_rating: this.itemToRate.tmdbRating
+        };
+
+        const created = await mediaAPI.create(mediaData);
+
+        // Update collection
+        this.userCollection.push(created);
+
+        // Close dialogs
+        this.closeRatingDialog();
+        this.close();
+
+        // Navigate to detail page
+        this.$router.push(`/media/${created.mediaId}`);
+
+      } catch (err) {
+        console.error('Error adding media:', err);
+        this.showMessage('Failed to add. Please try again.', 'error');
+      } finally {
+        this.adding = null;
+      }
+    },
+
+    // View full details (optional enhancement)
+    viewDetails(item) {
+      // Could show expanded modal with full plot, cast, etc.
+      // For now, just opens rating dialog
+      this.openRatingDialog(item);
     },
 
     isInCollection(tmdbId) {
       return this.userCollection.some(m => m.tmdbId === tmdbId);
     },
 
-    getReleaseYear(item) {
-      const date = item.release_date || item.first_air_date;
-      return date ? new Date(date).getFullYear() : 'N/A';
+    goToExisting(tmdbId) {
+      const existing = this.userCollection.find(m => m.tmdbId === tmdbId);
+      if (existing) {
+        this.$router.push(`/media/${existing.mediaId}`);
+        this.close();
+      }
     },
 
     clearSearch() {
       this.searchQuery = '';
       this.searchResults = [];
-      this.selectedItem = null;
     },
 
     reset() {
       this.searchQuery = '';
       this.searchResults = [];
-      this.selectedItem = null;
       this.searching = false;
+      this.adding = null;
+      this.closeRatingDialog();
     },
 
     close() {
       this.isOpen = false;
+    },
+
+    showMessage(message, color = 'success') {
+      this.snackbarMessage = message;
+      this.snackbarColor = color;
+      this.showSnackbar = true;
     }
   }
 };
 </script>
 
 <style scoped>
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(var(--v-theme-surface));
+}
+
 .result-card {
   cursor: pointer;
   transition: all 0.2s ease;
@@ -329,11 +521,6 @@ export default {
 
 .result-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.result-card--selected {
-  border: 2px solid rgb(var(--v-theme-primary));
 }
 
 .collection-badge {
@@ -345,7 +532,17 @@ export default {
   justify-content: center;
 }
 
-.gap-2 {
-  gap: 8px;
+.mobile-results {
+  background: transparent;
+}
+
+.result-list-item {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background: rgb(var(--v-theme-surface));
+}
+
+.gap-1 {
+  gap: 4px;
 }
 </style>

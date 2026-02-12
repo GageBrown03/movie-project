@@ -4,7 +4,6 @@
     <v-row class="mb-6 align-center">
       <v-col>
         <h1 class="text-h3 font-weight-bold">Discover</h1>
-        
       </v-col>
     </v-row>
 
@@ -21,7 +20,6 @@
             <v-icon color="error" class="mr-2">mdi-trending-up</v-icon>
             Trending This Week
           </h2>
-          
         </div>
 
         <v-row>
@@ -32,10 +30,14 @@
             sm="4"
             md="2"
           >
-            <recommendation-card 
+            <media-quick-add-card
               :item="media"
               :is-in-collection="isInCollection(media.tmdbId)"
-              @click="handleCardClick(media)"
+              :loading="loadingStates[media.tmdbId]"
+              :is-mobile="isMobile"
+              @quick-add-watchlist="quickAddToWatchlist"
+              @quick-add-rated="openRatingDialog"
+              @view-existing="goToExisting"
             />
           </v-col>
         </v-row>
@@ -61,10 +63,14 @@
             sm="4"
             md="2"
           >
-            <recommendation-card 
+            <media-quick-add-card
               :item="media"
               :is-in-collection="isInCollection(media.tmdbId)"
-              @click="handleCardClick(media)"
+              :loading="loadingStates[media.tmdbId]"
+              :is-mobile="isMobile"
+              @quick-add-watchlist="quickAddToWatchlist"
+              @quick-add-rated="openRatingDialog"
+              @view-existing="goToExisting"
             />
           </v-col>
         </v-row>
@@ -77,9 +83,6 @@
             <v-icon color="amber" class="mr-2">mdi-star</v-icon>
             Based on What You Loved
           </h2>
-          <p class="text-caption text-medium-emphasis">
-            
-          </p>
         </div>
 
         <v-row>
@@ -90,10 +93,14 @@
             sm="4"
             md="2"
           >
-            <recommendation-card 
+            <media-quick-add-card
               :item="media"
               :is-in-collection="isInCollection(media.tmdbId)"
-              @click="handleCardClick(media)"
+              :loading="loadingStates[media.tmdbId]"
+              :is-mobile="isMobile"
+              @quick-add-watchlist="quickAddToWatchlist"
+              @quick-add-rated="openRatingDialog"
+              @view-existing="goToExisting"
             />
           </v-col>
         </v-row>
@@ -106,7 +113,6 @@
             <v-icon color="secondary" class="mr-2">mdi-account-star</v-icon>
             Featuring Your Favorite Actors
           </h2>
-          
         </div>
 
         <v-row>
@@ -117,24 +123,26 @@
             sm="4"
             md="2"
           >
-            <recommendation-card 
+            <media-quick-add-card
               :item="media"
               :is-in-collection="isInCollection(media.tmdbId)"
-              @click="handleCardClick(media)"
+              :loading="loadingStates[media.tmdbId]"
+              :is-mobile="isMobile"
+              @quick-add-watchlist="quickAddToWatchlist"
+              @quick-add-rated="openRatingDialog"
+              @view-existing="goToExisting"
             />
           </v-col>
         </v-row>
       </section>
 
-      
-      <!-- Hidden Gems (High TMDB, Not in Your Collection) -->
+      <!-- Hidden Gems -->
       <section v-if="hiddenGems.length > 0" class="mb-8">
         <div class="section-header mb-4">
           <h2 class="text-h5 font-weight-bold">
             <v-icon color="info" class="mr-2">mdi-diamond-stone</v-icon>
             Hidden Gems
           </h2>
-          
         </div>
 
         <v-row>
@@ -145,10 +153,14 @@
             sm="4"
             md="2"
           >
-            <recommendation-card 
+            <media-quick-add-card
               :item="media"
               :is-in-collection="isInCollection(media.tmdbId)"
-              @click="handleCardClick(media)"
+              :loading="loadingStates[media.tmdbId]"
+              :is-mobile="isMobile"
+              @quick-add-watchlist="quickAddToWatchlist"
+              @quick-add-rated="openRatingDialog"
+              @view-existing="goToExisting"
             />
           </v-col>
         </v-row>
@@ -162,82 +174,90 @@
         text="Rate some movies and TV shows to get personalized recommendations!"
       >
         <template v-slot:actions>
-          <v-btn color="primary" size="large" to="/media/new">
+          <v-btn color="primary" size="large" @click="$emit('open-add-dialog')">
             Add Media
           </v-btn>
         </template>
       </v-empty-state>
     </div>
 
-    <!-- Quick Add Dialog -->
-    <v-dialog v-model="showQuickAddDialog" max-width="700">
-      <v-card v-if="selectedItem">
-        <v-img
-          v-if="selectedItem.backdropUrl"
-          :src="selectedItem.backdropUrl"
-          height="300"
-          cover
-          gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.8)"
-        >
-          <div class="pa-6" style="position: absolute; bottom: 0;">
-            <v-chip 
-              :color="selectedItem.mediaType === 'movie' ? 'primary' : 'secondary'"
-              size="small"
-              class="mb-2"
-            >
-              {{ selectedItem.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
-            </v-chip>
-            <h2 class="text-h4 text-white">{{ selectedItem.title }}</h2>
+    <!-- Rating Dialog (reused from AddMediaDialog) -->
+    <v-dialog v-model="showRatingDialog" max-width="500">
+      <v-card v-if="itemToRate">
+        <v-card-title>Rate {{ itemToRate.title }}</v-card-title>
+        <v-card-text>
+          <div class="d-flex align-center mb-4">
+            <v-avatar size="60" rounded class="mr-3">
+              <v-img v-if="itemToRate.posterUrl" :src="itemToRate.posterUrl" />
+            </v-avatar>
+            <div>
+              <p class="text-body-1 font-weight-bold mb-0">{{ itemToRate.title }}</p>
+              <p class="text-caption text-medium-emphasis">
+                {{ itemToRate.mediaType === 'movie' ? 'Movie' : 'TV Show' }} • {{ itemToRate.releaseYear }}
+              </p>
+            </div>
           </div>
-        </v-img>
-        
-        <v-card-text class="pt-6">
-          <div class="d-flex gap-2 mb-4">
-            <v-chip v-if="selectedItem.releaseYear" size="small">
-              {{ selectedItem.releaseYear }}
-            </v-chip>
-            <v-chip v-if="selectedItem.tmdbRating" size="small">
-              <v-icon start size="small">mdi-star</v-icon>
-              {{ selectedItem.tmdbRating.toFixed(1) }}
-            </v-chip>
-          </div>
-          
-          <p v-if="selectedItem.plot" class="text-body-1">
-            {{ selectedItem.plot }}
+
+          <v-rating
+            v-model="userRating"
+            color="primary"
+            size="large"
+            hover
+          />
+          <p class="text-caption mt-2">
+            {{ userRating ? `${userRating} out of 5 stars` : 'Tap to rate' }}
           </p>
+
+          <v-textarea
+            v-model="userNotes"
+            label="Personal notes (optional)"
+            variant="outlined"
+            rows="2"
+            class="mt-4"
+            placeholder="What did you think?"
+          />
         </v-card-text>
-        
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="showQuickAddDialog = false">
-            Cancel
-          </v-btn>
-          <v-btn color="info" @click="addToWatchlist" :loading="adding">
-            <v-icon start>mdi-bookmark-plus</v-icon>
-            Add to Watchlist
+          <v-btn variant="text" @click="closeRatingDialog">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            @click="saveWithRating"
+            :loading="saving"
+            :disabled="!userRating"
+          >
+            Add to Library
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Success Snackbar -->
+    <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000">
+      {{ snackbarMessage }}
+    </v-snackbar>
   </div>
 </template>
 
 <script>
 import { recommendationsAPI } from '@/services/recommendations';
 import { mediaAPI } from '@/services/api-production';
-import RecommendationCard from '@/components/RecommendationCard.vue';
+import MediaQuickAddCard from '@/components/MediaQuickAddCard.vue';
 
 export default {
   name: 'DiscoverView',
   
   components: {
-    RecommendationCard
+    MediaQuickAddCard
   },
+
+  emits: ['open-add-dialog'],
   
   data() {
     return {
       loading: false,
       userCollection: [],
+      loadingStates: {}, // Track which items are being added
       
       // Recommendation categories
       fiveStarMedia: [],
@@ -249,10 +269,17 @@ export default {
       trendingRecommendations: [],
       hiddenGems: [],
       
-      // Quick add dialog
-      showQuickAddDialog: false,
-      selectedItem: null,
-      adding: false,
+      // Rating dialog
+      showRatingDialog: false,
+      itemToRate: null,
+      userRating: null,
+      userNotes: '',
+      saving: false,
+
+      // Snackbar
+      showSnackbar: false,
+      snackbarMessage: '',
+      snackbarColor: 'success'
     };
   },
   
@@ -262,6 +289,10 @@ export default {
              this.genreRecommendations.length > 0 ||
              this.actorRecommendations.length > 0 ||
              this.trendingRecommendations.length > 0;
+    },
+    
+    isMobile() {
+      return this.$vuetify.display.mobile;
     }
   },
   
@@ -340,7 +371,6 @@ export default {
     async loadFiveStarRecommendations() {
       if (this.fiveStarMedia.length === 0) return;
       
-      // Get similar content for random 5-star item
       const randomFiveStar = this.fiveStarMedia[
         Math.floor(Math.random() * this.fiveStarMedia.length)
       ];
@@ -352,7 +382,6 @@ export default {
             randomFiveStar.mediaType
           );
           
-          // Filter out items already in collection
           this.fiveStarRecommendations = similar.filter(
             item => !this.isInCollection(item.tmdbId)
           );
@@ -382,7 +411,6 @@ export default {
     async loadActorRecommendations() {
       if (this.topActors.length === 0) return;
       
-      // Get recommendations for top actor
       const topActor = this.topActors[0];
       
       try {
@@ -410,8 +438,7 @@ export default {
     
     async loadHiddenGems() {
       try {
-        // Get highly rated movies not in collection
-        const recommendations = await recommendationsAPI.getByGenre(18, 'movie'); // Drama genre
+        const recommendations = await recommendationsAPI.getByGenre(18, 'movie');
         
         this.hiddenGems = recommendations
           .filter(item => !this.isInCollection(item.tmdbId))
@@ -426,49 +453,100 @@ export default {
       return this.userCollection.some(m => m.tmdbId === tmdbId);
     },
     
-    handleCardClick(item) {
-      if (this.isInCollection(item.tmdbId)) {
-        const existing = this.userCollection.find(m => m.tmdbId === item.tmdbId);
-        this.$router.push(`/media/${existing.mediaId}`);
-      } else {
-        this.selectedItem = item;
-        this.showQuickAddDialog = true;
-      }
-    },
-    
-    async addToWatchlist() {
-      if (!this.selectedItem) return;
-      
-      this.adding = true;
-      
+    // Quick add to watchlist
+    async quickAddToWatchlist(item) {
+      this.$set(this.loadingStates, item.tmdbId, 'watchlist');
+
       try {
         const mediaData = {
-          title: this.selectedItem.title,
-          media_type: this.selectedItem.mediaType,
-          tmdb_id: this.selectedItem.tmdbId,
+          title: item.title,
+          media_type: item.mediaType,
+          tmdb_id: item.tmdbId,
           status: 'want_to_watch',
-          release_year: this.selectedItem.releaseYear,
-          plot: this.selectedItem.plot,
-          poster_url: this.selectedItem.posterUrl,
-          backdrop_url: this.selectedItem.backdropUrl,
-          tmdb_rating: this.selectedItem.tmdbRating,
+          release_year: item.releaseYear,
+          plot: item.plot,
+          poster_url: item.posterUrl,
+          backdrop_url: item.backdropUrl,
+          tmdb_rating: item.tmdbRating
         };
-        
+
         const created = await mediaAPI.create(mediaData);
+        this.userCollection.push(created);
         
-        // Refresh collection
-        this.userCollection = await mediaAPI.getAll();
-        
-        // Close dialog and navigate
-        this.showQuickAddDialog = false;
-        this.$router.push(`/media/${created.mediaId}`);
-        
+        this.showMessage(`Added "${item.title}" to watchlist!`, 'success');
+
       } catch (err) {
-        console.error('Error adding to watchlist:', err);
+        console.error('Error adding media:', err);
+        this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        this.adding = false;
+        this.$delete(this.loadingStates, item.tmdbId);
       }
     },
+
+    // Open rating dialog
+    openRatingDialog(item) {
+      this.itemToRate = item;
+      this.userRating = null;
+      this.userNotes = '';
+      this.showRatingDialog = true;
+    },
+
+    closeRatingDialog() {
+      this.showRatingDialog = false;
+      this.itemToRate = null;
+      this.userRating = null;
+      this.userNotes = '';
+    },
+
+    // Save with rating
+    async saveWithRating() {
+      if (!this.itemToRate || !this.userRating) return;
+
+      this.$set(this.loadingStates, this.itemToRate.tmdbId, 'rated');
+      this.saving = true;
+
+      try {
+        const mediaData = {
+          title: this.itemToRate.title,
+          media_type: this.itemToRate.mediaType,
+          tmdb_id: this.itemToRate.tmdbId,
+          status: 'watched',
+          rating: this.userRating,
+          notes: this.userNotes || null,
+          release_year: this.itemToRate.releaseYear,
+          plot: this.itemToRate.plot,
+          poster_url: this.itemToRate.posterUrl,
+          backdrop_url: this.itemToRate.backdropUrl,
+          tmdb_rating: this.itemToRate.tmdbRating
+        };
+
+        const created = await mediaAPI.create(mediaData);
+        this.userCollection.push(created);
+
+        this.closeRatingDialog();
+        this.$router.push(`/media/${created.mediaId}`);
+
+      } catch (err) {
+        console.error('Error adding media:', err);
+        this.showMessage('Failed to add. Please try again.', 'error');
+      } finally {
+        this.$delete(this.loadingStates, this.itemToRate.tmdbId);
+        this.saving = false;
+      }
+    },
+
+    goToExisting(item) {
+      const existing = this.userCollection.find(m => m.tmdbId === item.tmdbId);
+      if (existing) {
+        this.$router.push(`/media/${existing.mediaId}`);
+      }
+    },
+
+    showMessage(message, color = 'success') {
+      this.snackbarMessage = message;
+      this.snackbarColor = color;
+      this.showSnackbar = true;
+    }
   },
 };
 </script>
@@ -482,9 +560,5 @@ export default {
 .section-header {
   border-left: 4px solid currentColor;
   padding-left: 16px;
-}
-
-.gap-2 {
-  gap: 8px;
 }
 </style>
