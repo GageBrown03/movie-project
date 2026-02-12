@@ -15,18 +15,6 @@
         />
       </v-col>
       <v-spacer />
-      <v-col cols="12" sm="auto" class="mt-4 mt-sm-0">
-        <v-btn 
-          color="primary" 
-          size="large" 
-          to="/movies/new" 
-          prepend-icon="mdi-plus"
-          elevation="2"
-          class="font-weight-bold px-8"
-        >
-          Add Media
-        </v-btn>
-      </v-col>
     </v-row>
 
     <v-row class="mb-6 align-center" no-gutters>

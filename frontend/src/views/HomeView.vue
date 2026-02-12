@@ -8,16 +8,7 @@
       
       <!-- Quick Action Buttons -->
       <div class="actions">
-        <v-btn 
-          color="primary" 
-          size="x-large" 
-          to="/media/new"
-          prepend-icon="mdi-plus"
-          elevation="4"
-          class="px-8"
-        >
-          Add New Media
-        </v-btn>
+        
         <v-btn 
           color="secondary" 
           size="x-large" 

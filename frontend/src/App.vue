@@ -8,12 +8,12 @@
 
         <v-divider class="my-2" />
 
-        <v-list-item to="/media" prepend-icon="mdi-view-grid">
+        <v-list-item to="/media" prepend-icon="mdi-bookshelf">
           <v-list-item-title>Library</v-list-item-title>
         </v-list-item>
 
         <v-list-item to="/friends" prepend-icon="mdi-account-group">
-          <v-list-item-title>Friends</v-list-item-title>
+          <v-list-item-title>Social</v-list-item-title>
           <template v-slot:append v-if="pendingFriendRequests > 0">
             <v-badge :content="pendingFriendRequests" color="error" />
           </template>
@@ -25,34 +25,15 @@
           <v-list-item-title>Analytics</v-list-item-title>
         </v-list-item>
 
-        <v-list-item to="/random" prepend-icon="mdi-dice-5" color="primary">
+        <!-- PHASE 2: Temporary - Will merge to Explore in Phase 4 -->
+        <v-list-item to="/random" prepend-icon="mdi-dice-5">
           <v-list-item-title>Pick for me</v-list-item-title>
         </v-list-item>
 
         <v-list-item to="/discover" prepend-icon="mdi-compass">
           <v-list-item-title>Discover</v-list-item-title>
         </v-list-item>
-
-        <v-divider class="my-2" />
-
-        <!-- Settings Menu 
-        <v-list-item to="/settings/privacy" prepend-icon="mdi-shield-account">
-          <v-list-item-title>Privacy Settings</v-list-item-title>
-        </v-list-item>
-        -->
       </v-list>
-
-      <!-- 👇 Fixed footer area of the drawer -->
-      <template #append>
-        <v-divider />
-        <v-list density="comfortable">
-          <v-list-item
-            to="/settings/privacy"
-            prepend-icon="mdi-shield-account"
-            title="Privacy Settings"
-          />
-        </v-list>
-      </template>
     </v-navigation-drawer>
     
     <v-app-bar app color="primary" dark>
@@ -66,20 +47,29 @@
 
       <v-spacer />
 
+      <!-- PHASE 2: Global Add Media Button -->
+      <v-btn
+        v-if="isLoggedIn"
+        prepend-icon="mdi-plus"
+        variant="text"
+        @click="showAddDialog = true"
+        class="mr-2"
+      >
+        Add
+      </v-btn>
+
       <!-- Theme Toggle -->
       <v-btn icon @click="toggleTheme" aria-label="Toggle theme">
         <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
-      <!-- Login/Logout Button -->
+      <!-- Login or UserMenu -->
       <v-btn v-if="!isLoggedIn" to="/login" variant="text">
         <v-icon start>mdi-login</v-icon>
         Login
       </v-btn>
-      <v-btn v-else @click="handleLogout" variant="text">
-        <v-icon start>mdi-logout</v-icon>
-        Logout
-      </v-btn>
+      
+      <user-menu v-else @logout="handleLogout" />
     </v-app-bar>
     
     <v-main>
@@ -87,24 +77,37 @@
         <router-view />
       </v-container>
     </v-main>
+
+    <!-- PHASE 2: Global Add Media Dialog -->
+    <add-media-dialog
+      v-model="showAddDialog"
+      @media-added="handleMediaAdded"
+    />
   </v-app>
 </template>
 
 <script>
 import { authAPI } from '@/services/api-production';
 import { useTheme } from 'vuetify';
+import UserMenu from '@/components/UserMenu.vue';
+import AddMediaDialog from '@/components/AddMediaDialog.vue';
 
-// Get API base URL (same logic as api-production.js)
 const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
 
 export default {
   name: 'App',
   
+  components: {
+    UserMenu,
+    AddMediaDialog
+  },
+  
   data() {
     return {
       drawer: true,
       isLoggedIn: false,
-      pendingFriendRequests: 0
+      pendingFriendRequests: 0,
+      showAddDialog: false
     };
   },
   
@@ -123,7 +126,6 @@ export default {
     this.checkAuth();
     this.loadTheme();
     
-    // Listen for route changes
     this.$watch(
       () => this.$route.path,
       () => {
@@ -139,19 +141,22 @@ export default {
     if (this.isLoggedIn) {
       this.loadPendingRequests();
       
-      // Refresh every 60 seconds
       this.pendingRequestsInterval = setInterval(() => {
         if (this.isLoggedIn) {
           this.loadPendingRequests();
         }
       }, 60000);
     }
+
+    // PHASE 2: Listen for keyboard shortcut (Ctrl/Cmd + K)
+    window.addEventListener('keydown', this.handleKeyboardShortcut);
   },
 
   beforeUnmount() {
     if (this.pendingRequestsInterval) {
       clearInterval(this.pendingRequestsInterval);
     }
+    window.removeEventListener('keydown', this.handleKeyboardShortcut);
   },
   
   methods: {
@@ -184,11 +189,8 @@ export default {
           }
         });
         
-        // CRITICAL: Check content-type before parsing JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          // Response is not JSON (probably HTML error page)
-          console.warn('Pending requests endpoint returned non-JSON response');
           this.pendingFriendRequests = 0;
           return;
         }
@@ -202,7 +204,6 @@ export default {
           this.pendingFriendRequests = 0;
         }
       } catch (err) {
-        // Silently fail - don't spam console with errors
         this.pendingFriendRequests = 0;
       }
     },
@@ -211,6 +212,24 @@ export default {
       const newTheme = this.isDark ? 'light' : 'dark';
       this.theme.global.name.value = newTheme;
       localStorage.setItem('theme', newTheme);
+    },
+
+    // PHASE 2: Keyboard shortcut handler
+    handleKeyboardShortcut(e) {
+      // Ctrl+K or Cmd+K to open add dialog
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        if (this.isLoggedIn) {
+          this.showAddDialog = true;
+        }
+      }
+    },
+
+    // PHASE 2: Handle successful media addition
+    handleMediaAdded(media) {
+      // Optional: Show success snackbar or refresh data
+      console.log('Media added:', media);
+      // The dialog already navigates to the detail page
     }
   }
 }
@@ -220,6 +239,7 @@ export default {
 .v-application {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
 .title-link {
   color: inherit;
   text-decoration: none;
@@ -229,5 +249,4 @@ export default {
 .clickable-title {
   cursor: pointer;
 }
-
 </style>

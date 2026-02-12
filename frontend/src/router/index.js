@@ -88,7 +88,7 @@ const routes = [
   },
   {
     path: '/movies/new',
-    redirect: '/media/new'
+    redirect: '/media'
   },
   {
     path: '/movies/:mediaId',
