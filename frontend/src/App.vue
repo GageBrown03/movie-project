@@ -26,8 +26,8 @@
         </v-list-item>
 
         <!-- PHASE 2: Temporary - Will merge to Explore in Phase 4 -->
-        <v-list-item to="/random" prepend-icon="mdi-dice-5">
-          <v-list-item-title>Pick for me</v-list-item-title>
+        <v-list-item to="/random" prepend-icon="mdi-shuffle" base-color="primary">
+          <v-list-item-title>Shuffle</v-list-item-title>
         </v-list-item>
 
         <v-list-item to="/discover" prepend-icon="mdi-compass">

@@ -36,42 +36,32 @@
       </p>
     </v-card-text>
 
-    <v-card-actions v-if="!isInCollection" class="pa-2 pt-0 flex-column gap-1">
+    <v-card-actions class="px-2 pb-2 pt-0 d-flex gap-2">
       <v-btn
-        size="x-small"
-        color="info"
-        variant="tonal"
-        block
-        @click="$emit('quick-add-watchlist', item)"
-        :loading="loading === 'watchlist'"
+        :color="isInCollection ? 'secondary' : 'primary'"
+        variant="flat"
+        class="flex-grow-1 px-0"
+        height="32"
+        :loading="loading"
+        @click.stop="handleMobileClick"
       >
-        <v-icon start size="14">mdi-bookmark-plus</v-icon>
-        Watchlist
+        <v-icon :icon="isInCollection ? 'mdi-eye' : 'mdi-plus'" />
+        <span class="d-none d-sm-inline ml-1">
+          {{ isInCollection ? 'View' : 'Add' }}
+        </span>
       </v-btn>
-      
-      <v-btn
-        size="x-small"
-        color="primary"
-        variant="tonal"
-        block
-        @click="$emit('quick-add-rated', item)"
-        :loading="loading === 'rated'"
-      >
-        <v-icon start size="14">mdi-star</v-icon>
-        Rate
-      </v-btn>
-    </v-card-actions>
 
-    <v-card-actions v-else class="pa-2 pt-0">
       <v-btn
-        size="x-small"
-        variant="outlined"
-        block
-        @click="$emit('view-existing', item)"
+        color="amber-darken-2"
+        variant="tonal"
+        class="flex-grow-1 px-0"
+        height="32"
+        @click.stop="$emit('rate', item)"
       >
-        View in Library
+        <v-icon icon="mdi-star" />
+        <span class="d-none d-sm-inline ml-1">Rate</span>
       </v-btn>
-    </v-card-actions>
+    </v-card-actions> 
   </v-card>
 
   <!-- IMPROVED: Mobile Card View with Title -->

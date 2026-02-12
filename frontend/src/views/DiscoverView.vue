@@ -24,7 +24,7 @@
           <v-col 
             v-for="media in trendingRecommendations.slice(0, 6)" 
             :key="media.tmdbId"
-            cols="6"
+            cols="4"
             sm="4"
             md="2"
           >
@@ -58,7 +58,7 @@
           <v-col 
             v-for="media in genreRecommendations.slice(0, 6)" 
             :key="media.tmdbId"
-            cols="6"
+            cols="4"
             sm="4"
             md="2"
           >
@@ -89,7 +89,7 @@
           <v-col 
             v-for="media in fiveStarRecommendations.slice(0, 6)" 
             :key="media.tmdbId"
-            cols="6"
+            cols="4"
             sm="4"
             md="2"
           >
@@ -120,7 +120,7 @@
           <v-col 
             v-for="media in actorRecommendations.slice(0, 6)" 
             :key="media.tmdbId"
-            cols="6"
+            cols="4"
             sm="4"
             md="2"
           >
@@ -151,7 +151,7 @@
           <v-col 
             v-for="media in hiddenGems.slice(0, 6)" 
             :key="media.tmdbId"
-            cols="6"
+            cols="4"
             sm="4"
             md="2"
           >
