@@ -1,16 +1,19 @@
 <template>
   <v-dialog
     v-model="isOpen"
-    max-width="1000"
+    max-width="1100"
     scrollable
     @click:outside="close"
+    :scrim="true"
+    attach="#app"
+    content-class="add-media-dialog"
   >
-    <v-card>
+    <v-card class="dialog-card">
       <v-card-title class="d-flex align-center pa-4 sticky-header">
         <v-icon class="mr-2">mdi-plus-circle</v-icon>
         <span class="text-h5">Add Media</span>
         <v-spacer />
-        <v-btn icon variant="text" @click="close">
+        <v-btn icon variant="text" @click="close" size="small">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -47,13 +50,13 @@
           text="Try a different search term"
         />
 
-        <!-- IMPROVED: Results with Quick Actions -->
+        <!-- Results with Quick Actions -->
         <div v-else-if="searchResults.length" class="mt-4">
-          <p class="text-caption text-medium-emphasis mb-2">
+          <p class="text-caption text-medium-emphasis mb-3">
             {{ searchResults.length }} results found
           </p>
 
-          <!-- Desktop: Card Grid with Quick Actions -->
+          <!-- Desktop: Card Grid -->
           <v-row v-if="!isMobile">
             <v-col
               v-for="item in searchResults"
@@ -61,6 +64,7 @@
               cols="6"
               sm="4"
               md="3"
+              lg="2"
             >
               <v-card class="result-card" hover>
                 <!-- Poster -->
@@ -93,7 +97,7 @@
 
                 <!-- Title -->
                 <v-card-text class="pa-2 pb-0">
-                  <p class="text-caption font-weight-bold text-truncate mb-1">
+                  <p class="text-caption font-weight-bold text-truncate mb-1" :title="item.title">
                     {{ item.title }}
                   </p>
                   <p class="text-caption text-medium-emphasis">
@@ -110,7 +114,7 @@
                     variant="tonal"
                     block
                     @click="quickAdd(item, 'want_to_watch')"
-                    :loading="adding === `${item.tmdbId}-watchlist`"
+                    :loading="loadingStates[item.tmdbId] === 'watchlist'"
                   >
                     <v-icon start size="14">mdi-bookmark-plus</v-icon>
                     Watchlist
@@ -143,7 +147,7 @@
             </v-col>
           </v-row>
 
-          <!-- Mobile: Compact List with Quick Actions -->
+          <!-- Mobile: Compact List -->
           <v-list v-else class="mobile-results">
             <v-list-item
               v-for="item in searchResults"
@@ -183,7 +187,7 @@
                     icon
                     variant="tonal"
                     @click="quickAdd(item, 'want_to_watch')"
-                    :loading="adding === `${item.tmdbId}-watchlist`"
+                    :loading="loadingStates[item.tmdbId] === 'watchlist'"
                   >
                     <v-icon size="16">mdi-bookmark-plus</v-icon>
                   </v-btn>
@@ -223,7 +227,7 @@
       </v-card-text>
     </v-card>
 
-    <!-- Rating Dialog (for "Rate" button) -->
+    <!-- Rating Dialog -->
     <v-dialog v-model="showRatingDialog" max-width="500">
       <v-card v-if="itemToRate">
         <v-card-title>Rate {{ itemToRate.title }}</v-card-title>
@@ -265,7 +269,7 @@
           <v-btn
             color="primary"
             @click="saveWithRating"
-            :loading="adding === `${itemToRate.tmdbId}-rated`"
+            :loading="loadingStates[itemToRate?.tmdbId] === 'rated'"
             :disabled="!userRating"
           >
             Add to Library
@@ -277,6 +281,9 @@
     <!-- Success Snackbar -->
     <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000">
       {{ snackbarMessage }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="showSnackbar = false">Close</v-btn>
+      </template>
     </v-snackbar>
   </v-dialog>
 </template>
@@ -301,7 +308,7 @@ export default {
       searchQuery: '',
       searching: false,
       searchResults: [],
-      adding: null, // Tracks which item is being added (tmdbId-action)
+      loadingStates: {}, // Vue 3: No need for $set
       userCollection: [],
       
       // Rating dialog
@@ -357,7 +364,9 @@ export default {
       this.searching = true;
 
       try {
-        this.searchResults = await tmdbAPI.search(this.searchQuery);
+        const allResults = await tmdbAPI.search(this.searchQuery);
+        // FIXED: Increase from 12 to 30 results
+        this.searchResults = allResults.slice(0, 30);
       } catch (err) {
         console.error('Search error:', err);
         this.searchResults = [];
@@ -367,10 +376,10 @@ export default {
       }
     },
 
-    // Quick add to watchlist (1-click)
+    // FIXED: Quick add to watchlist (Vue 3 compatible)
     async quickAdd(item, status) {
-      const addKey = `${item.tmdbId}-watchlist`;
-      this.adding = addKey;
+      // Vue 3: Direct assignment instead of $set
+      this.loadingStates[item.tmdbId] = 'watchlist';
 
       try {
         const mediaData = {
@@ -400,11 +409,11 @@ export default {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        this.adding = null;
+        // Vue 3: Direct delete instead of $delete
+        delete this.loadingStates[item.tmdbId];
       }
     },
 
-    // Open rating dialog
     openRatingDialog(item) {
       this.itemToRate = item;
       this.userRating = null;
@@ -419,12 +428,12 @@ export default {
       this.userNotes = '';
     },
 
-    // Save with rating
+    // FIXED: Save with rating - STAY ON PAGE
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
 
-      const addKey = `${this.itemToRate.tmdbId}-rated`;
-      this.adding = addKey;
+      // Vue 3: Direct assignment
+      this.loadingStates[this.itemToRate.tmdbId] = 'rated';
 
       try {
         const mediaData = {
@@ -446,27 +455,26 @@ export default {
         // Update collection
         this.userCollection.push(created);
 
-        // Close dialogs
-        this.closeRatingDialog();
-        this.close();
-
-        // used to navigate to detail page now stays on page
+        // FIXED: Don't navigate - stay on page!
+        // Show success message
         this.showMessage(`Rated "${this.itemToRate.title}" - ${this.userRating} stars!`, 'success');
+
+        // Close dialog
         this.closeRatingDialog();
-        
+
+        // Emit event
+        this.$emit('media-added', created);
 
       } catch (err) {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        this.adding = null;
+        // Vue 3: Direct delete
+        delete this.loadingStates[this.itemToRate.tmdbId];
       }
     },
 
-    // View full details (optional enhancement)
     viewDetails(item) {
-      // Could show expanded modal with full plot, cast, etc.
-      // For now, just opens rating dialog
       this.openRatingDialog(item);
     },
 
@@ -491,7 +499,7 @@ export default {
       this.searchQuery = '';
       this.searchResults = [];
       this.searching = false;
-      this.adding = null;
+      this.loadingStates = {};
       this.closeRatingDialog();
     },
 
@@ -509,11 +517,22 @@ export default {
 </script>
 
 <style scoped>
+/* FIXED: Better positioning - covers search bar */
+:deep(.add-media-dialog) {
+  align-self: flex-start !important;
+  margin-top: 80px !important; /* Below header */
+}
+
+.dialog-card {
+  max-height: calc(100vh - 100px);
+}
+
 .sticky-header {
   position: sticky;
   top: 0;
   z-index: 10;
   background: rgb(var(--v-theme-surface));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .result-card {
@@ -546,10 +565,5 @@ export default {
 
 .gap-1 {
   gap: 4px;
-}
-/* Added to dialog */
-:deep(.add-media-dialog) {
-  align-self: flex-start !important;
-  margin-top: 80px !important; /* Below header */
 }
 </style>
