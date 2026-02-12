@@ -450,8 +450,10 @@ export default {
         this.closeRatingDialog();
         this.close();
 
-        // Navigate to detail page
-        this.$router.push(`/media/${created.mediaId}`);
+        // used to navigate to detail page now stays on page
+        this.showMessage(`Rated "${this.itemToRate.title}" - ${this.userRating} stars!`, 'success');
+        this.closeRatingDialog();
+        
 
       } catch (err) {
         console.error('Error adding media:', err);
@@ -544,5 +546,10 @@ export default {
 
 .gap-1 {
   gap: 4px;
+}
+/* Added to dialog */
+:deep(.add-media-dialog) {
+  align-self: flex-start !important;
+  margin-top: 80px !important; /* Below header */
 }
 </style>
