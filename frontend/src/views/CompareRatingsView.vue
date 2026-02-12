@@ -18,7 +18,7 @@
           </span>
         </h1>
         <p class="text-subtitle-1 text-medium-emphasis">
-          See how your movie tastes align
+          See how your tastes align
         </p>
       </v-col>
     </v-row>
@@ -43,7 +43,7 @@
                 {{ comparison.stats.totalCommon }}
               </div>
               <div class="text-caption text-medium-emphasis">
-                Movies in Common
+                Media in Common
               </div>
             </v-card-text>
           </v-card>
@@ -243,7 +243,7 @@
             {{ friendData.username }} Recommends for You
           </h2>
           <p class="text-body-2 text-medium-emphasis mb-4">
-            Movies {{ friendData.username }} loved (4-5★) that you haven't seen yet
+            Media {{ friendData.username }} loved (4-5★) that you haven't seen yet
           </p>
 
           <v-row>
