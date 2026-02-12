@@ -14,10 +14,10 @@ def create_activity(user_id, activity_type, media_id=None, friend_user_id=None, 
     
     Args:
         user_id: ID of user performing action
-        activity_type: 'rating', 'watchlist', 'friend_added', 'milestone'
+        activity_type: 'rating', 'watchlist', 'friend_added'
         media_id: ID of related media (optional)
         friend_user_id: ID of friend (optional)
-        metadata: Dict with extra data (rating value, milestone type, etc.)
+        metadata: Dict with extra data (rating value, etc.)
     """
     try:
         activity = Activity(
@@ -34,31 +34,6 @@ def create_activity(user_id, activity_type, media_id=None, friend_user_id=None, 
         db.session.rollback()
         print(f"Error creating activity: {e}")
         return None
-
-
-def check_milestones(user_id):
-    """
-    Check if user hit any milestones and create activity if so.
-    Call this after adding media.
-    """
-    # Count total rated items
-    total_rated = Media.query.filter_by(
-        user_id=user_id, 
-        status=MediaStatus.WATCHED
-    ).count()
-    
-    # Milestone thresholds
-    milestones = [1, 5, 10, 25, 50, 100, 250, 500]
-    
-    if total_rated in milestones:
-        create_activity(
-            user_id=user_id,
-            activity_type='milestone',
-            metadata={
-                'milestone_type': 'total_rated',
-                'count': total_rated
-            }
-        )
 
 
 @activity_bp.route('/feed', methods=['GET'])
@@ -104,22 +79,12 @@ def get_activity_feed():
         if filter_type == 'me':
             query = query.filter(Activity.user_id == current_user_id)
         elif filter_type == 'friends':
-            if friend_ids:
-                query = query.filter(Activity.user_id.in_(friend_ids))
-            else:
-                # No friends, return empty list
+            if not friend_ids:
                 return jsonify([]), 200
+            query = query.filter(Activity.user_id.in_(friend_ids))
         else:  # 'all'
-            if friend_ids:
-                query = query.filter(
-                    or_(
-                        Activity.user_id == current_user_id,
-                        Activity.user_id.in_(friend_ids)
-                    )
-                )
-            else:
-                # No friends, just show own activities
-                query = query.filter(Activity.user_id == current_user_id)
+            user_ids = [current_user_id] + friend_ids
+            query = query.filter(Activity.user_id.in_(user_ids))
         
         # Get activities with eager loading
         activities = query.order_by(desc(Activity.created_at)).limit(limit).offset(offset).all()
@@ -144,28 +109,19 @@ def get_activity_feed():
         return jsonify(result), 200
         
     except Exception as e:
-        print(f"Error in get_activity_feed: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': 'Failed to load activity feed', 'message': str(e)}), 500
+        print(f"Error fetching activity feed: {e}")
+        return jsonify({'error': 'Failed to fetch activity feed'}), 500
 
 
 @activity_bp.route('/user/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_activity(user_id):
     """
-    Get activity feed for a specific user
-    Query params:
-        - limit: Number of items (default 50)
+    Get activity feed for a specific user.
+    Used for user profile pages.
     """
     try:
-        current_user_id = int(get_jwt_identity())
         limit = request.args.get('limit', 50, type=int)
-        
-        # TODO: Add privacy check when privacy module is ready
-        # from src.routes.privacy import can_view_profile
-        # if not can_view_profile(current_user_id, user_id):
-        #     return jsonify({'error': 'Cannot view this user\'s activity'}), 403
         
         activities = Activity.query.filter_by(user_id=user_id).order_by(
             desc(Activity.created_at)
@@ -190,56 +146,5 @@ def get_user_activity(user_id):
         return jsonify(result), 200
         
     except Exception as e:
-        print(f"Error in get_user_activity: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': 'Failed to load user activity', 'message': str(e)}), 500
-
-
-@activity_bp.route('/stats', methods=['GET'])
-@jwt_required()
-def get_activity_stats():
-    """Get activity statistics for current user"""
-    try:
-        current_user_id = int(get_jwt_identity())
-        
-        # Calculate stats
-        total_rated = Media.query.filter_by(
-            user_id=current_user_id, 
-            status=MediaStatus.WATCHED
-        ).count()
-        
-        total_watchlist = Media.query.filter_by(
-            user_id=current_user_id, 
-            status=MediaStatus.WANT_TO_WATCH
-        ).count()
-        
-        # Count friends (normalized table - user can be in either position)
-        total_friends = Friendship.query.filter(
-            or_(
-                Friendship.user_id_1 == current_user_id,
-                Friendship.user_id_2 == current_user_id
-            ),
-            Friendship.status == FriendshipStatus.ACCEPTED
-        ).count()
-        
-        # Recent activity count (last 7 days)
-        from datetime import datetime, timedelta
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        recent_activity_count = Activity.query.filter(
-            Activity.user_id == current_user_id,
-            Activity.created_at >= week_ago
-        ).count()
-        
-        return jsonify({
-            'totalRated': total_rated,
-            'totalWatchlist': total_watchlist,
-            'totalFriends': total_friends,
-            'recentActivityCount': recent_activity_count
-        }), 200
-        
-    except Exception as e:
-        print(f"Error in get_activity_stats: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': 'Failed to load stats', 'message': str(e)}), 500
+        print(f"Error fetching user activity: {e}")
+        return jsonify({'error': 'Failed to fetch user activity'}), 500

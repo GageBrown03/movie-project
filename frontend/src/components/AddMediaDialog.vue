@@ -41,21 +41,21 @@
         </div>
 
         <v-empty-state
-          v-else-if="!searchResults.length && searchQuery && !searching"
+          v-else-if="!filteredResults.length && searchQuery && !searching"
           icon="mdi-magnify-close"
           title="No Results"
           text="Try a different search term"
         />
 
-        <div v-else-if="searchResults.length" class="mt-4">
+        <div v-else-if="filteredResults.length" class="mt-4">
           <p class="text-caption text-medium-emphasis mb-3">
-            {{ searchResults.length }} results found
+            {{ filteredResults.length }} results found
           </p>
 
           <!-- Desktop Grid -->
           <v-row v-if="!isMobile">
             <v-col
-              v-for="item in searchResults"
+              v-for="item in filteredResults"
               :key="item.tmdbId"
               cols="6"
               sm="4"
@@ -70,7 +70,6 @@
                   cover
                   @click="viewDetails(item)"
                 >
-                  <!-- IMPROVED: Better library status badges -->
                   <div v-if="getLibraryStatus(item.tmdbId)" class="collection-badge">
                     <v-chip
                       v-if="getLibraryStatus(item.tmdbId).type === 'rated'"
@@ -90,17 +89,6 @@
                       <v-icon start size="small">mdi-bookmark</v-icon>
                       Watchlist
                     </v-chip>
-                  </div>
-                </v-img>
-
-                <v-img
-                  v-else
-                  src="/placeholder-poster.png"
-                  aspect-ratio="2/3"
-                  @click="viewDetails(item)"
-                >
-                  <div class="d-flex align-center justify-center fill-height bg-grey-darken-3">
-                    <v-icon size="64" color="grey">mdi-image-off</v-icon>
                   </div>
                 </v-img>
 
@@ -157,7 +145,7 @@
           <!-- Mobile List -->
           <v-list v-else class="mobile-results">
             <v-list-item
-              v-for="item in searchResults"
+              v-for="item in filteredResults"
               :key="item.tmdbId"
               class="mb-2 result-list-item"
             >
@@ -170,7 +158,6 @@
 
               <v-list-item-title class="text-body-2 font-weight-bold">
                 {{ item.title }}
-                <!-- IMPROVED: Better status chips -->
                 <v-chip
                   v-if="getLibraryStatus(item.tmdbId)?.type === 'rated'"
                   size="x-small"
@@ -349,6 +336,11 @@ export default {
     
     isMobile() {
       return this.$vuetify.display.mobile;
+    },
+
+    // FIXED: Filter out results without posters (same as Discover)
+    filteredResults() {
+      return this.searchResults.filter(item => item.posterUrl);
     }
   },
 
@@ -388,7 +380,6 @@ export default {
       }
     },
 
-    // IMPROVED: Get library status with type and rating
     getLibraryStatus(tmdbId) {
       const existing = this.userCollection.find(m => m.tmdbId === tmdbId);
       if (!existing) return null;
@@ -401,10 +392,22 @@ export default {
       return { type: 'in-library' };
     },
 
+    // FIXED: Fetch full details to get cast
     async quickAdd(item, status) {
       this.loadingStates[item.tmdbId] = 'watchlist';
 
       try {
+        // Fetch full details to get cast
+        let fullDetails;
+        try {
+          fullDetails = item.mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(item.tmdbId)
+            : await tmdbAPI.getTVDetails(item.tmdbId);
+        } catch (err) {
+          console.log('Could not fetch full details, using search result');
+          fullDetails = item;
+        }
+
         const mediaData = {
           title: item.title,
           media_type: item.mediaType,
@@ -414,7 +417,8 @@ export default {
           plot: item.plot,
           poster_url: item.posterUrl,
           backdrop_url: item.backdropUrl,
-          tmdb_rating: item.tmdbRating
+          tmdb_rating: item.tmdbRating,
+          cast: fullDetails.cast || []  // FIXED: Include cast
         };
 
         const created = await mediaAPI.create(mediaData);
@@ -445,30 +449,41 @@ export default {
       this.userNotes = '';
     },
 
-    // FIXED: Store title/rating before closing dialog
+    // FIXED: Fetch full details to get cast + Store values before closing
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
-
-      // Store values BEFORE closing dialog
-      const itemTitle = this.itemToRate.title;
-      const itemRating = this.userRating;
-      const itemTmdbId = this.itemToRate.tmdbId;
 
       this.savingRating = true;
 
       try {
+        // Fetch full details to get cast
+        let fullDetails;
+        try {
+          fullDetails = this.itemToRate.mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(this.itemToRate.tmdbId)
+            : await tmdbAPI.getTVDetails(this.itemToRate.tmdbId);
+        } catch (err) {
+          console.log('Could not fetch full details, using search result');
+          fullDetails = this.itemToRate;
+        }
+
+        // Store values BEFORE closing dialog
+        const itemTitle = this.itemToRate.title;
+        const itemRating = this.userRating;
+
         const mediaData = {
           title: this.itemToRate.title,
           media_type: this.itemToRate.mediaType,
-          tmdb_id: itemTmdbId,
+          tmdb_id: this.itemToRate.tmdbId,
           status: 'watched',
-          rating: itemRating,
+          rating: this.userRating,
           notes: this.userNotes || null,
           release_year: this.itemToRate.releaseYear,
           plot: this.itemToRate.plot,
           poster_url: this.itemToRate.posterUrl,
           backdrop_url: this.itemToRate.backdropUrl,
-          tmdb_rating: this.itemToRate.tmdbRating
+          tmdb_rating: this.itemToRate.tmdbRating,
+          cast: fullDetails.cast || []  // FIXED: Include cast
         };
 
         const created = await mediaAPI.create(mediaData);

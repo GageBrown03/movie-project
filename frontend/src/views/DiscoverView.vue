@@ -247,7 +247,7 @@
 
 <script>
 import { recommendationsAPI } from '@/services/recommendations';
-import { mediaAPI } from '@/services/api-production';
+import { mediaAPI, tmdbAPI } from '@/services/api-production';
 import MediaQuickAddCard from '@/components/MediaQuickAddCard.vue';
 
 export default {
@@ -445,7 +445,6 @@ export default {
       }
     },
     
-    // IMPROVED: Get library status with rating info
     getLibraryStatus(tmdbId) {
       const existing = this.userCollection.find(m => m.tmdbId === tmdbId);
       if (!existing) return null;
@@ -458,10 +457,22 @@ export default {
       return { type: 'in-library' };
     },
     
+    // FIXED: Fetch full details to get cast
     async quickAddToWatchlist(item) {
       this.loadingStates[item.tmdbId] = 'watchlist';
 
       try {
+        // Fetch full details to get cast
+        let fullDetails;
+        try {
+          fullDetails = item.mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(item.tmdbId)
+            : await tmdbAPI.getTVDetails(item.tmdbId);
+        } catch (err) {
+          console.log('Could not fetch full details, using recommendation');
+          fullDetails = item;
+        }
+
         const mediaData = {
           title: item.title,
           media_type: item.mediaType,
@@ -471,7 +482,8 @@ export default {
           plot: item.plot,
           poster_url: item.posterUrl,
           backdrop_url: item.backdropUrl,
-          tmdb_rating: item.tmdbRating
+          tmdb_rating: item.tmdbRating,
+          cast: fullDetails.cast || []  // FIXED: Include cast
         };
 
         const created = await mediaAPI.create(mediaData);
@@ -501,31 +513,41 @@ export default {
       this.userNotes = '';
     },
 
-    // FIXED: Store values before closing dialog
+    // FIXED: Fetch full details to get cast + Store values before closing
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
-
-      // Store values BEFORE any async operations
-      const itemTitle = this.itemToRate.title;
-      const itemRating = this.userRating;
-      const itemTmdbId = this.itemToRate.tmdbId;
-      const itemNotes = this.userNotes;
 
       this.savingRating = true;
 
       try {
+        // Fetch full details to get cast
+        let fullDetails;
+        try {
+          fullDetails = this.itemToRate.mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(this.itemToRate.tmdbId)
+            : await tmdbAPI.getTVDetails(this.itemToRate.tmdbId);
+        } catch (err) {
+          console.log('Could not fetch full details, using recommendation');
+          fullDetails = this.itemToRate;
+        }
+
+        // Store values BEFORE closing dialog
+        const itemTitle = this.itemToRate.title;
+        const itemRating = this.userRating;
+
         const mediaData = {
           title: itemTitle,
           media_type: this.itemToRate.mediaType,
-          tmdb_id: itemTmdbId,
+          tmdb_id: this.itemToRate.tmdbId,
           status: 'watched',
           rating: itemRating,
-          notes: itemNotes || null,
+          notes: this.userNotes || null,
           release_year: this.itemToRate.releaseYear,
           plot: this.itemToRate.plot,
           poster_url: this.itemToRate.posterUrl,
           backdrop_url: this.itemToRate.backdropUrl,
-          tmdb_rating: this.itemToRate.tmdbRating
+          tmdb_rating: this.itemToRate.tmdbRating,
+          cast: fullDetails.cast || []  // FIXED: Include cast
         };
 
         const created = await mediaAPI.create(mediaData);
@@ -534,7 +556,7 @@ export default {
         // Close dialog BEFORE showing message
         this.closeRatingDialog();
         
-        // Use stored values (not this.itemToRate which is now null)
+        // Use stored values
         this.showMessage(`Rated "${itemTitle}" - ${itemRating} stars!`, 'success');
 
       } catch (err) {

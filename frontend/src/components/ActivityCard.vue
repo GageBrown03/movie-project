@@ -99,7 +99,7 @@
           </div>
 
           <!-- Milestone Info -->
-          <div v-if="activity.activityType === 'milestone' && activity.metadata" class="mb-1">
+          <div v-if="activity.activityType === 'milestone'" class="mb-1">
             <v-chip size="small" variant="tonal" color="amber">
               <v-icon start size="small">mdi-star</v-icon>
               {{ milestoneText }}
@@ -139,13 +139,15 @@ export default {
     activityText() {
       switch (this.activity.activityType) {
         case 'rating':
+          // Show rating value if available
+          if (this.activity.metadata && this.activity.metadata.rating) {
+            return `rated ${this.activity.metadata.rating}★`;
+          }
           return 'rated';
         case 'watchlist':
           return 'added to watchlist';
         case 'friend_added':
           return 'is now friends with';
-        case 'milestone':
-          return 'reached a milestone';
         default:
           return 'did something';
       }
@@ -182,17 +184,38 @@ export default {
     },
 
     milestoneText() {
-      if (this.activity.metadata?.count) {
-        return `${this.activity.metadata.count} movies rated!`;
+      // FIXED: Better milestone text formatting
+      if (!this.activity.metadata) {
+        return 'Achievement unlocked!';
       }
+
+      const { milestone_type, count } = this.activity.metadata;
+
+      if (milestone_type === 'total_rated' && count) {
+        return `${count} ${count === 1 ? 'movie' : 'movies'} rated!`;
+      }
+
+      if (count) {
+        return `${count} milestone reached!`;
+      }
+
       return 'Achievement unlocked!';
     },
 
     timeAgo() {
-      if (!this.activity.createdAt) return '';
+      // Handle both camelCase and snake_case
+      const timestamp = this.activity.createdAt || this.activity.created_at;
+      if (!timestamp) return '';
 
       const now = new Date();
-      const created = new Date(this.activity.createdAt);
+      const created = new Date(timestamp);
+      
+      // Check if date is valid
+      if (isNaN(created.getTime())) {
+        console.error('Invalid date:', timestamp);
+        return '';
+      }
+
       const diffMs = now - created;
       const diffMins = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
@@ -207,15 +230,47 @@ export default {
     },
 
     isClickable() {
-      return this.activity.media && this.activity.media.mediaId; // Only media activities clickable
+      // Always clickable - just changes where it goes
+      return true;
+    },
+
+    currentUserId() {
+      // Get current user ID from localStorage
+      const user = localStorage.getItem('user');
+      if (user) {
+        try {
+          return JSON.parse(user).userId;
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    },
+
+    isOwnActivity() {
+      return this.currentUserId && this.activity.userId === this.currentUserId;
     }
   },
 
   methods: {
     handleCardClick() {
-      // Navigate to media detail (only for rating/watchlist activities)
+      // FIXED: Smart navigation
+      // For media activities (rating/watchlist):
       if (this.activity.media && this.activity.media.mediaId) {
-        this.$router.push(`/media/${this.activity.media.mediaId}`);
+        // If it's YOUR activity, navigate to media detail
+        if (this.isOwnActivity) {
+          this.$router.push(`/media/${this.activity.media.mediaId}`);
+        } else {
+          // If it's someone else's activity, navigate to their profile
+          if (this.activity.user.username) {
+            this.$router.push(`/user/${this.activity.user.username}`);
+          }
+        }
+      } else {
+        // For non-media activities (friend_added, milestone), go to user profile
+        if (this.activity.user.username) {
+          this.$router.push(`/user/${this.activity.user.username}`);
+        }
       }
     },
 

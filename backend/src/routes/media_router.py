@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Media, MediaType, MediaStatus, Activity
-from src.routes.activity_routes import create_activity, check_milestones
+from src.routes.activity_routes import create_activity
 from src.utils.actor_utils import add_cast_to_media
 
 media_router = Blueprint('media', __name__, url_prefix='/media')
@@ -162,9 +162,6 @@ def create_media():
             media_id=new_media.media_id,
             metadata={'rating': new_media.rating} if new_media.rating else None
         )
-        
-        # Check for milestones
-        check_milestones(user_id)
         
         return jsonify(new_media.to_dict(include_cast=True)), 201  
         
