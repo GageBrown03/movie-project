@@ -26,7 +26,7 @@
         </v-list-item>
 
         <!-- PHASE 2: Temporary - Will merge to Explore in Phase 4 -->
-        <v-list-item to="/random" prepend-icon="mdi-shuffle" base-color="primary">
+        <v-list-item to="/random" prepend-icon="mdi-shuffle">
           <v-list-item-title>Shuffle</v-list-item-title>
         </v-list-item>
 
