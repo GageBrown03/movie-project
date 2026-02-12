@@ -455,7 +455,7 @@ export default {
     
     // Quick add to watchlist
     async quickAddToWatchlist(item) {
-      this.$set(this.loadingStates, item.tmdbId, 'watchlist');
+      this.loadingStates[item.tmdbId] = 'watchlist'  // Direct assignment
 
       try {
         const mediaData = {
@@ -479,7 +479,7 @@ export default {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        this.$delete(this.loadingStates, item.tmdbId);
+        delete this.loadingStates[item.tmdbId]         // Direct delete
       }
     },
 
@@ -502,7 +502,7 @@ export default {
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
 
-      this.$set(this.loadingStates, this.itemToRate.tmdbId, 'rated');
+      this.loadingStates[item.tmdbId] = 'watchlist'  // Direct assignment
       this.saving = true;
 
       try {
@@ -530,7 +530,7 @@ export default {
         console.error('Error adding media:', err);
         this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
-        this.$delete(this.loadingStates, this.itemToRate.tmdbId);
+        delete this.loadingStates[item.tmdbId]         // Direct delete
         this.saving = false;
       }
     },
