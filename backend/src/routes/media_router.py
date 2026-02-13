@@ -160,7 +160,7 @@ def create_media():
             user_id=user_id,
             activity_type=activity_type,
             media_id=new_media.media_id,
-            metadata={'rating': new_media.rating} if new_media.rating else None
+            data={'rating': new_media.rating} if new_media.rating else None
         )
         
         return jsonify(new_media.to_dict(include_cast=True)), 201  
@@ -235,7 +235,7 @@ def update_media(media_id: int):
             user_id=user_id,
             activity_type='rating',
             media_id=media.media_id,
-            metadata={'rating': media.rating}
+            data={'rating': media.rating}
         )
     
     return jsonify(media.to_dict(include_cast=True))
