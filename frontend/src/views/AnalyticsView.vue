@@ -320,11 +320,11 @@
 
 <script>
 import { mediaAPI } from '@/services/api-production';
-import axios from 'axios';
-import TopPeople from '@/components/Analytics/TopPeople.vue';
-import DecadePreferences from '@/components/Analytics/DecadePreferences.vue';
-import AllTimeRecords from '@/components/Analytics/AllTimeRecords.vue';
-import CollectionCard from '@/components/Analytics/CollectionCard.vue';
+import { analyticsAPI } from '@/services/analytics';
+import TopPeople from '@/components/analytics/TopPeople.vue';
+import DecadePreferences from '@/components/analytics/DecadePreferences.vue';
+import AllTimeRecords from '@/components/analytics/AllTimeRecords.vue';
+import CollectionCard from '@/components/analytics/CollectionCard.vue';
 
 export default {
   name: 'AnalyticsView',
@@ -470,9 +470,9 @@ export default {
     async loadTopPeople() {
       this.loadingPeople = true;
       try {
-        const response = await axios.get('/api/analytics/top-people');
-        this.topActors = response.data.actors || [];
-        this.topDirectors = response.data.directors || [];
+        const data = await analyticsAPI.getTopPeople();
+        this.topActors = data.actors || [];
+        this.topDirectors = data.directors || [];
       } catch (err) {
         console.error('Error loading top people:', err);
       } finally {
@@ -483,9 +483,9 @@ export default {
     async loadDecadePreferences() {
       this.loadingDecades = true;
       try {
-        const response = await axios.get('/api/analytics/decades');
-        this.decadeData = response.data.decades || [];
-        this.favoriteDecade = response.data.favorite || null;
+        const data = await analyticsAPI.getDecadePreferences();
+        this.decadeData = data.decades || [];
+        this.favoriteDecade = data.favorite || null;
       } catch (err) {
         console.error('Error loading decades:', err);
       } finally {
@@ -496,8 +496,8 @@ export default {
     async loadRecords() {
       this.loadingRecords = true;
       try {
-        const response = await axios.get('/api/analytics/records');
-        this.records = response.data || {};
+        const data = await analyticsAPI.getRecords();
+        this.records = data || {};
       } catch (err) {
         console.error('Error loading records:', err);
       } finally {
@@ -508,8 +508,8 @@ export default {
     async loadCollectionCard() {
       this.loadingCollectionCard = true;
       try {
-        const response = await axios.get('/api/analytics/collection-card');
-        this.collectionCardStats = response.data || {};
+        const data = await analyticsAPI.getCollectionCard();
+        this.collectionCardStats = data || {};
       } catch (err) {
         console.error('Error loading collection card:', err);
       } finally {
