@@ -186,7 +186,7 @@
                   <!-- Friend's Rating -->
                   <v-col cols="5">
                     <div class="text-caption text-medium-emphasis mb-1">
-                      {{ friendData.username }}'s Rating
+                      {{ friendData.username }}'s
                     </div>
                     <div class="d-flex align-center">
                       <v-rating
@@ -196,7 +196,7 @@
                         color="amber"
                         size="small"
                       />
-                      <span class="text-h6 ml-2">{{ item.friendRating }}</span>
+                      
                     </div>
                   </v-col>
                 </v-row>
@@ -235,7 +235,7 @@
         <p class="text-body-2 text-medium-emphasis">Try adjusting your filters</p>
       </v-card>
 
-      <!-- Recommendations Section -->
+      <!-- Recommendations Section - WITH WORKING QUICK ADD -->
       <v-row class="mt-6" v-if="comparison.recommendationsForMe.length > 0">
         <v-col cols="12">
           <h2 class="text-h5 font-weight-bold mb-4">
@@ -254,7 +254,7 @@
               sm="4"
               md="2"
             >
-              <v-card hover>
+              <v-card hover class="recommendation-card">
                 <v-img
                   v-if="rec.posterUrl"
                   :src="rec.posterUrl"
@@ -262,7 +262,7 @@
                   cover
                 />
                 <v-card-text class="pa-2">
-                  <div class="text-caption font-weight-bold text-truncate">
+                  <div class="text-caption font-weight-bold text-truncate" :title="rec.title">
                     {{ rec.title }}
                   </div>
                   <v-rating
@@ -274,22 +274,33 @@
                   />
                 </v-card-text>
                 
-                <!-- NEW: Action buttons -->
+                <!-- Quick Add Buttons -->
                 <v-card-actions class="pa-2 pt-0">
                   <v-btn
+                    v-if="!isInCollection(rec.tmdbId)"
                     size="x-small"
                     color="info"
                     variant="tonal"
                     block
                     @click="quickAddToWatchlist(rec)"
-                    :loading="loadingStates[rec.tmdbId]"
+                    :loading="loadingStates[rec.tmdbId] === 'watchlist'"
                   >
                     <v-icon start size="14">mdi-bookmark-plus</v-icon>
                     Watchlist
                   </v-btn>
+                  <v-btn
+                    v-else
+                    size="x-small"
+                    variant="outlined"
+                    block
+                    @click="goToExisting(rec.tmdbId)"
+                  >
+                    View
+                  </v-btn>
                 </v-card-actions>
                 <v-card-actions class="pa-2 pt-0">
                   <v-btn
+                    v-if="!isInCollection(rec.tmdbId)"
                     size="x-small"
                     color="primary"
                     variant="tonal"
@@ -306,11 +317,71 @@
         </v-col>
       </v-row>
     </div>
+
+    <!-- Rating Dialog -->
+    <v-dialog v-model="showRatingDialog" max-width="500">
+      <v-card v-if="itemToRate">
+        <v-card-title>Rate {{ itemToRate.title }}</v-card-title>
+        <v-card-text>
+          <div class="d-flex align-center mb-4">
+            <v-avatar size="60" rounded class="mr-3">
+              <v-img v-if="itemToRate.posterUrl" :src="itemToRate.posterUrl" />
+            </v-avatar>
+            <div>
+              <p class="text-body-1 font-weight-bold mb-0">{{ itemToRate.title }}</p>
+              <p class="text-caption text-medium-emphasis">
+                Movie • {{ itemToRate.releaseYear }}
+              </p>
+            </div>
+          </div>
+
+          <v-rating
+            v-model="userRating"
+            color="primary"
+            size="large"
+            hover
+          />
+          <p class="text-caption mt-2">
+            {{ userRating ? `${userRating} out of 5 stars` : 'Tap to rate' }}
+          </p>
+
+          <v-textarea
+            v-model="userNotes"
+            label="Personal notes (optional)"
+            variant="outlined"
+            rows="2"
+            class="mt-4"
+            placeholder="What did you think?"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeRatingDialog">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            @click="saveWithRating"
+            :loading="savingRating"
+            :disabled="!userRating"
+          >
+            Add to Library
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Success Snackbar -->
+    <v-snackbar v-model="showSnackbar" :color="snackbarColor" timeout="3000">
+      {{ snackbarMessage }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="showSnackbar = false">Close</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
 <script>
-import { compareAPI } from '@/services/api-production';
+// FIXED: Added missing imports
+import { compareAPI, tmdbAPI, mediaAPI } from '@/services/api-production';
 
 export default {
   name: 'CompareRatingsView',
@@ -321,12 +392,6 @@ export default {
       error: null,
       comparison: null,
       friendData: null,
-      loadingStates: {},  // NEW
-      userCollection: [],  // NEW
-      showRatingDialog: false,  // NEW
-      itemToRate: null,  // NEW
-      userRating: null,  // NEW
-      userNotes: '',  // NEW
       
       filterType: 'all',
       filterOptions: [
@@ -343,6 +408,20 @@ export default {
         { title: 'Highest Rated (Friend)', value: 'friend_rating' },
         { title: 'Title (A-Z)', value: 'title' },
       ],
+
+      // Quick add functionality
+      userCollection: [],
+      loadingStates: {},
+      showRatingDialog: false,
+      itemToRate: null,
+      userRating: null,
+      userNotes: '',
+      savingRating: false,
+
+      // Snackbar
+      showSnackbar: false,
+      snackbarMessage: '',
+      snackbarColor: 'success'
     };
   },
   
@@ -399,6 +478,7 @@ export default {
   
   created() {
     this.loadComparison();
+    this.loadUserCollection();
   },
   
   methods: {
@@ -415,6 +495,20 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+
+    // NEW: Load user collection
+    async loadUserCollection() {
+      try {
+        this.userCollection = await mediaAPI.getAll();
+      } catch (err) {
+        console.error('Error loading collection:', err);
+      }
+    },
+
+    // NEW: Check if in collection
+    isInCollection(tmdbId) {
+      return this.userCollection.some(m => m.tmdbId === tmdbId);
     },
     
     getDifferenceColor(difference) {
@@ -433,44 +527,129 @@ export default {
       }
     },
 
+    // FIXED: Complete quick add implementation
     async quickAddToWatchlist(item) {
-      this.loadingStates[item.tmdbId] = true;
-      
+      this.loadingStates[item.tmdbId] = 'watchlist';
+
+      const mediaTitle = item.title;
+
       try {
-        // Fetch full details for cast
-        const fullDetails = await tmdbAPI.getMovieDetails(item.tmdbId);
-        
+        // Fetch cast data
+        let castData = [];
+        try {
+          const fullDetails = await tmdbAPI.getMovieDetails(item.tmdbId);
+          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+        } catch (tmdbError) {
+          console.warn('Could not fetch cast:', tmdbError.message);
+        }
+
         const mediaData = {
-          title: item.title,
+          title: mediaTitle,
           media_type: 'movie',
           tmdb_id: item.tmdbId,
           status: 'want_to_watch',
           release_year: item.releaseYear,
           poster_url: item.posterUrl,
-          tmdb_rating: item.tmdbRating,
-          cast: fullDetails.cast || []
+          tmdb_rating: item.rating,
+          cast: castData
         };
+
+        const created = await mediaAPI.create(mediaData);
         
-        await mediaAPI.create(mediaData);
-        this.userCollection.push(mediaData);
-        // Show success message
+        if (!created || typeof created !== 'object') {
+          throw new Error('Invalid response from server');
+        }
+
+        this.userCollection.push(created);
+        this.showMessage(`Added "${mediaTitle}" to watchlist!`, 'success');
+
       } catch (err) {
-        console.error('Error:', err);
+        console.error('Error adding to watchlist:', err);
+        this.showMessage('Failed to add. Please try again.', 'error');
       } finally {
         delete this.loadingStates[item.tmdbId];
       }
     },
     
+    // FIXED: Complete rating dialog
     openRatingDialog(item) {
       this.itemToRate = item;
       this.userRating = null;
       this.userNotes = '';
       this.showRatingDialog = true;
     },
+
+    closeRatingDialog() {
+      this.showRatingDialog = false;
+      this.itemToRate = null;
+      this.userRating = null;
+      this.userNotes = '';
+    },
     
+    // FIXED: Complete save with rating
     async saveWithRating() {
-      // Same as DiscoverView saveWithRating
-      // (fetch full details, create media, close dialog)
+      if (!this.itemToRate || !this.userRating) return;
+
+      const mediaTitle = this.itemToRate.title;
+      const rating = this.userRating;
+
+      this.savingRating = true;
+
+      try {
+        // Fetch cast data
+        let castData = [];
+        try {
+          const fullDetails = await tmdbAPI.getMovieDetails(this.itemToRate.tmdbId);
+          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+        } catch (tmdbError) {
+          console.warn('Could not fetch cast:', tmdbError.message);
+        }
+
+        const mediaData = {
+          title: mediaTitle,
+          media_type: 'movie',
+          tmdb_id: this.itemToRate.tmdbId,
+          status: 'watched',
+          rating: rating,
+          notes: this.userNotes || null,
+          release_year: this.itemToRate.releaseYear,
+          poster_url: this.itemToRate.posterUrl,
+          tmdb_rating: this.itemToRate.rating,
+          cast: castData
+        };
+
+        const created = await mediaAPI.create(mediaData);
+        
+        if (!created || typeof created !== 'object') {
+          throw new Error('Invalid response from server');
+        }
+
+        this.userCollection.push(created);
+
+        this.closeRatingDialog();
+        this.showMessage(`Rated "${mediaTitle}" - ${rating} stars!`, 'success');
+
+      } catch (err) {
+        console.error('Error saving rating:', err);
+        this.showMessage('Failed to save. Please try again.', 'error');
+      } finally {
+        this.savingRating = false;
+      }
+    },
+
+    // NEW: Go to existing media
+    goToExisting(tmdbId) {
+      const existing = this.userCollection.find(m => m.tmdbId === tmdbId);
+      if (existing) {
+        this.$router.push(`/media/${existing.mediaId}`);
+      }
+    },
+
+    // NEW: Show message
+    showMessage(message, color = 'success') {
+      this.snackbarMessage = message;
+      this.snackbarColor = color;
+      this.showSnackbar = true;
     }
   }
 };
@@ -497,5 +676,13 @@ export default {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.1);
+}
+
+.recommendation-card {
+  transition: transform 0.2s ease;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-4px);
 }
 </style>

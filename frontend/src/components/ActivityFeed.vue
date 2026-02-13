@@ -101,7 +101,7 @@
       <div v-if="showAll && activities.length > 10" class="text-center mt-6">
         <v-btn
           variant="text"
-          @click="showAll = false; $el.closest('.activity-feed').scrollIntoView({ behavior: 'smooth' })"
+          @click="scrollToTopAndCollapse"
           prepend-icon="mdi-chevron-up"
         >
           Show Less
@@ -131,8 +131,8 @@ export default {
       loading: false,
       loadingMore: false,
       error: null,
-      limit: 10,       // Number of activities to show
-      showAll: false,  // NEW
+      limit: 50,       // FIXED: Fetch 50 activities (was 10)
+      showAll: false,  // Show only 10 initially
       offset: 0,
       hasMore: true
     };
@@ -160,6 +160,8 @@ export default {
           return 'Your activity feed will show your ratings and friend updates.';
       }
     },
+
+    // FIXED: Display first 10 unless showAll is true
     displayedActivities() {
       return this.showAll ? this.activities : this.activities.slice(0, 10);
     }
@@ -171,7 +173,7 @@ export default {
       this.activities = [];
       this.offset = 0;
       this.hasMore = true;
-      this.showAll = false;  // reset showAll on filter change
+      this.showAll = false;  // Reset showAll on filter change
       this.loadActivities();
     }
   },
@@ -221,11 +223,19 @@ export default {
       }
     },
 
+    // NEW: Scroll to top and collapse
+    scrollToTopAndCollapse() {
+      this.showAll = false;
+      // Scroll to top of activity feed
+      this.$el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+
     // Public method to refresh feed (can be called from parent)
     async refresh() {
       this.activities = [];
       this.offset = 0;
       this.hasMore = true;
+      this.showAll = false;
       await this.loadActivities();
     }
   }
