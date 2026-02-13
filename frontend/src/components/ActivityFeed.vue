@@ -79,25 +79,33 @@
     <!-- Activity List -->
     <div v-else class="activity-list">
       <activity-card
-        v-for="activity in activities"
+        v-for="activity in displayedActivities"
         :key="activity.activityId"
         :activity="activity"
       />
 
-      <!-- Load More Button -->
-      <div v-if="hasMore && !loading" class="text-center mt-4">
+      <!-- Show More Button (if more than 10) -->
+      <div v-if="!showAll && activities.length > 10" class="text-center mt-6">
         <v-btn
+          color="primary"
           variant="outlined"
-          @click="loadMore"
-          :loading="loadingMore"
+          size="large"
+          @click="showAll = true"
+          prepend-icon="mdi-chevron-down"
         >
-          Load More
+          Show {{ activities.length - 10 }} More
         </v-btn>
       </div>
 
-      <!-- Loading More -->
-      <div v-if="loadingMore" class="text-center py-4">
-        <v-progress-circular indeterminate color="primary" size="32" />
+      <!-- Show Less Button (if showing all) -->
+      <div v-if="showAll && activities.length > 10" class="text-center mt-6">
+        <v-btn
+          variant="text"
+          @click="showAll = false; $el.closest('.activity-feed').scrollIntoView({ behavior: 'smooth' })"
+          prepend-icon="mdi-chevron-up"
+        >
+          Show Less
+        </v-btn>
       </div>
     </div>
   </div>
@@ -123,7 +131,8 @@ export default {
       loading: false,
       loadingMore: false,
       error: null,
-      limit: 20,
+      limit: 10,       // Number of activities to show
+      showAll: false,  // NEW
       offset: 0,
       hasMore: true
     };
@@ -150,6 +159,9 @@ export default {
         default:
           return 'Your activity feed will show your ratings and friend updates.';
       }
+    },
+    displayedActivities() {
+      return this.showAll ? this.activities : this.activities.slice(0, 10);
     }
   },
 
@@ -159,6 +171,7 @@ export default {
       this.activities = [];
       this.offset = 0;
       this.hasMore = true;
+      this.showAll = false;  // reset showAll on filter change
       this.loadActivities();
     }
   },

@@ -7,7 +7,7 @@ from sqlalchemy import or_, and_, desc
 activity_bp = Blueprint('activity', __name__, url_prefix='/api/activity')
 
 
-def create_activity(user_id, activity_type, media_id=None, friend_user_id=None, metadata=None):
+def create_activity(user_id, activity_type, media_id=None, friend_user_id=None, data=None):
     """
     Helper function to create an activity.
     Call this from other routes when actions happen.
@@ -17,7 +17,7 @@ def create_activity(user_id, activity_type, media_id=None, friend_user_id=None, 
         activity_type: 'rating', 'watchlist', 'friend_added'
         media_id: ID of related media (optional)
         friend_user_id: ID of friend (optional)
-        metadata: Dict with extra data (rating value, etc.)
+        data: Dict with extra data (rating value, etc.)
     """
     try:
         activity = Activity(
@@ -25,7 +25,7 @@ def create_activity(user_id, activity_type, media_id=None, friend_user_id=None, 
             activity_type=activity_type,
             media_id=media_id,
             friend_user_id=friend_user_id,
-            metadata=metadata or {}
+            data=data or {}
         )
         db.session.add(activity)
         db.session.commit()

@@ -273,6 +273,33 @@
                     size="x-small"
                   />
                 </v-card-text>
+                
+                <!-- NEW: Action buttons -->
+                <v-card-actions class="pa-2 pt-0">
+                  <v-btn
+                    size="x-small"
+                    color="info"
+                    variant="tonal"
+                    block
+                    @click="quickAddToWatchlist(rec)"
+                    :loading="loadingStates[rec.tmdbId]"
+                  >
+                    <v-icon start size="14">mdi-bookmark-plus</v-icon>
+                    Watchlist
+                  </v-btn>
+                </v-card-actions>
+                <v-card-actions class="pa-2 pt-0">
+                  <v-btn
+                    size="x-small"
+                    color="primary"
+                    variant="tonal"
+                    block
+                    @click="openRatingDialog(rec)"
+                  >
+                    <v-icon start size="14">mdi-star</v-icon>
+                    Rate
+                  </v-btn>
+                </v-card-actions>
               </v-card>
             </v-col>
           </v-row>
@@ -294,6 +321,12 @@ export default {
       error: null,
       comparison: null,
       friendData: null,
+      loadingStates: {},  // NEW
+      userCollection: [],  // NEW
+      showRatingDialog: false,  // NEW
+      itemToRate: null,  // NEW
+      userRating: null,  // NEW
+      userNotes: '',  // NEW
       
       filterType: 'all',
       filterOptions: [
@@ -398,6 +431,46 @@ export default {
       } else {
         return `They liked it ${Math.abs(difference)} star${Math.abs(difference) > 1 ? 's' : ''} more`;
       }
+    },
+
+    async quickAddToWatchlist(item) {
+      this.loadingStates[item.tmdbId] = true;
+      
+      try {
+        // Fetch full details for cast
+        const fullDetails = await tmdbAPI.getMovieDetails(item.tmdbId);
+        
+        const mediaData = {
+          title: item.title,
+          media_type: 'movie',
+          tmdb_id: item.tmdbId,
+          status: 'want_to_watch',
+          release_year: item.releaseYear,
+          poster_url: item.posterUrl,
+          tmdb_rating: item.tmdbRating,
+          cast: fullDetails.cast || []
+        };
+        
+        await mediaAPI.create(mediaData);
+        this.userCollection.push(mediaData);
+        // Show success message
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        delete this.loadingStates[item.tmdbId];
+      }
+    },
+    
+    openRatingDialog(item) {
+      this.itemToRate = item;
+      this.userRating = null;
+      this.userNotes = '';
+      this.showRatingDialog = true;
+    },
+    
+    async saveWithRating() {
+      // Same as DiscoverView saveWithRating
+      // (fetch full details, create media, close dialog)
     }
   }
 };

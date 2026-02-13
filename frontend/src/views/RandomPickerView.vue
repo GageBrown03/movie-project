@@ -488,6 +488,14 @@ export default {
   created() {
     this.loadWatchlist();
   },
+
+  async mounted() {
+  // NEW: Auto-pick after watchlist loads
+  if (this.watchlist.length > 0) {
+    await this.$nextTick();
+    this.pickRandom();
+  }
+},
   
   methods: {
     async loadWatchlist() {
@@ -495,6 +503,12 @@ export default {
       try {
         const allMedia = await mediaAPI.getAll();
         this.watchlist = allMedia.filter(m => m.status === 'want_to_watch');
+        
+        // NEW: Auto-pick after loading
+        if (this.watchlist.length > 0) {
+          await this.$nextTick();
+          this.pickRandom();
+        }
       } catch (err) {
         console.error('Error loading watchlist:', err);
       } finally {
