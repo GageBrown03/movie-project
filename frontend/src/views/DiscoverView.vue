@@ -457,24 +457,32 @@ export default {
       return { type: 'in-library' };
     },
     
-    // FIXED: Fetch full details to get cast
+    // Copy this method into your DiscoverView.vue to replace the existing quickAddToWatchlist
+
     async quickAddToWatchlist(item) {
       this.loadingStates[item.tmdbId] = 'watchlist';
 
+      // Store title immediately in case item changes
+      const mediaTitle = item.title;
+
       try {
-        // Fetch full details to get cast
-        let fullDetails;
+        // Fetch cast data with safer error handling
+        let castData = [];
+        
         try {
-          fullDetails = item.mediaType === 'movie'
+          const fullDetails = item.mediaType === 'movie'
             ? await tmdbAPI.getMovieDetails(item.tmdbId)
             : await tmdbAPI.getTVDetails(item.tmdbId);
-        } catch (err) {
-          console.log('Could not fetch full details, using recommendation');
-          fullDetails = item;
+          
+          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+        } catch (tmdbError) {
+          // TMDB API failed - continue without cast data
+          console.warn('Could not fetch cast from TMDB:', tmdbError.message);
+          castData = Array.isArray(item.cast) ? item.cast : [];
         }
 
         const mediaData = {
-          title: item.title,
+          title: mediaTitle,
           media_type: item.mediaType,
           tmdb_id: item.tmdbId,
           status: 'want_to_watch',
@@ -483,17 +491,25 @@ export default {
           poster_url: item.posterUrl,
           backdrop_url: item.backdropUrl,
           tmdb_rating: item.tmdbRating,
-          cast: fullDetails.cast || []  // FIXED: Include cast
+          cast: castData
         };
 
         const created = await mediaAPI.create(mediaData);
-        this.userCollection.push(created);
         
-        this.showMessage(`Added "${item.title}" to watchlist!`, 'success');
+        // Validate response before using it
+        if (!created || typeof created !== 'object') {
+          throw new Error('Invalid response from server');
+        }
+
+        this.userCollection.push(created);
+        this.showMessage(`Added "${mediaTitle}" to watchlist!`, 'success');
 
       } catch (err) {
-        console.error('Error adding media:', err);
-        this.showMessage('Failed to add. Please try again.', 'error');
+        console.error('Error adding to watchlist:', err);
+        
+        // More helpful error message
+        const errorMsg = err.response?.data?.error || err.message || 'Unknown error';
+        this.showMessage(`Failed to add: ${errorMsg}`, 'error');
       } finally {
         delete this.loadingStates[item.tmdbId];
       }
@@ -513,55 +529,70 @@ export default {
       this.userNotes = '';
     },
 
-    // FIXED: Fetch full details to get cast + Store values before closing
+    // Also replace saveWithRating in DiscoverView.vue with this safer version:
+
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
+
+      // Store values BEFORE any async operations
+      const mediaTitle = this.itemToRate.title;
+      const mediaType = this.itemToRate.mediaType;
+      const tmdbId = this.itemToRate.tmdbId;
+      const rating = this.userRating;
+      const notes = this.userNotes;
 
       this.savingRating = true;
 
       try {
-        // Fetch full details to get cast
-        let fullDetails;
+        // Fetch cast data with safer error handling
+        let castData = [];
+        
         try {
-          fullDetails = this.itemToRate.mediaType === 'movie'
-            ? await tmdbAPI.getMovieDetails(this.itemToRate.tmdbId)
-            : await tmdbAPI.getTVDetails(this.itemToRate.tmdbId);
-        } catch (err) {
-          console.log('Could not fetch full details, using recommendation');
-          fullDetails = this.itemToRate;
+          const fullDetails = mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(tmdbId)
+            : await tmdbAPI.getTVDetails(tmdbId);
+          
+          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+        } catch (tmdbError) {
+          console.warn('Could not fetch cast from TMDB:', tmdbError.message);
+          castData = Array.isArray(this.itemToRate.cast) ? this.itemToRate.cast : [];
         }
 
-        // Store values BEFORE closing dialog
-        const itemTitle = this.itemToRate.title;
-        const itemRating = this.userRating;
-
         const mediaData = {
-          title: itemTitle,
-          media_type: this.itemToRate.mediaType,
-          tmdb_id: this.itemToRate.tmdbId,
+          title: mediaTitle,
+          media_type: mediaType,
+          tmdb_id: tmdbId,
           status: 'watched',
-          rating: itemRating,
-          notes: this.userNotes || null,
+          rating: rating,
+          notes: notes || null,
           release_year: this.itemToRate.releaseYear,
           plot: this.itemToRate.plot,
           poster_url: this.itemToRate.posterUrl,
           backdrop_url: this.itemToRate.backdropUrl,
           tmdb_rating: this.itemToRate.tmdbRating,
-          cast: fullDetails.cast || []  // FIXED: Include cast
+          cast: castData
         };
 
         const created = await mediaAPI.create(mediaData);
+        
+        // Validate response
+        if (!created || typeof created !== 'object') {
+          throw new Error('Invalid response from server');
+        }
+
         this.userCollection.push(created);
 
-        // Close dialog BEFORE showing message
+        // Close dialog FIRST
         this.closeRatingDialog();
         
-        // Use stored values
-        this.showMessage(`Rated "${itemTitle}" - ${itemRating} stars!`, 'success');
+        // THEN show success message using stored values
+        this.showMessage(`Rated "${mediaTitle}" - ${rating} stars!`, 'success');
 
       } catch (err) {
-        console.error('Error adding media:', err);
-        this.showMessage('Failed to add. Please try again.', 'error');
+        console.error('Error saving rating:', err);
+        
+        const errorMsg = err.response?.data?.error || err.message || 'Unknown error';
+        this.showMessage(`Failed to save: ${errorMsg}`, 'error');
       } finally {
         this.savingRating = false;
       }
