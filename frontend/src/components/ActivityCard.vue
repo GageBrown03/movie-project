@@ -74,9 +74,9 @@
           </div>
 
           <!-- Rating Stars (for rating activity) -->
-          <div v-if="activity.activityType === 'rating' && activity.metadata?.rating" class="mb-1">
+          <div v-if="activity.activityType === 'rating' && activity.data?.rating" class="mb-1">
             <v-rating
-              :model-value="activity.metadata.rating"
+              :model-value="activity.data.rating"
               readonly
               size="small"
               density="compact"
@@ -140,8 +140,8 @@ export default {
       switch (this.activity.activityType) {
         case 'rating':
           // Show rating value if available
-          if (this.activity.metadata && this.activity.metadata.rating) {
-            return `rated ${this.activity.metadata.rating}★`;
+          if (this.activity.data && this.activity.data.rating) {
+            return `rated ${this.activity.data.rating}★`;
           }
           return 'rated';
         case 'watchlist':
@@ -185,11 +185,11 @@ export default {
 
     milestoneText() {
       // FIXED: Better milestone text formatting
-      if (!this.activity.metadata) {
+      if (!this.activity.data) {
         return 'Achievement unlocked!';
       }
 
-      const { milestone_type, count } = this.activity.metadata;
+      const { milestone_type, count } = this.activity.data;
 
       if (milestone_type === 'total_rated' && count) {
         return `${count} ${count === 1 ? 'movie' : 'movies'} rated!`;

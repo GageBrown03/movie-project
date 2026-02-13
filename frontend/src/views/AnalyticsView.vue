@@ -31,7 +31,17 @@
 
     <!-- Analytics Content -->
     <div v-else>
-      <!-- Stats Cards Row -->
+      <!-- NEW: Collection Card (Shareable) -->
+      <v-row class="mb-6">
+        <v-col cols="12">
+          <collection-card
+            :stats="collectionCardStats"
+            :loading="loadingCollectionCard"
+          />
+        </v-col>
+      </v-row>
+
+      <!-- Stats Cards Row (Existing) -->
       <v-row class="mb-6">
         <!-- Total Media -->
         <v-col cols="12" sm="6" md="4">
@@ -93,7 +103,7 @@
           </v-card>
         </v-col>
 
-        <!-- FIXED: Total Watch Time - Only Watched Items -->
+        <!-- Total Watch Time -->
         <v-col cols="12" sm="6" md="4">
           <v-card class="stat-card" elevation="2">
             <v-card-text>
@@ -138,7 +148,7 @@
           <v-card class="stat-card" elevation="2">
             <v-card-text>
               <div class="d-flex align-center mb-2">
-                <v-icon :color="stats.ratingDiff > 0 ? 'success' : 'error'" size="32" class="mr-3">
+                <v-icon :color="stats.ratingDiff > 0 ? 'success' : 'error'" size="32" class="mr-2">
                   {{ stats.ratingDiff > 0 ? 'mdi-thumb-up' : 'mdi-thumb-down' }}
                 </v-icon>
                 <div>
@@ -157,9 +167,19 @@
         </v-col>
       </v-row>
 
+      <!-- NEW: Top People (Actors & Directors) -->
+      <top-people
+        :actors="topActors"
+        :directors="topDirectors"
+        :loading="loadingPeople"
+        @filter-by-actor="filterByActor"
+        @filter-by-director="filterByDirector"
+        class="mb-6"
+      />
+
       <!-- Charts Row -->
-      <v-row>
-        <!-- Rating Distribution -->
+      <v-row class="mb-6">
+        <!-- Rating Distribution (Existing) -->
         <v-col cols="12" md="6">
           <v-card elevation="2">
             <v-card-title class="text-h6">
@@ -191,7 +211,7 @@
           </v-card>
         </v-col>
 
-        <!-- Genre Breakdown -->
+        <!-- Genre Breakdown (Existing) -->
         <v-col cols="12" md="6">
           <v-card elevation="2">
             <v-card-title class="text-h6">
@@ -220,8 +240,31 @@
             </v-card-text>
           </v-card>
         </v-col>
+      </v-row>
 
-        <!-- FIXED: Recent Activity with proper timeAgo -->
+      <!-- NEW: Decade Preferences -->
+      <v-row class="mb-6">
+        <v-col cols="12">
+          <decade-preferences
+            :decades="decadeData"
+            :favorite="favoriteDecade"
+            :loading="loadingDecades"
+          />
+        </v-col>
+      </v-row>
+
+      <!-- NEW: All-Time Records -->
+      <v-row class="mb-6">
+        <v-col cols="12">
+          <all-time-records
+            :records="records"
+            :loading="loadingRecords"
+          />
+        </v-col>
+      </v-row>
+
+      <!-- Recent Activity (Existing) -->
+      <v-row>
         <v-col cols="12">
           <v-card elevation="2">
             <v-card-title class="text-h6">
@@ -239,25 +282,23 @@
                   <template v-slot:prepend>
                     <v-avatar size="60" rounded class="mr-4">
                       <v-img v-if="media.posterUrl" :src="media.posterUrl" cover />
-                      <v-icon v-else>mdi-movie-outline</v-icon>
+                      <v-icon v-else>mdi-movie</v-icon>
                     </v-avatar>
                   </template>
 
-                  <v-list-item-title>
+                  <v-list-item-title class="font-weight-bold">
                     {{ media.title }}
-                    <v-chip size="x-small" :color="media.mediaType === 'movie' ? 'primary' : 'secondary'" class="ml-2">
-                      {{ media.mediaType.toUpperCase() }}
-                    </v-chip>
                   </v-list-item-title>
 
                   <v-list-item-subtitle>
                     <v-rating
                       v-if="media.rating"
                       :model-value="media.rating"
-                      size="x-small"
-                      color="amber"
-                      density="compact"
                       readonly
+                      density="compact"
+                      color="amber"
+                      size="small"
+                      class="mr-2"
                     />
                     <span v-else class="text-info">Watchlist</span>
                   </v-list-item-subtitle>
@@ -279,15 +320,41 @@
 
 <script>
 import { mediaAPI } from '@/services/api-production';
+import axios from 'axios';
+import TopPeople from '@../components/analytics/TopPeople.vue';
+import DecadePreferences from '@../components/analytics/DecadePreferences.vue';
+import AllTimeRecords from '@../components/analytics/AllTimeRecords.vue';
+import CollectionCard from '@../components/analytics/CollectionCard.vue';
 
 export default {
   name: 'AnalyticsView',
+  
+  components: {
+    TopPeople,
+    DecadePreferences,
+    AllTimeRecords,
+    CollectionCard
+  },
   
   data() {
     return {
       loading: false,
       mediaList: [],
       genreColors: ['primary', 'secondary', 'success', 'warning', 'error', 'info', 'purple', 'indigo'],
+      
+      // NEW: Analytics data
+      topActors: [],
+      topDirectors: [],
+      decadeData: [],
+      favoriteDecade: null,
+      records: {},
+      collectionCardStats: {},
+      
+      // NEW: Loading states
+      loadingPeople: false,
+      loadingDecades: false,
+      loadingRecords: false,
+      loadingCollectionCard: false,
     };
   },
   
@@ -316,13 +383,13 @@ export default {
         ratingDistribution[i] = this.mediaList.filter(m => m.rating === i).length;
       }
       
-      // FIXED: Total watch time - ONLY COUNT WATCHED ITEMS
+      // Total watch time - ONLY COUNT WATCHED ITEMS
       let totalMinutes = 0;
-      watched.forEach(m => {  // Changed from this.mediaList to watched
+      watched.forEach(m => {
         if (m.mediaType === 'movie' && m.runtime) {
           totalMinutes += m.runtime;
         } else if (m.mediaType === 'tv' && m.numberOfEpisodes) {
-          totalMinutes += m.numberOfEpisodes * 45; // Estimate 45min per episode
+          totalMinutes += m.numberOfEpisodes * 45;
         }
       });
       const totalHours = Math.round(totalMinutes / 60);
@@ -349,7 +416,7 @@ export default {
       let ratingDiff = 0;
       if (mediaWithBothRatings.length > 0) {
         const yourAvg = mediaWithBothRatings.reduce((sum, m) => sum + m.rating, 0) / mediaWithBothRatings.length;
-        const tmdbAvg = mediaWithBothRatings.reduce((sum, m) => sum + (m.tmdbRating / 2), 0) / mediaWithBothRatings.length; // Convert TMDB 10-point to 5-point
+        const tmdbAvg = mediaWithBothRatings.reduce((sum, m) => sum + (m.tmdbRating / 2), 0) / mediaWithBothRatings.length;
         ratingDiff = (yourAvg - tmdbAvg).toFixed(1);
       }
       
@@ -377,6 +444,7 @@ export default {
   
   created() {
     this.loadMedia();
+    this.loadAnalytics();
   },
   
   methods: {
@@ -391,20 +459,96 @@ export default {
       }
     },
     
+    // NEW: Load analytics data
+    async loadAnalytics() {
+      this.loadTopPeople();
+      this.loadDecadePreferences();
+      this.loadRecords();
+      this.loadCollectionCard();
+    },
+    
+    async loadTopPeople() {
+      this.loadingPeople = true;
+      try {
+        const response = await axios.get('/api/analytics/top-people');
+        this.topActors = response.data.actors || [];
+        this.topDirectors = response.data.directors || [];
+      } catch (err) {
+        console.error('Error loading top people:', err);
+      } finally {
+        this.loadingPeople = false;
+      }
+    },
+    
+    async loadDecadePreferences() {
+      this.loadingDecades = true;
+      try {
+        const response = await axios.get('/api/analytics/decades');
+        this.decadeData = response.data.decades || [];
+        this.favoriteDecade = response.data.favorite || null;
+      } catch (err) {
+        console.error('Error loading decades:', err);
+      } finally {
+        this.loadingDecades = false;
+      }
+    },
+    
+    async loadRecords() {
+      this.loadingRecords = true;
+      try {
+        const response = await axios.get('/api/analytics/records');
+        this.records = response.data || {};
+      } catch (err) {
+        console.error('Error loading records:', err);
+      } finally {
+        this.loadingRecords = false;
+      }
+    },
+    
+    async loadCollectionCard() {
+      this.loadingCollectionCard = true;
+      try {
+        const response = await axios.get('/api/analytics/collection-card');
+        this.collectionCardStats = response.data || {};
+      } catch (err) {
+        console.error('Error loading collection card:', err);
+      } finally {
+        this.loadingCollectionCard = false;
+      }
+    },
+    
+    // NEW: Filter by actor
+    filterByActor(actor) {
+      console.log('Filter by actor:', actor.name);
+      // Navigate to library with actor filter
+      this.$router.push({
+        path: '/library',
+        query: { actor: actor.name }
+      });
+    },
+    
+    // NEW: Filter by director
+    filterByDirector(director) {
+      console.log('Filter by director:', director.name);
+      // Navigate to library with director filter
+      this.$router.push({
+        path: '/library',
+        query: { director: director.name }
+      });
+    },
+    
     getRatingPercentage(rating) {
       const count = this.stats.ratingDistribution[rating] || 0;
       const maxCount = Math.max(...Object.values(this.stats.ratingDistribution));
       return maxCount > 0 ? (count / maxCount) * 100 : 0;
     },
     
-    // FIXED: timeAgo function to handle recent dates properly
     timeAgo(dateString) {
       if (!dateString) return '';
       
       const date = new Date(dateString);
       const now = new Date();
       
-      // Reset hours to compare just dates
       const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const nowOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       

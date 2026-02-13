@@ -81,6 +81,7 @@ from src.routes.tmdb_router import tmdb_router
 from src.routes.friends import friends
 from src.routes.privacy import privacy_bp as privacy
 from src.routes.compare import compare
+from src.routes.analytics import analytics_bp as analytics
 
 # Phase 3: Activity routes
 from src.routes.activity_routes import activity_bp
@@ -93,6 +94,7 @@ app.register_blueprint(privacy)
 app.register_blueprint(compare)
 app.register_blueprint(activity_bp)  # NEW
 app.register_blueprint(user_profile_bp)
+app.register_blueprint(analytics)
 
 print("✅ Blueprints registered:")
 print("  - auth_router")
@@ -103,6 +105,7 @@ print("  - privacy (/api/privacy)")
 print("  - compare (/api/compare)")
 print("  - activity_bp (/api/activity)")  # NEW
 print("  - user_profile_bp (/api/profile)")
+print("  - analytics_bp (/api/analytics)")
 
 # ==========================================
 # Health Check
