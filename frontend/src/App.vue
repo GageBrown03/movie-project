@@ -20,8 +20,10 @@
         </v-list-item>
 
         <v-divider class="my-2" />
-
-        <v-list-item to="/analytics" prepend-icon="mdi-chart-line">
+        <!-- REPLACE BELOW LINE WITH THIS FOR OLD ANALYTICS: 
+         <v-list-item to="/analytics" prepend-icon="mdi-chart-line">
+          -->
+        <v-list-item to="/api/analytics" prepend-icon="mdi-chart-line">
           <v-list-item-title>Analytics</v-list-item-title>
         </v-list-item>
 
