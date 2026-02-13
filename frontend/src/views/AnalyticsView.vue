@@ -321,10 +321,10 @@
 <script>
 import { mediaAPI } from '@/services/api-production';
 import axios from 'axios';
-import TopPeople from '@../components/analytics/TopPeople.vue';
-import DecadePreferences from '@../components/analytics/DecadePreferences.vue';
-import AllTimeRecords from '@../components/analytics/AllTimeRecords.vue';
-import CollectionCard from '@../components/analytics/CollectionCard.vue';
+import TopPeople from '@/components/Analytics/TopPeople.vue';
+import DecadePreferences from '@/components/Analytics/DecadePreferences.vue';
+import AllTimeRecords from '@/components/Analytics/AllTimeRecords.vue';
+import CollectionCard from '@/components/Analytics/CollectionCard.vue';
 
 export default {
   name: 'AnalyticsView',
