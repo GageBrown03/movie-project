@@ -1,98 +1,194 @@
 <template>
   <div class="similar-content">
-    <v-card elevation="2" class="mb-6">
+    <!-- Loading State -->
+    <div v-if="loading" class="mb-6">
+      <v-card elevation="2">
+        <v-card-title class="text-h6">
+          <v-icon start>mdi-lightbulb-on</v-icon>
+          Loading Related Content...
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col v-for="i in 6" :key="i" cols="6" sm="4" md="2">
+              <v-skeleton-loader type="image, article" />
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </div>
+
+    <!-- Empty State -->
+    <v-card v-else-if="relatedItems.length === 0" elevation="2" class="mb-6">
       <v-card-title class="text-h6">
         <v-icon start>mdi-lightbulb-on</v-icon>
-        Similar {{ mediaType === 'movie' ? 'Movies' : 'TV Shows' }}
+        Related Content
       </v-card-title>
-      
-      <!-- Loading State -->
-      <v-card-text v-if="loading">
-        <v-row>
-          <v-col v-for="i in 6" :key="i" cols="6" sm="4" md="2">
-            <v-skeleton-loader type="image, article" />
-          </v-col>
-        </v-row>
-      </v-card-text>
-      
-      <!-- Similar Content Carousel -->
-      <v-card-text v-else-if="similarItems.length > 0">
-        <div class="carousel-container">
-          <v-btn
-            icon="mdi-chevron-left"
-            size="small"
-            variant="elevated"
-            class="carousel-nav carousel-nav-left"
-            @click="scroll(-1)"
-            :disabled="scrollPosition === 0"
-          />
-          
-          <div class="carousel-track" ref="carouselTrack">
-            <div 
-              v-for="item in similarItems" 
-              :key="item.tmdbId"
-              class="carousel-item"
-              @click="handleItemClick(item)"
-            >
-              <v-card class="similar-card" hover>
-                <v-img
-                  v-if="item.posterUrl"
-                  :src="item.posterUrl"
-                  aspect-ratio="2/3"
-                  cover
-                  class="similar-poster"
-                >
-                  <div class="poster-overlay">
-                    <v-chip 
-                      v-if="isInCollection(item.tmdbId)"
-                      color="success"
-                      size="x-small"
-                      class="in-collection-chip"
-                    >
-                      <v-icon start size="x-small">mdi-check</v-icon>
-                      In Collection
-                    </v-chip>
-                  </div>
-                </v-img>
-                <div v-else class="poster-placeholder">
-                  <v-icon size="48">mdi-movie-outline</v-icon>
-                </div>
-                
-                <v-card-text class="pa-2">
-                  <div class="text-caption font-weight-bold text-truncate">
-                    {{ item.title }}
-                  </div>
-                  <div class="text-caption text-medium-emphasis">
-                    {{ item.releaseYear }}
-                    <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
-                      mdi-star
-                    </v-icon>
-                    {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </div>
-          </div>
-          
-          <v-btn
-            icon="mdi-chevron-right"
-            size="small"
-            variant="elevated"
-            class="carousel-nav carousel-nav-right"
-            @click="scroll(1)"
-            :disabled="isAtEnd"
-          />
-        </div>
-      </v-card-text>
-      
-      <!-- Empty State -->
-      <v-card-text v-else class="text-center py-6">
+      <v-card-text class="text-center py-6">
         <v-icon size="48" color="grey">mdi-filter-off</v-icon>
         <p class="text-body-2 text-medium-emphasis mt-2">
-          No similar content found
+          No related content found
         </p>
       </v-card-text>
     </v-card>
+
+    <!-- Related Content by Type -->
+    <div v-else>
+      <!-- In Series / Collection -->
+      <v-card v-if="collectionItems.length > 0" elevation="2" class="mb-4">
+        <v-card-title class="text-h6">
+          <v-icon start color="primary">mdi-folder-multiple</v-icon>
+          More in This Series
+        </v-card-title>
+        <v-card-text>
+          <div class="carousel-container">
+            <v-btn
+              icon="mdi-chevron-left"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-left"
+              @click="scrollSection('collection', -1)"
+              :disabled="scrollPositions.collection === 0"
+            />
+            
+            <div class="carousel-track" :ref="el => carouselRefs.collection = el">
+              <div 
+                v-for="item in collectionItems" 
+                :key="item.tmdbId"
+                class="carousel-item"
+                @click="handleItemClick(item)"
+              >
+                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+              </div>
+            </div>
+            
+            <v-btn
+              icon="mdi-chevron-right"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-right"
+              @click="scrollSection('collection', 1)"
+            />
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- Recommended (TMDB Algorithm) -->
+      <v-card v-if="recommendedItems.length > 0" elevation="2" class="mb-4">
+        <v-card-title class="text-h6">
+          <v-icon start color="success">mdi-thumb-up</v-icon>
+          You Might Also Like
+        </v-card-title>
+        <v-card-text>
+          <div class="carousel-container">
+            <v-btn
+              icon="mdi-chevron-left"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-left"
+              @click="scrollSection('recommended', -1)"
+              :disabled="scrollPositions.recommended === 0"
+            />
+            
+            <div class="carousel-track" :ref="el => carouselRefs.recommended = el">
+              <div 
+                v-for="item in recommendedItems" 
+                :key="item.tmdbId"
+                class="carousel-item"
+                @click="handleItemClick(item)"
+              >
+                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+              </div>
+            </div>
+            
+            <v-btn
+              icon="mdi-chevron-right"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-right"
+              @click="scrollSection('recommended', 1)"
+            />
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- Similar Content -->
+      <v-card v-if="similarItems.length > 0" elevation="2" class="mb-4">
+        <v-card-title class="text-h6">
+          <v-icon start color="info">mdi-movie-filter</v-icon>
+          Similar {{ mediaType === 'movie' ? 'Movies' : 'TV Shows' }}
+        </v-card-title>
+        <v-card-text>
+          <div class="carousel-container">
+            <v-btn
+              icon="mdi-chevron-left"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-left"
+              @click="scrollSection('similar', -1)"
+              :disabled="scrollPositions.similar === 0"
+            />
+            
+            <div class="carousel-track" :ref="el => carouselRefs.similar = el">
+              <div 
+                v-for="item in similarItems" 
+                :key="item.tmdbId"
+                class="carousel-item"
+                @click="handleItemClick(item)"
+              >
+                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+              </div>
+            </div>
+            
+            <v-btn
+              icon="mdi-chevron-right"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-right"
+              @click="scrollSection('similar', 1)"
+            />
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- Spinoffs (Related TV/Movies) -->
+      <v-card v-if="spinoffItems.length > 0" elevation="2" class="mb-4">
+        <v-card-title class="text-h6">
+          <v-icon start color="secondary">mdi-television-play</v-icon>
+          Related {{ mediaType === 'movie' ? 'TV Shows' : 'Movies' }}
+        </v-card-title>
+        <v-card-text>
+          <div class="carousel-container">
+            <v-btn
+              icon="mdi-chevron-left"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-left"
+              @click="scrollSection('spinoff', -1)"
+              :disabled="scrollPositions.spinoff === 0"
+            />
+            
+            <div class="carousel-track" :ref="el => carouselRefs.spinoff = el">
+              <div 
+                v-for="item in spinoffItems" 
+                :key="item.tmdbId"
+                class="carousel-item"
+                @click="handleItemClick(item)"
+              >
+                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+              </div>
+            </div>
+            
+            <v-btn
+              icon="mdi-chevron-right"
+              size="small"
+              variant="elevated"
+              class="carousel-nav carousel-nav-right"
+              @click="scrollSection('spinoff', 1)"
+            />
+          </div>
+        </v-card-text>
+      </v-card>
+    </div>
 
     <!-- Quick Add Dialog -->
     <v-dialog v-model="showQuickAddDialog" max-width="600">
@@ -119,6 +215,9 @@
                 <v-icon start size="small">mdi-star</v-icon>
                 {{ selectedItem.tmdbRating.toFixed(1) }}
               </v-chip>
+              <v-chip v-if="selectedItem.mediaType" size="small" class="ml-2">
+                {{ selectedItem.mediaType === 'movie' ? 'Movie' : 'TV Show' }}
+              </v-chip>
             </v-col>
           </v-row>
         </v-card-text>
@@ -140,8 +239,60 @@
 import { recommendationsAPI } from '@/services/recommendations';
 import { mediaAPI } from '@/services/api-production';
 
+// Reusable card component
+const SimilarCard = {
+  name: 'SimilarCard',
+  props: {
+    item: Object,
+    isInCollection: Boolean
+  },
+  template: `
+    <v-card class="similar-card" hover>
+      <v-img
+        v-if="item.posterUrl"
+        :src="item.posterUrl"
+        aspect-ratio="2/3"
+        cover
+        class="similar-poster"
+      >
+        <div class="poster-overlay">
+          <v-chip 
+            v-if="isInCollection"
+            color="success"
+            size="x-small"
+            class="in-collection-chip"
+          >
+            <v-icon start size="x-small">mdi-check</v-icon>
+            In Library
+          </v-chip>
+        </div>
+      </v-img>
+      <div v-else class="poster-placeholder">
+        <v-icon size="48">mdi-movie-outline</v-icon>
+      </div>
+      
+      <v-card-text class="pa-2">
+        <div class="text-caption font-weight-bold text-truncate" :title="item.title">
+          {{ item.title }}
+        </div>
+        <div class="text-caption text-medium-emphasis">
+          {{ item.releaseYear }}
+          <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
+            mdi-star
+          </v-icon>
+          {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
+        </div>
+      </v-card-text>
+    </v-card>
+  `
+};
+
 export default {
   name: 'SimilarContent',
+  
+  components: {
+    SimilarCard
+  },
   
   props: {
     tmdbId: {
@@ -158,9 +309,22 @@ export default {
   data() {
     return {
       loading: false,
-      similarItems: [],
+      relatedItems: [],
       userCollection: [],
-      scrollPosition: 0,
+      
+      // Carousel refs and scroll positions
+      carouselRefs: {
+        collection: null,
+        recommended: null,
+        similar: null,
+        spinoff: null
+      },
+      scrollPositions: {
+        collection: 0,
+        recommended: 0,
+        similar: 0,
+        spinoff: 0
+      },
       
       // Quick add dialog
       showQuickAddDialog: false,
@@ -170,25 +334,37 @@ export default {
   },
   
   computed: {
-    isAtEnd() {
-      if (!this.$refs.carouselTrack) return false;
-      const track = this.$refs.carouselTrack;
-      return this.scrollPosition >= track.scrollWidth - track.clientWidth - 10;
+    collectionItems() {
+      return this.relatedItems.filter(item => item.relationType === 'collection');
+    },
+    
+    recommendedItems() {
+      return this.relatedItems.filter(item => item.relationType === 'recommended');
+    },
+    
+    similarItems() {
+      return this.relatedItems.filter(item => item.relationType === 'similar');
+    },
+    
+    spinoffItems() {
+      return this.relatedItems.filter(item => item.relationType === 'spinoff');
     }
   },
   
   created() {
-    this.loadSimilar();
+    this.loadRelated();
     this.loadUserCollection();
   },
   
   methods: {
-    async loadSimilar() {
+    async loadRelated() {
       this.loading = true;
       try {
-        this.similarItems = await recommendationsAPI.getSimilar(this.tmdbId, this.mediaType);
+        // Use new comprehensive method
+        this.relatedItems = await recommendationsAPI.getRelatedContent(this.tmdbId, this.mediaType);
+        console.log('Related content loaded:', this.relatedItems.length);
       } catch (err) {
-        console.error('Error loading similar content:', err);
+        console.error('Error loading related content:', err);
       } finally {
         this.loading = false;
       }
@@ -206,8 +382,10 @@ export default {
       return this.userCollection.some(m => m.tmdbId === tmdbId);
     },
     
-    scroll(direction) {
-      const track = this.$refs.carouselTrack;
+    scrollSection(section, direction) {
+      const track = this.carouselRefs[section];
+      if (!track) return;
+      
       const scrollAmount = 300 * direction;
       
       track.scrollBy({ 
@@ -217,7 +395,7 @@ export default {
       
       // Update scroll position after animation
       setTimeout(() => {
-        this.scrollPosition = track.scrollLeft;
+        this.scrollPositions[section] = track.scrollLeft;
       }, 300);
     },
     
@@ -319,6 +497,7 @@ export default {
 .similar-card {
   cursor: pointer;
   transition: transform 0.2s ease;
+  height: 100%;
 }
 
 .similar-card:hover {

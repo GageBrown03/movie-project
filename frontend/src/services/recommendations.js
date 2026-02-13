@@ -1,39 +1,149 @@
-// recommendations.js - Service for fetching recommendations from TMDB
+// recommendations.js - IMPROVED with franchise/collection support
 
 const TMDB_API_KEY = process.env.VUE_APP_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
-// Debug: Check if API key is loaded
 if (!TMDB_API_KEY) {
   console.error('TMDB_API_KEY is not defined! Check your .env file.');
 }
 
 export const recommendationsAPI = {
   /**
-   * Get similar movies/TV shows for a specific media item
+   * NEW: Get comprehensive related content (collections, sequels, spinoffs, similar)
+   * This is the main method to use for "Similar Content"
    */
-  async getSimilar(tmdbId, mediaType) {
-    const endpoint = mediaType === 'movie' 
-      ? `${TMDB_BASE_URL}/movie/${tmdbId}/similar`
-      : `${TMDB_BASE_URL}/tv/${tmdbId}/similar`;
+  async getRelatedContent(tmdbId, mediaType) {
+    console.log('🔍 Fetching comprehensive related content for:', tmdbId, mediaType);
     
-    const url = `${endpoint}?api_key=${TMDB_API_KEY}&page=1`;
-    console.log('Fetching similar content:', url.replace(TMDB_API_KEY, 'API_KEY'));
+    const results = {
+      collection: [],      // Movies in same franchise (e.g., Avengers series)
+      similar: [],         // TMDB similar algorithm
+      recommendations: [], // TMDB recommendations algorithm
+      spinoffs: []        // Related TV shows for movies, or vice versa
+    };
+
+    try {
+      // 1. Get full media details (includes belongs_to_collection for movies)
+      const details = await this.getMediaDetails(tmdbId, mediaType);
+      
+      // 2. If movie belongs to a collection, get all movies in that collection
+      if (mediaType === 'movie' && details.belongs_to_collection) {
+        results.collection = await this.getCollection(details.belongs_to_collection.id);
+        console.log('✅ Found collection:', details.belongs_to_collection.name, results.collection.length);
+      }
+
+      // 3. Get TMDB similar content
+      const similar = await this.getSimilar(tmdbId, mediaType);
+      results.similar = similar;
+      console.log('✅ Found similar:', results.similar.length);
+
+      // 4. Get TMDB recommendations (different algorithm than similar)
+      const recommendations = await this.getRecommendations(tmdbId, mediaType);
+      results.recommendations = recommendations;
+      console.log('✅ Found recommendations:', results.recommendations.length);
+
+      // 5. Check for spinoffs (if movie, find related TV; if TV, find related movies)
+      if (details.keywords?.length > 0) {
+        results.spinoffs = await this.getSpinoffs(details.keywords, mediaType);
+        console.log('✅ Found spinoffs:', results.spinoffs.length);
+      }
+
+      // Combine and deduplicate all results
+      const combined = this.combineAndDeduplicate(results, tmdbId);
+      console.log('🎬 Total related content found:', combined.length);
+      
+      return combined;
+
+    } catch (err) {
+      console.error('Error fetching related content:', err);
+      // Fallback to just similar if comprehensive search fails
+      return await this.getSimilar(tmdbId, mediaType);
+    }
+  },
+
+  /**
+   * NEW: Get full media details including collections and keywords
+   */
+  async getMediaDetails(tmdbId, mediaType) {
+    const endpoint = mediaType === 'movie' 
+      ? `${TMDB_BASE_URL}/movie/${tmdbId}`
+      : `${TMDB_BASE_URL}/tv/${tmdbId}`;
+    
+    const url = `${endpoint}?api_key=${TMDB_API_KEY}&append_to_response=keywords`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch media details: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract keywords for spinoff detection
+    const keywords = mediaType === 'movie' 
+      ? data.keywords?.keywords || []
+      : data.keywords?.results || [];
+    
+    return {
+      ...data,
+      keywords: keywords.map(k => k.name)
+    };
+  },
+
+  /**
+   * NEW: Get all movies in a collection (franchise)
+   */
+  async getCollection(collectionId) {
+    const url = `${TMDB_BASE_URL}/collection/${collectionId}?api_key=${TMDB_API_KEY}`;
+    console.log('Fetching collection:', collectionId);
     
     const response = await fetch(url);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('TMDB API Error:', response.status, errorText);
-      throw new Error(`Failed to fetch similar content: ${response.status}`);
+      console.error('Collection fetch error:', response.status);
+      return [];
     }
     
     const data = await response.json();
-    console.log('Similar content results:', data.results?.length || 0);
     
-    // Transform TMDB results - ONLY items with posters
-    return data.results
-      .filter(item => item.poster_path) // Must have poster
+    return (data.parts || [])
+      .filter(item => item.poster_path)
+      .map(item => ({
+        tmdbId: item.id,
+        title: item.title,
+        mediaType: 'movie',
+        posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+        backdropUrl: item.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+          : null,
+        releaseYear: item.release_date 
+          ? new Date(item.release_date).getFullYear()
+          : null,
+        tmdbRating: item.vote_average,
+        plot: item.overview,
+        relationType: 'collection' // Tag for UI
+      }));
+  },
+
+  /**
+   * NEW: Get TMDB recommendations (different algorithm than similar)
+   */
+  async getRecommendations(tmdbId, mediaType) {
+    const endpoint = mediaType === 'movie' 
+      ? `${TMDB_BASE_URL}/movie/${tmdbId}/recommendations`
+      : `${TMDB_BASE_URL}/tv/${tmdbId}/recommendations`;
+    
+    const url = `${endpoint}?api_key=${TMDB_API_KEY}&page=1`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    return (data.results || [])
+      .filter(item => item.poster_path)
       .slice(0, 12)
       .map(item => ({
         tmdbId: item.id,
@@ -48,34 +158,143 @@ export const recommendationsAPI = {
           : (item.first_air_date ? new Date(item.first_air_date).getFullYear() : null),
         tmdbRating: item.vote_average,
         plot: item.overview,
+        relationType: 'recommended'
       }));
   },
 
   /**
-   * Get recommendations based on a genre - IMPROVED QUALITY
+   * NEW: Find spinoffs (TV shows for movies, or movies for TV shows)
+   * Uses keywords to find related content in opposite media type
    */
+  async getSpinoffs(keywords, originalMediaType) {
+    if (keywords.length === 0) return [];
+    
+    // Use first 2-3 most relevant keywords
+    const topKeywords = keywords.slice(0, 3);
+    const oppositeType = originalMediaType === 'movie' ? 'tv' : 'movie';
+    
+    const endpoint = oppositeType === 'movie'
+      ? `${TMDB_BASE_URL}/discover/movie`
+      : `${TMDB_BASE_URL}/discover/tv`;
+    
+    // Search using keywords (this finds related content in opposite media type)
+    const url = `${endpoint}?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&vote_count.gte=100&with_keywords=${topKeywords.join(',')}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    return (data.results || [])
+      .filter(item => item.poster_path)
+      .slice(0, 6)
+      .map(item => ({
+        tmdbId: item.id,
+        title: item.title || item.name,
+        mediaType: oppositeType,
+        posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+        backdropUrl: item.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+          : null,
+        releaseYear: item.release_date 
+          ? new Date(item.release_date).getFullYear()
+          : (item.first_air_date ? new Date(item.first_air_date).getFullYear() : null),
+        tmdbRating: item.vote_average,
+        plot: item.overview,
+        relationType: 'spinoff'
+      }));
+  },
+
+  /**
+   * NEW: Combine and deduplicate results from all sources
+   * Priority: Collection > Recommendations > Similar > Spinoffs
+   */
+  combineAndDeduplicate(results, excludeTmdbId) {
+    const seen = new Set([excludeTmdbId]); // Exclude the current media
+    const combined = [];
+
+    // Priority order: collection first (most relevant)
+    const sources = [
+      { items: results.collection, label: 'In Series' },
+      { items: results.recommendations, label: 'Recommended' },
+      { items: results.similar, label: 'Similar' },
+      { items: results.spinoffs, label: 'Related' }
+    ];
+
+    sources.forEach(source => {
+      source.items.forEach(item => {
+        const key = `${item.mediaType}-${item.tmdbId}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          combined.push({
+            ...item,
+            relationLabel: source.label // Add label for UI grouping
+          });
+        }
+      });
+    });
+
+    return combined.slice(0, 20); // Max 20 items
+  },
+
+  /**
+   * EXISTING: Get similar movies/TV shows (now used as part of comprehensive search)
+   */
+  async getSimilar(tmdbId, mediaType) {
+    const endpoint = mediaType === 'movie' 
+      ? `${TMDB_BASE_URL}/movie/${tmdbId}/similar`
+      : `${TMDB_BASE_URL}/tv/${tmdbId}/similar`;
+    
+    const url = `${endpoint}?api_key=${TMDB_API_KEY}&page=1`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    return (data.results || [])
+      .filter(item => item.poster_path)
+      .slice(0, 12)
+      .map(item => ({
+        tmdbId: item.id,
+        title: item.title || item.name,
+        mediaType: mediaType,
+        posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+        backdropUrl: item.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+          : null,
+        releaseYear: item.release_date 
+          ? new Date(item.release_date).getFullYear()
+          : (item.first_air_date ? new Date(item.first_air_date).getFullYear() : null),
+        tmdbRating: item.vote_average,
+        plot: item.overview,
+        relationType: 'similar'
+      }));
+  },
+
+  // EXISTING METHODS - Keep unchanged
   async getByGenre(genreId, mediaType, page = 1) {
     const endpoint = mediaType === 'movie'
       ? `${TMDB_BASE_URL}/discover/movie`
       : `${TMDB_BASE_URL}/discover/tv`;
     
-    // IMPROVED: Sort by popularity, higher quality threshold, more votes required
     const url = `${endpoint}?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&vote_count.gte=500&vote_average.gte=6.5&page=${page}`;
-    console.log('Fetching genre recommendations:', url.replace(TMDB_API_KEY, 'API_KEY'));
     
     const response = await fetch(url);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('TMDB API Error:', response.status, errorText);
       throw new Error(`Failed to fetch genre recommendations: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Genre recommendations results:', data.results?.length || 0);
     
-    // FILTER: Must have poster AND good rating
-    return data.results
+    return (data.results || [])
       .filter(item => item.poster_path && item.vote_average >= 6.5)
       .slice(0, 20)
       .map(item => ({
@@ -94,13 +313,7 @@ export const recommendationsAPI = {
       }));
   },
 
-  /**
-   * Get media by a specific actor
-   */
   async getByActor(actorId, page = 1) {
-    console.log('Fetching actor credits for:', actorId);
-    
-    // Get actor's movie credits
     const movieResponse = await fetch(
       `${TMDB_BASE_URL}/person/${actorId}/movie_credits?api_key=${TMDB_API_KEY}`
     );
@@ -110,21 +323,14 @@ export const recommendationsAPI = {
     );
     
     if (!movieResponse.ok || !tvResponse.ok) {
-      console.error('Actor credits error:', movieResponse.status, tvResponse.status);
       throw new Error('Failed to fetch actor credits');
     }
     
     const movieData = await movieResponse.json();
     const tvData = await tvResponse.json();
     
-    console.log('Actor credits:', {
-      movies: movieData.cast?.length || 0,
-      tv: tvData.cast?.length || 0
-    });
-    
-    // FILTER: Only items with posters
-    const movies = movieData.cast
-      .filter(item => item.poster_path) // Must have poster
+    const movies = (movieData.cast || [])
+      .filter(item => item.poster_path)
       .map(item => ({
         tmdbId: item.id,
         title: item.title,
@@ -137,8 +343,8 @@ export const recommendationsAPI = {
         popularity: item.popularity,
       }));
     
-    const tvShows = tvData.cast
-      .filter(item => item.poster_path) // Must have poster
+    const tvShows = (tvData.cast || [])
+      .filter(item => item.poster_path)
       .map(item => ({
         tmdbId: item.id,
         title: item.name,
@@ -151,32 +357,23 @@ export const recommendationsAPI = {
         popularity: item.popularity,
       }));
     
-    // Combine and sort by popularity
     return [...movies, ...tvShows]
       .sort((a, b) => b.popularity - a.popularity)
       .slice(0, 20);
   },
 
-  /**
-   * Get trending content
-   */
   async getTrending(mediaType = 'all', timeWindow = 'week') {
     const url = `${TMDB_BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${TMDB_API_KEY}`;
-    console.log('Fetching trending:', url.replace(TMDB_API_KEY, 'API_KEY'));
     
     const response = await fetch(url);
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('TMDB API Error:', response.status, errorText);
       throw new Error(`Failed to fetch trending content: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Trending results:', data.results?.length || 0);
     
-    // FILTER: Must have poster
-    return data.results
+    return (data.results || [])
       .filter(item => item.poster_path)
       .slice(0, 20)
       .map(item => ({
@@ -195,11 +392,7 @@ export const recommendationsAPI = {
       }));
   },
 
-  /**
-   * Genre ID mapping (TMDB genre IDs)
-   */
   genreMap: {
-    // Movies
     'Action': 28,
     'Adventure': 12,
     'Animation': 16,
@@ -218,7 +411,6 @@ export const recommendationsAPI = {
     'Thriller': 53,
     'War': 10752,
     'Western': 37,
-    // TV
     'Action & Adventure': 10759,
     'Sci-Fi & Fantasy': 10765,
     'War & Politics': 10768,
