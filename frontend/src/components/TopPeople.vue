@@ -25,7 +25,7 @@
         
         <v-list v-else lines="two" class="bg-transparent">
           <v-list-item
-            v-for="(actor, index) in actors"
+            v-for="(actor, index) in displayedActors"
             :key="actor.id"
             @click="filterByActor(actor)"
             link
@@ -60,6 +60,18 @@
             </template>
           </v-list-item>
         </v-list>
+        
+        <!-- Show More/Less Button for Actors -->
+        <v-card-actions v-if="actors.length > 5" class="justify-center">
+          <v-btn
+            variant="text"
+            color="primary"
+            @click="showAllActors = !showAllActors"
+          >
+            {{ showAllActors ? 'Show Less' : `Show More (${actors.length - 5} more)` }}
+            <v-icon :icon="showAllActors ? 'mdi-chevron-up' : 'mdi-chevron-down'" end />
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-col>
 
@@ -88,7 +100,7 @@
         
         <v-list v-else lines="two" class="bg-transparent">
           <v-list-item
-            v-for="(director, index) in directors"
+            v-for="(director, index) in displayedDirectors"
             :key="director.id || director.name"
             @click="filterByDirector(director)"
             link
@@ -123,6 +135,18 @@
             </template>
           </v-list-item>
         </v-list>
+        
+        <!-- Show More/Less Button for Directors -->
+        <v-card-actions v-if="directors.length > 5" class="justify-center">
+          <v-btn
+            variant="text"
+            color="secondary"
+            @click="showAllDirectors = !showAllDirectors"
+          >
+            {{ showAllDirectors ? 'Show Less' : `Show More (${directors.length - 5} more)` }}
+            <v-icon :icon="showAllDirectors ? 'mdi-chevron-up' : 'mdi-chevron-down'" end />
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-col>
   </v-row>
@@ -144,6 +168,23 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    }
+  },
+  
+  data() {
+    return {
+      showAllActors: false,
+      showAllDirectors: false
+    };
+  },
+  
+  computed: {
+    displayedActors() {
+      return this.showAllActors ? this.actors : this.actors.slice(0, 5);
+    },
+    
+    displayedDirectors() {
+      return this.showAllDirectors ? this.directors : this.directors.slice(0, 5);
     }
   },
   

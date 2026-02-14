@@ -22,41 +22,44 @@
     
     <v-card-text v-else>
       <v-row>
-        <!-- Highest Rated -->
-        <v-col v-if="records.highestRated" cols="12" sm="6" md="4">
+        <!-- Hidden Gem -->
+        <v-col v-if="records.hiddenGem" cols="12" sm="6" md="4">
           <v-card 
             variant="tonal" 
-            color="success" 
+            color="info" 
             class="record-card"
-            @click="goToMedia(records.highestRated.mediaId)"
+            @click="goToMedia(records.hiddenGem.mediaId)"
             link
           >
             <v-card-text>
               <div class="d-flex align-center mb-2">
-                <v-icon color="success" size="32" class="mr-2">
-                  mdi-thumb-up
+                <v-icon color="info" size="32" class="mr-2">
+                  mdi-diamond-stone
                 </v-icon>
                 <div class="text-caption text-medium-emphasis">
-                  Highest Rated
+                  Hidden Gem
                 </div>
               </div>
               
               <div class="d-flex align-center">
-                <v-avatar v-if="records.highestRated.posterUrl" size="60" rounded class="mr-3">
-                  <v-img :src="records.highestRated.posterUrl" cover />
+                <v-avatar v-if="records.hiddenGem.posterUrl" size="60" rounded class="mr-3">
+                  <v-img :src="records.hiddenGem.posterUrl" cover />
                 </v-avatar>
                 
                 <div class="flex-grow-1">
                   <div class="text-body-2 font-weight-bold line-clamp-2">
-                    {{ records.highestRated.title }}
+                    {{ records.hiddenGem.title }}
                   </div>
                   <v-rating
-                    :model-value="records.highestRated.rating"
+                    :model-value="records.hiddenGem.rating"
                     readonly
                     density="compact"
                     color="amber"
                     size="small"
                   />
+                  <div v-if="records.hiddenGem.count5Star > 1" class="text-caption mt-1">
+                    One of {{ records.hiddenGem.count5Star }} 5★ movies
+                  </div>
                 </div>
               </div>
             </v-card-text>

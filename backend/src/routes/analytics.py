@@ -194,15 +194,35 @@ def get_all_time_records():
     
     records = {}
     
-    # Highest rated movie
+    # Hidden Gem: Your 5-star movie that's most obscure
+    # Since we don't have TMDB popularity stored, we use oldest 5-star as proxy
+    # (Older + 5 stars = likely a hidden gem you discovered)
     if rated:
-        highest_rated = max(rated, key=lambda x: (x.rating, x.tmdb_rating or 0))
-        records['highestRated'] = {
-            'title': highest_rated.title,
-            'rating': highest_rated.rating,
-            'mediaId': highest_rated.media_id,
-            'posterUrl': highest_rated.poster_url
-        }
+        five_star_movies = [m for m in rated if m.rating == 5]
+        
+        if five_star_movies:
+            # If multiple 5-star movies, pick oldest one (more likely to be obscure)
+            hidden_gem = min(five_star_movies, key=lambda x: x.release_year or 9999)
+            
+            records['hiddenGem'] = {
+                'title': hidden_gem.title,
+                'rating': hidden_gem.rating,
+                'mediaId': hidden_gem.media_id,
+                'posterUrl': hidden_gem.poster_url,
+                'releaseYear': hidden_gem.release_year,
+                'count5Star': len(five_star_movies)  # How many 5-star total
+            }
+        else:
+            # No 5-star movies, use highest rated instead
+            highest_rated = max(rated, key=lambda x: (x.rating, x.tmdb_rating or 0))
+            records['hiddenGem'] = {
+                'title': highest_rated.title,
+                'rating': highest_rated.rating,
+                'mediaId': highest_rated.media_id,
+                'posterUrl': highest_rated.poster_url,
+                'releaseYear': highest_rated.release_year,
+                'count5Star': 0
+            }
     
     # Lowest rated movie
     if rated:
