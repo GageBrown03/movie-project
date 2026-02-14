@@ -2,6 +2,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Activity, User, Friendship, Media, MediaStatus, FriendshipStatus
+from datetime import datetime, timedelta
 from sqlalchemy import or_, and_, desc
 
 activity_bp = Blueprint('activity', __name__, url_prefix='/api/activity')
@@ -148,3 +149,46 @@ def get_user_activity(user_id):
     except Exception as e:
         print(f"Error fetching user activity: {e}")
         return jsonify({'error': 'Failed to fetch user activity'}), 500
+
+@activity_bp.route('/stats', methods=['GET'])
+@jwt_required()
+def get_activity_stats():
+    """
+    Get activity stats for the current user.
+    Returns counts of activities this week, this month, total.
+    """
+    try:
+        current_user_id = int(get_jwt_identity())
+        
+        # Get all user's activities
+        all_activities = Activity.query.filter_by(user_id=current_user_id).all()
+        
+        # Calculate stats
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
+        
+        total_count = len(all_activities)
+        week_count = len([a for a in all_activities if a.created_at >= week_ago])
+        month_count = len([a for a in all_activities if a.created_at >= month_ago])
+        
+        # Count by type
+        ratings_count = len([a for a in all_activities if a.activity_type == 'rating'])
+        watchlist_count = len([a for a in all_activities if a.activity_type == 'watchlist'])
+        friends_count = len([a for a in all_activities if a.activity_type == 'friend_added'])
+        
+        return jsonify({
+            'total': total_count,
+            'thisWeek': week_count,
+            'thisMonth': month_count,
+            'byType': {
+                'ratings': ratings_count,
+                'watchlist': watchlist_count,
+                'friends': friends_count
+            }
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching activity stats: {e}")
+        return jsonify({'error': 'Failed to fetch activity stats'}), 500
