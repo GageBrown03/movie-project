@@ -92,7 +92,7 @@
       <!-- Filter & Sort -->
       <v-card class="mb-6">
         <v-card-text>
-          <v-row align="center">
+          <v-row class="align-center">
             <v-col cols="12" md="6">
               <v-select
                 v-model="filterType"
@@ -169,7 +169,6 @@
                         color="amber"
                         size="small"
                       />
-                      <span class="text-h6 ml-2">{{ item.myRating }}</span>
                     </div>
                   </v-col>
 
@@ -527,32 +526,55 @@ export default {
       }
     },
 
-    // FIXED: Complete quick add implementation
+    // FIXED: Complete quick add implementation with proper media type handling
     async quickAddToWatchlist(item) {
       this.loadingStates[item.tmdbId] = 'watchlist';
-
       const mediaTitle = item.title;
 
       try {
-        // Fetch cast data
-        let castData = [];
+        // Get media type from item (backend now includes it)
+        const mediaType = item.mediaType || item.media_type || 'movie';
+        
+        // Fetch FULL details from TMDB based on correct type
+        let fullDetails;
         try {
-          const fullDetails = await tmdbAPI.getMovieDetails(item.tmdbId);
-          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+          if (mediaType === 'tv') {
+            fullDetails = await tmdbAPI.getTVDetails(item.tmdbId);
+          } else {
+            fullDetails = await tmdbAPI.getMovieDetails(item.tmdbId);
+          }
         } catch (tmdbError) {
-          console.warn('Could not fetch cast:', tmdbError.message);
+          console.warn('Could not fetch TMDB details:', tmdbError.message);
+          throw new Error('Failed to fetch media details');
         }
 
+        // Extract cast data
+        const castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+
+        // Build complete media data
         const mediaData = {
           title: mediaTitle,
-          media_type: 'movie',
+          media_type: mediaType,
           tmdb_id: item.tmdbId,
           status: 'want_to_watch',
-          release_year: item.releaseYear,
-          poster_url: item.posterUrl,
-          tmdb_rating: item.rating,
+          release_year: fullDetails.release_year || item.releaseYear,
+          plot: fullDetails.plot || fullDetails.overview,
+          poster_url: fullDetails.poster_url || item.posterUrl,
+          backdrop_url: fullDetails.backdrop_url,
+          tmdb_rating: fullDetails.tmdb_rating || fullDetails.vote_average,
+          genres: fullDetails.genres,
           cast: castData
         };
+
+        // Add type-specific fields
+        if (mediaType === 'movie') {
+          mediaData.director = fullDetails.director;
+          mediaData.runtime = fullDetails.runtime;
+        } else if (mediaType === 'tv') {
+          mediaData.number_of_seasons = fullDetails.number_of_seasons;
+          mediaData.number_of_episodes = fullDetails.number_of_episodes;
+          mediaData.show_status = fullDetails.status;
+        }
 
         const created = await mediaAPI.create(mediaData);
         
@@ -565,7 +587,8 @@ export default {
 
       } catch (err) {
         console.error('Error adding to watchlist:', err);
-        this.showMessage('Failed to add. Please try again.', 'error');
+        const errorMsg = err.message || 'Unknown error';
+        this.showMessage(`Failed to add: ${errorMsg}`, 'error');
       } finally {
         delete this.loadingStates[item.tmdbId];
       }
@@ -586,37 +609,63 @@ export default {
       this.userNotes = '';
     },
     
-    // FIXED: Complete save with rating
+    // FIXED: Complete save with rating with proper media type handling
     async saveWithRating() {
       if (!this.itemToRate || !this.userRating) return;
 
       const mediaTitle = this.itemToRate.title;
       const rating = this.userRating;
+      const notes = this.userNotes;
+      const tmdbId = this.itemToRate.tmdbId;
 
       this.savingRating = true;
 
       try {
-        // Fetch cast data
-        let castData = [];
+        // Get media type from item
+        const mediaType = this.itemToRate.mediaType || this.itemToRate.media_type || 'movie';
+        
+        // Fetch FULL details from TMDB based on correct type
+        let fullDetails;
         try {
-          const fullDetails = await tmdbAPI.getMovieDetails(this.itemToRate.tmdbId);
-          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+          if (mediaType === 'tv') {
+            fullDetails = await tmdbAPI.getTVDetails(tmdbId);
+          } else {
+            fullDetails = await tmdbAPI.getMovieDetails(tmdbId);
+          }
         } catch (tmdbError) {
-          console.warn('Could not fetch cast:', tmdbError.message);
+          console.warn('Could not fetch TMDB details:', tmdbError.message);
+          throw new Error('Failed to fetch media details');
         }
 
+        // Extract cast data
+        const castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+
+        // Build complete media data
         const mediaData = {
           title: mediaTitle,
-          media_type: 'movie',
-          tmdb_id: this.itemToRate.tmdbId,
+          media_type: mediaType,
+          tmdb_id: tmdbId,
           status: 'watched',
           rating: rating,
-          notes: this.userNotes || null,
-          release_year: this.itemToRate.releaseYear,
-          poster_url: this.itemToRate.posterUrl,
-          tmdb_rating: this.itemToRate.rating,
+          notes: notes || null,
+          release_year: fullDetails.release_year || this.itemToRate.releaseYear,
+          plot: fullDetails.plot || fullDetails.overview,
+          poster_url: fullDetails.poster_url || this.itemToRate.posterUrl,
+          backdrop_url: fullDetails.backdrop_url,
+          tmdb_rating: fullDetails.tmdb_rating || fullDetails.vote_average,
+          genres: fullDetails.genres,
           cast: castData
         };
+
+        // Add type-specific fields
+        if (mediaType === 'movie') {
+          mediaData.director = fullDetails.director;
+          mediaData.runtime = fullDetails.runtime;
+        } else if (mediaType === 'tv') {
+          mediaData.number_of_seasons = fullDetails.number_of_seasons;
+          mediaData.number_of_episodes = fullDetails.number_of_episodes;
+          mediaData.show_status = fullDetails.status;
+        }
 
         const created = await mediaAPI.create(mediaData);
         
@@ -631,7 +680,8 @@ export default {
 
       } catch (err) {
         console.error('Error saving rating:', err);
-        this.showMessage('Failed to save. Please try again.', 'error');
+        const errorMsg = err.message || 'Unknown error';
+        this.showMessage(`Failed to save: ${errorMsg}`, 'error');
       } finally {
         this.savingRating = false;
       }

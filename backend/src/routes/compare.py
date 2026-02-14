@@ -121,13 +121,27 @@ def get_comparison(username):
         
         # Find movies you loved but friend didn't (or vice versa)
         recommendations_for_friend = [
-            {'tmdbId': m.tmdb_id, 'title': m.title, 'rating': m.rating, 'posterUrl': m.poster_url}
+            {
+                'tmdbId': m.tmdb_id, 
+                'title': m.title, 
+                'mediaType': m.media_type.value,  # ✅ Added
+                'releaseYear': m.release_year,     # ✅ Added
+                'rating': m.rating, 
+                'posterUrl': m.poster_url
+            }
             for m in my_media 
             if m.tmdb_id and m.tmdb_id not in friend_ratings and m.rating >= 4
         ][:10]
         
         recommendations_for_me = [
-            {'tmdbId': m.tmdb_id, 'title': m.title, 'rating': m.rating, 'posterUrl': m.poster_url}
+            {
+                'tmdbId': m.tmdb_id, 
+                'title': m.title, 
+                'mediaType': m.media_type.value,  # ✅ Added
+                'releaseYear': m.release_year,     # ✅ Added
+                'rating': m.rating, 
+                'posterUrl': m.poster_url
+            }
             for m in friend_media 
             if m.tmdb_id and m.tmdb_id not in my_ratings and m.rating >= 4
         ][:10]
