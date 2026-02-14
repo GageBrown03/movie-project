@@ -38,28 +38,41 @@
 
     <v-card-actions class="px-2 pb-2 pt-0 d-flex gap-2">
       <v-btn
-        :color="isInCollection ? 'secondary' : 'primary'"
+        v-if="!isInCollection"
+        color="primary"
         variant="flat"
         class="flex-grow-1 px-0"
         height="32"
-        :loading="loading"
-        @click.stop="handleMobileClick"
+        :loading="loading === 'watchlist'"
+        @click.stop="$emit('quick-add-watchlist', item)"
       >
-        <v-icon :icon="isInCollection ? 'mdi-eye' : 'mdi-plus'" />
-        <span class="d-none d-sm-inline ml-1">
-          {{ isInCollection ? 'View' : 'Add' }}
-        </span>
+        <v-icon icon="mdi-plus" />
+        <span class="d-none d-sm-inline ml-1">Add</span>
       </v-btn>
 
       <v-btn
+        v-if="!isInCollection"
         color="amber-darken-2"
         variant="tonal"
         class="flex-grow-1 px-0"
         height="32"
-        @click.stop="$emit('rate', item)"
+        :loading="loading === 'rated'"
+        @click.stop="$emit('quick-add-rated', item)"
       >
         <v-icon icon="mdi-star" />
         <span class="d-none d-sm-inline ml-1">Rate</span>
+      </v-btn>
+
+      <v-btn
+        v-if="isInCollection"
+        color="secondary"
+        variant="flat"
+        block
+        height="32"
+        @click.stop="$emit('view-existing', item)"
+      >
+        <v-icon icon="mdi-eye" />
+        <span class="d-none d-sm-inline ml-1">View</span>
       </v-btn>
     </v-card-actions> 
   </v-card>
