@@ -124,8 +124,8 @@ export default {
   
   computed: {
     sortedDecades() {
-      // Sort from oldest to newest
-      return [...this.decades].sort((a, b) => a.decade - b.decade);
+      // Sort from newest to oldest (2020s first, then 2010s, etc.)
+      return [...this.decades].sort((a, b) => b.decade - a.decade);
     },
     
     maxCount() {

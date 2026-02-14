@@ -29,17 +29,20 @@ def get_top_people():
     for media in media_list:
         if media.cast:
             for cast_member in media.cast:
-                actor_id = cast_member.get('actorId') or cast_member.get('actor_id')
-                actor_name = cast_member.get('name')
-                
-                if actor_id and actor_name:
-                    if actor_id not in actor_counts:
-                        actor_counts[actor_id] = {
-                            'id': actor_id,
-                            'name': actor_name,
-                            'count': 0
-                        }
-                    actor_counts[actor_id]['count'] += 1
+                # MediaCast is a relationship object, not a dict
+                # Access via cast_member.actor
+                if cast_member.actor:
+                    actor_id = cast_member.actor.tmdb_id  # Use TMDB ID for photo lookup
+                    actor_name = cast_member.actor.name
+                    
+                    if actor_id and actor_name:
+                        if actor_id not in actor_counts:
+                            actor_counts[actor_id] = {
+                                'id': actor_id,
+                                'name': actor_name,
+                                'count': 0
+                            }
+                        actor_counts[actor_id]['count'] += 1
     
     # Count directors
     director_counts = {}
@@ -324,9 +327,11 @@ def get_collection_card():
     for media in media_list:
         if media.cast:
             for cast_member in media.cast:
-                actor_name = cast_member.get('name')
-                if actor_name:
-                    actor_counts[actor_name] = actor_counts.get(actor_name, 0) + 1
+                # MediaCast is a relationship object
+                if cast_member.actor:
+                    actor_name = cast_member.actor.name
+                    if actor_name:
+                        actor_counts[actor_name] = actor_counts.get(actor_name, 0) + 1
     
     if actor_counts:
         top_actor = max(actor_counts.items(), key=lambda x: x[1])
