@@ -114,6 +114,9 @@
             <v-icon color="secondary" class="mr-2">mdi-account-star</v-icon>
             Featuring Your Favorite Actors
           </h2>
+          <p class="text-caption text-medium-emphasis">
+            Based on {{ topActors.slice(0, 3).map(a => a.name).join(', ') }}
+          </p>
         </div>
 
         <v-row>
@@ -407,14 +410,66 @@ export default {
     async loadActorRecommendations() {
       if (this.topActors.length === 0) return;
       
-      const topActor = this.topActors[0];
-      
       try {
-        const recommendations = await recommendationsAPI.getByActor(topActor.id);
+        // Use top 3 actors instead of just #1
+        const actorsToUse = this.topActors.slice(0, 3);
         
-        this.actorRecommendations = recommendations.filter(
-          item => !this.getLibraryStatus(item.tmdbId)
+        console.log('Loading recommendations for actors:', actorsToUse.map(a => a.name));
+        
+        // Fetch recommendations for each top actor
+        const allRecommendations = await Promise.all(
+          actorsToUse.map(actor => 
+            recommendationsAPI.getByActor(actor.id).catch(err => {
+              console.warn(`Failed to fetch for ${actor.name}:`, err);
+              return [];
+            })
+          )
         );
+        
+        // Flatten all results
+        const combined = allRecommendations.flat();
+        
+        // Deduplicate by tmdbId
+        const seen = new Set();
+        const unique = combined.filter(item => {
+          const key = `${item.mediaType}-${item.tmdbId}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        
+        // Filter out:
+        // 1. Items already in library
+        // 2. Low-rated content (likely guest appearances)
+        // 3. Very old content (unless highly rated)
+        const currentYear = new Date().getFullYear();
+        
+        const filtered = unique.filter(item => {
+          // Not in library
+          if (this.getLibraryStatus(item.tmdbId)) return false;
+          
+          // Require minimum rating (filters out most guest appearances)
+          if (item.tmdbRating < 6.5) return false;
+          
+          // For older content, require higher rating
+          if (item.releaseYear && item.releaseYear < currentYear - 20) {
+            return item.tmdbRating >= 7.5;
+          }
+          
+          return true;
+        });
+        
+        // Sort by rating * popularity (best quality + relevance)
+        const sorted = filtered.sort((a, b) => {
+          const scoreA = (a.tmdbRating || 0) * (a.popularity || 1);
+          const scoreB = (b.tmdbRating || 0) * (b.popularity || 1);
+          return scoreB - scoreA;
+        });
+        
+        this.actorRecommendations = sorted.slice(0, 12);
+        
+        console.log(`Actor recommendations: ${this.actorRecommendations.length} from ${actorsToUse.map(a => a.name).join(', ')}`);
+        
       } catch (err) {
         console.error('Error loading actor recommendations:', err);
       }

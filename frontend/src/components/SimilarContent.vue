@@ -360,9 +360,15 @@ export default {
     async loadRelated() {
       this.loading = true;
       try {
-        // Use new comprehensive method
+        // NEW: Use comprehensive method instead
         this.relatedItems = await recommendationsAPI.getRelatedContent(this.tmdbId, this.mediaType);
         console.log('Related content loaded:', this.relatedItems.length);
+        console.log('By type:', {
+          collection: this.collectionItems.length,
+          recommended: this.recommendedItems.length,
+          similar: this.similarItems.length,
+          spinoff: this.spinoffItems.length
+        });
       } catch (err) {
         console.error('Error loading related content:', err);
       } finally {
