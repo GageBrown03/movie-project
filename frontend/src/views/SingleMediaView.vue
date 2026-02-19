@@ -112,88 +112,123 @@
         </div>
       </div>
 
-      <!-- MOBILE: Compact Hero -->
+      <!-- MOBILE: Centered Hero -->
       <div class="mobile-hero d-md-none">
         <v-container class="py-4">
+          <!-- Back Button -->
           <v-btn
             icon="mdi-arrow-left"
             variant="text"
             size="small"
+            color="white"
             @click="$router.push('/media')"
             class="mb-3"
           />
           
-          <div class="d-flex gap-3">
+          <!-- Centered Content -->
+          <div class="text-center">
+            <!-- Type Badge -->
+            <v-chip 
+              :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
+              size="small" 
+              class="mb-3 text-white font-weight-black"
+              variant="flat"
+              label
+            >
+              {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+            </v-chip>
+            
+            <!-- Title -->
+            <h1 class="text-h5 mb-2 text-white">{{ media.title }}</h1>
+            
+            <!-- Meta Info - Centered -->
+            <div class="mobile-meta mb-3">
+              <span v-if="media.releaseYear" class="text-white">{{ media.releaseYear }}</span>
+              <span v-if="media.mediaType === 'movie' && media.runtime" class="text-white">
+                <v-icon size="x-small" color="white" class="mx-1">mdi-circle-small</v-icon>
+                {{ media.runtime }} min
+              </span>
+              <span v-if="media.mediaType === 'tv' && media.numberOfSeasons" class="text-white">
+                <v-icon size="x-small" color="white" class="mx-1">mdi-circle-small</v-icon>
+                {{ media.numberOfSeasons }} {{ media.numberOfSeasons === 1 ? 'Season' : 'Seasons' }}
+              </span>
+            </div>
+            
+            <div v-if="media.director" class="text-caption text-white mb-4 opacity-90">
+              {{ media.mediaType === 'tv' ? media.director : `Directed by ${media.director}` }}
+            </div>
+            
             <!-- Compact Poster -->
-            <div class="mobile-poster-wrapper">
+            <div class="mobile-poster-centered mx-auto mb-4">
               <v-img
                 v-if="media.posterUrl"
                 :src="media.posterUrl"
                 aspect-ratio="2/3"
-                width="120"
+                width="140"
                 cover
-                class="rounded"
+                class="rounded elevation-8"
               />
               <div v-else class="mobile-poster-placeholder">
-                <v-icon size="40" color="grey">mdi-movie-outline</v-icon>
+                <v-icon size="48" color="white">mdi-movie-outline</v-icon>
               </div>
             </div>
             
-            <!-- Title & Meta -->
-            <div class="flex-grow-1">
+            <!-- Compact Status & Rating Row -->
+            <div class="mobile-status-row mb-3">
               <v-chip 
-                :color="media.mediaType === 'movie' ? '#1976D2' : '#7B1FA2'" 
-                size="x-small" 
-                class="mb-2 text-white font-weight-black"
+                :color="statusColor" 
                 variant="flat"
-                label
+                size="small"
+                class="mr-2"
               >
-                {{ media.mediaType === 'movie' ? 'MOVIE' : 'TV' }}
+                <v-icon start size="x-small">
+                  {{ media.status === 'want_to_watch' ? 'mdi-bookmark' : 'mdi-check-circle' }}
+                </v-icon>
+                {{ statusLabel }}
               </v-chip>
               
-              <h1 class="text-h5 mb-2">{{ media.title }}</h1>
+              <v-chip
+                v-if="media.rating"
+                color="amber"
+                variant="flat"
+                size="small"
+              >
+                <v-icon start size="x-small">mdi-star</v-icon>
+                {{ media.rating }}/5
+              </v-chip>
+            </div>
+            
+            <!-- Mobile Quick Actions -->
+            <div class="mobile-actions-centered">
+              <v-btn
+                v-if="media.status === 'want_to_watch'"
+                color="success"
+                size="small"
+                block
+                @click="quickMarkAsWatched"
+                prepend-icon="mdi-check"
+                class="mb-2"
+              >
+                Mark Watched
+              </v-btn>
               
-              <div class="text-caption text-medium-emphasis mb-3">
-                <div v-if="media.releaseYear">{{ media.releaseYear }}</div>
-                <div v-if="media.mediaType === 'movie' && media.runtime">{{ media.runtime }} min</div>
-                <div v-if="media.mediaType === 'tv' && media.numberOfSeasons">
-                  {{ media.numberOfSeasons }} {{ media.numberOfSeasons === 1 ? 'Season' : 'Seasons' }}
-                </div>
-                <div v-if="media.director" class="text-truncate">{{ media.director }}</div>
-              </div>
-              
-              <!-- Mobile Quick Actions -->
-              <div class="mobile-actions">
+              <div class="d-flex gap-2 justify-center">
                 <v-btn
-                  v-if="media.status === 'want_to_watch'"
-                  color="success"
                   size="small"
-                  block
-                  @click="quickMarkAsWatched"
-                  prepend-icon="mdi-check"
-                  class="mb-1"
+                  variant="tonal"
+                  @click="editMode = true"
+                  prepend-icon="mdi-pencil"
+                  class="flex-grow-1"
                 >
-                  Mark Watched
+                  Edit
                 </v-btn>
-                
-                <div class="d-flex gap-1">
-                  <v-btn
-                    size="small"
-                    variant="tonal"
-                    @click="editMode = true"
-                    prepend-icon="mdi-pencil"
-                    class="flex-grow-1"
-                  >
-                    Edit
-                  </v-btn>
-                  <v-btn
-                    size="small"
-                    variant="tonal"
-                    color="error"
-                    @click="deleteDialog = true"
-                    icon="mdi-delete"
-                  />
-                </div>
+                <v-btn
+                  size="small"
+                  variant="tonal"
+                  color="error"
+                  @click="deleteDialog = true"
+                  icon="mdi-delete"
+                />
               </div>
             </div>
           </div>
@@ -283,49 +318,87 @@
           <v-col cols="12" md="8">
             <!-- VIEW MODE -->
             <div v-if="!editMode">
-              <!-- Status & Rating -->
-              <v-card elevation="2" class="mb-4">
+              <!-- Compact Status & Rating Bar (Desktop/Tablet only) -->
+              <div class="d-none d-md-flex align-center gap-3 mb-4 pa-3 rounded" style="background: rgba(var(--v-theme-surface-variant), 0.5);">
+                <v-chip 
+                  :color="statusColor" 
+                  variant="flat"
+                  size="small"
+                  prepend-icon="mdi-bookmark"
+                >
+                  {{ statusLabel }}
+                </v-chip>
+                
+                <v-rating
+                  v-if="media.rating"
+                  :model-value="media.rating"
+                  readonly
+                  density="compact"
+                  color="amber"
+                  size="small"
+                />
+                <span v-if="media.rating" class="text-caption">Your Rating</span>
+                
+                <v-spacer />
+                
+                <v-chip
+                  v-if="media.tmdbRating"
+                  size="small"
+                  variant="tonal"
+                  prepend-icon="mdi-star"
+                >
+                  {{ media.tmdbRating.toFixed(1) }}/10 TMDB
+                </v-chip>
+              </div>
+
+              <!-- Cast (MOVED UP - More important than plot) -->
+              <v-card elevation="2" class="mb-4" v-if="media.cast && media.cast.length">
+                <v-card-title class="text-h6">
+                  <v-icon class="mr-2">mdi-account-group</v-icon>
+                  Cast
+                </v-card-title>
                 <v-card-text>
-                  <v-row>
-                    <v-col cols="12" sm="6">
-                      <div class="detail-item">
-                        <div class="text-caption text-medium-emphasis mb-1">Status</div>
-                        <v-chip 
-                          :color="statusColor" 
-                          variant="flat"
-                          size="small"
-                        >
-                          {{ statusLabel }}
-                        </v-chip>
-                      </div>
-                    </v-col>
-                    
-                    <v-col cols="12" sm="6">
-                      <div class="detail-item" v-if="media.rating">
-                        <div class="text-caption text-medium-emphasis mb-1">Your Rating</div>
-                        <v-rating
-                          :model-value="media.rating"
-                          readonly
-                          density="compact"
-                          color="amber"
+                  <div class="cast-grid">
+                    <div 
+                      v-for="actor in media.cast.slice(0, 6)" 
+                      :key="actor.actorId"
+                      class="cast-member"
+                    >
+                      <v-avatar size="60" class="mb-2">
+                        <v-img 
+                          v-if="actor.profileUrl" 
+                          :src="actor.profileUrl"
                         />
+                        <v-icon v-else size="32">mdi-account</v-icon>
+                      </v-avatar>
+                      <div class="text-caption font-weight-bold text-center">
+                        {{ actor.name }}
                       </div>
-                    </v-col>
-                  </v-row>
+                      <div class="text-caption text-medium-emphasis text-center">
+                        {{ actor.character }}
+                      </div>
+                    </div>
+                  </div>
                 </v-card-text>
               </v-card>
 
-              <!-- Plot -->
+              <!-- Plot (Now below cast) -->
               <v-card elevation="2" class="mb-4" v-if="media.plot">
-                <v-card-title class="text-h6">Plot</v-card-title>
+                <v-card-title class="text-h6">
+                  <v-icon class="mr-2">mdi-text</v-icon>
+                  Plot
+                </v-card-title>
                 <v-card-text>
-                  <p class="text-body-1">{{ media.plot }}</p>
+                  <p class="text-body-2">{{ media.plot }}</p>
                 </v-card-text>
               </v-card>
 
               <!-- Details Grid -->
               <v-card elevation="2" class="mb-4">
-                <v-card-title class="text-h6">Details</v-card-title>
+                <v-card-title class="text-h6">
+                  <v-icon class="mr-2">mdi-information</v-icon>
+                  Details
+                </v-card-title>
                 <v-card-text>
                   <v-row>
                     <v-col cols="12" sm="6" v-if="media.releaseYear">
@@ -391,34 +464,6 @@
                       </div>
                     </v-col>
                   </v-row>
-                </v-card-text>
-              </v-card>
-
-              <!-- Cast -->
-              <v-card elevation="2" class="mb-4" v-if="media.cast && media.cast.length">
-                <v-card-title class="text-h6">Cast</v-card-title>
-                <v-card-text>
-                  <div class="cast-grid">
-                    <div 
-                      v-for="actor in media.cast.slice(0, 6)" 
-                      :key="actor.actorId"
-                      class="cast-member"
-                    >
-                      <v-avatar size="60" class="mb-2">
-                        <v-img 
-                          v-if="actor.profileUrl" 
-                          :src="actor.profileUrl"
-                        />
-                        <v-icon v-else size="32">mdi-account</v-icon>
-                      </v-avatar>
-                      <div class="text-caption font-weight-bold text-center">
-                        {{ actor.name }}
-                      </div>
-                      <div class="text-caption text-medium-emphasis text-center">
-                        {{ actor.character }}
-                      </div>
-                    </div>
-                  </div>
                 </v-card-text>
               </v-card>
 
@@ -771,24 +816,46 @@ export default {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   margin: -16px -16px 0 -16px;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
 }
 
-.mobile-poster-wrapper {
-  flex-shrink: 0;
+.mobile-meta {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.mobile-poster-centered {
+  max-width: 140px;
 }
 
 .mobile-poster-placeholder {
-  width: 120px;
+  width: 140px;
   aspect-ratio: 2/3;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
-.mobile-actions .gap-1 {
-  gap: 4px;
+.mobile-status-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mobile-actions-centered {
+  max-width: 300px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mobile-actions-centered .gap-2 {
+  gap: 8px;
 }
 
 /* RESPONSIVE */
