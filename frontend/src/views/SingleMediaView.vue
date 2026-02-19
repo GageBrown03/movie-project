@@ -607,7 +607,7 @@ export default {
       this.error = null;
       
       try {
-        const id = this.$route.params.id;
+        const id = this.$route.params.mediaId;
         this.media = await mediaAPI.getOne(id);
       } catch (err) {
         console.error('Error loading media:', err);
