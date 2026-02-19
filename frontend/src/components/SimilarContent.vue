@@ -57,7 +57,44 @@
                 class="carousel-item"
                 @click="handleItemClick(item)"
               >
-                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+                <!-- Inline Card -->
+                <v-card class="similar-card" hover>
+                  <v-img
+                    v-if="item.posterUrl"
+                    :src="item.posterUrl"
+                    aspect-ratio="2/3"
+                    cover
+                    class="similar-poster"
+                  >
+                    <div class="poster-overlay">
+                      <v-chip 
+                        v-if="isInCollection(item.tmdbId)"
+                        color="success"
+                        size="x-small"
+                        class="in-collection-chip"
+                      >
+                        <v-icon start size="x-small">mdi-check</v-icon>
+                        In Library
+                      </v-chip>
+                    </div>
+                  </v-img>
+                  <div v-else class="poster-placeholder">
+                    <v-icon size="48">mdi-movie-outline</v-icon>
+                  </div>
+                  
+                  <v-card-text class="pa-2">
+                    <div class="text-caption font-weight-bold text-truncate" :title="item.title">
+                      {{ item.title }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      {{ item.releaseYear }}
+                      <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
+                        mdi-star
+                      </v-icon>
+                      {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
             
@@ -96,7 +133,44 @@
                 class="carousel-item"
                 @click="handleItemClick(item)"
               >
-                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+                <!-- Inline Card -->
+                <v-card class="similar-card" hover>
+                  <v-img
+                    v-if="item.posterUrl"
+                    :src="item.posterUrl"
+                    aspect-ratio="2/3"
+                    cover
+                    class="similar-poster"
+                  >
+                    <div class="poster-overlay">
+                      <v-chip 
+                        v-if="isInCollection(item.tmdbId)"
+                        color="success"
+                        size="x-small"
+                        class="in-collection-chip"
+                      >
+                        <v-icon start size="x-small">mdi-check</v-icon>
+                        In Library
+                      </v-chip>
+                    </div>
+                  </v-img>
+                  <div v-else class="poster-placeholder">
+                    <v-icon size="48">mdi-movie-outline</v-icon>
+                  </div>
+                  
+                  <v-card-text class="pa-2">
+                    <div class="text-caption font-weight-bold text-truncate" :title="item.title">
+                      {{ item.title }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      {{ item.releaseYear }}
+                      <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
+                        mdi-star
+                      </v-icon>
+                      {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
             
@@ -135,7 +209,44 @@
                 class="carousel-item"
                 @click="handleItemClick(item)"
               >
-                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+                <!-- Inline Card -->
+                <v-card class="similar-card" hover>
+                  <v-img
+                    v-if="item.posterUrl"
+                    :src="item.posterUrl"
+                    aspect-ratio="2/3"
+                    cover
+                    class="similar-poster"
+                  >
+                    <div class="poster-overlay">
+                      <v-chip 
+                        v-if="isInCollection(item.tmdbId)"
+                        color="success"
+                        size="x-small"
+                        class="in-collection-chip"
+                      >
+                        <v-icon start size="x-small">mdi-check</v-icon>
+                        In Library
+                      </v-chip>
+                    </div>
+                  </v-img>
+                  <div v-else class="poster-placeholder">
+                    <v-icon size="48">mdi-movie-outline</v-icon>
+                  </div>
+                  
+                  <v-card-text class="pa-2">
+                    <div class="text-caption font-weight-bold text-truncate" :title="item.title">
+                      {{ item.title }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      {{ item.releaseYear }}
+                      <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
+                        mdi-star
+                      </v-icon>
+                      {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
             
@@ -174,7 +285,44 @@
                 class="carousel-item"
                 @click="handleItemClick(item)"
               >
-                <similar-card :item="item" :is-in-collection="isInCollection(item.tmdbId)" />
+                <!-- Inline Card -->
+                <v-card class="similar-card" hover>
+                  <v-img
+                    v-if="item.posterUrl"
+                    :src="item.posterUrl"
+                    aspect-ratio="2/3"
+                    cover
+                    class="similar-poster"
+                  >
+                    <div class="poster-overlay">
+                      <v-chip 
+                        v-if="isInCollection(item.tmdbId)"
+                        color="success"
+                        size="x-small"
+                        class="in-collection-chip"
+                      >
+                        <v-icon start size="x-small">mdi-check</v-icon>
+                        In Library
+                      </v-chip>
+                    </div>
+                  </v-img>
+                  <div v-else class="poster-placeholder">
+                    <v-icon size="48">mdi-movie-outline</v-icon>
+                  </div>
+                  
+                  <v-card-text class="pa-2">
+                    <div class="text-caption font-weight-bold text-truncate" :title="item.title">
+                      {{ item.title }}
+                    </div>
+                    <div class="text-caption text-medium-emphasis">
+                      {{ item.releaseYear }}
+                      <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
+                        mdi-star
+                      </v-icon>
+                      {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
             </div>
             
@@ -239,60 +387,10 @@
 import { recommendationsAPI } from '@/services/recommendations';
 import { mediaAPI } from '@/services/api-production';
 
-// Reusable card component
-const SimilarCard = {
-  name: 'SimilarCard',
-  props: {
-    item: Object,
-    isInCollection: Boolean
-  },
-  template: `
-    <v-card class="similar-card" hover>
-      <v-img
-        v-if="item.posterUrl"
-        :src="item.posterUrl"
-        aspect-ratio="2/3"
-        cover
-        class="similar-poster"
-      >
-        <div class="poster-overlay">
-          <v-chip 
-            v-if="isInCollection"
-            color="success"
-            size="x-small"
-            class="in-collection-chip"
-          >
-            <v-icon start size="x-small">mdi-check</v-icon>
-            In Library
-          </v-chip>
-        </div>
-      </v-img>
-      <div v-else class="poster-placeholder">
-        <v-icon size="48">mdi-movie-outline</v-icon>
-      </div>
-      
-      <v-card-text class="pa-2">
-        <div class="text-caption font-weight-bold text-truncate" :title="item.title">
-          {{ item.title }}
-        </div>
-        <div class="text-caption text-medium-emphasis">
-          {{ item.releaseYear }}
-          <v-icon v-if="item.tmdbRating" size="x-small" color="amber" class="ml-1">
-            mdi-star
-          </v-icon>
-          {{ item.tmdbRating ? item.tmdbRating.toFixed(1) : '' }}
-        </div>
-      </v-card-text>
-    </v-card>
-  `
-};
-
 export default {
   name: 'SimilarContent',
   
-  components: {
-    SimilarCard
-  },
+  components: {},
   
   props: {
     tmdbId: {
