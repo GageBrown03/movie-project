@@ -288,7 +288,7 @@ export default {
     },
 
     openAddDialog() {
-      this.$root.$emit('open-add-media-dialog');
+      window.dispatchEvent(new CustomEvent('open-add-media-dialog'));
     },
 
     refreshFeed() {
