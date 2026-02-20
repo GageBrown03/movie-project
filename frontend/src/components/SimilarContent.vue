@@ -310,17 +310,19 @@ export default {
     async saveWithRating() {
       this.savingRating = true;
       try {
-        const created = await mediaAPI.create({
+        const mediaData = {
           ...this.itemToRate,
-          rating: this.userRating,
+          media_type: this.itemToRate.mediaType, // Fix for 400 error
+          rating: parseInt(this.userRating),     // Backend expects an integer 1-5
           notes: this.userNotes,
-          status: 'watched',
-        });
-
-        this.userCollection.push(created);
-        this.showMessage(`Rated "${this.itemToRate.title}"!`);
+          status: 'watched'
+        };
+        const created = await mediaAPI.create(mediaData);
+        this.$emit('media-added', created);
+        this.showMessage(`Rated "${this.itemToRate.title}"!`, 'success');
         this.closeRatingDialog();
-      } catch {
+      } catch (err) {
+        console.error(err);
         this.showMessage('Failed to save rating', 'error');
       } finally {
         this.savingRating = false;
@@ -328,15 +330,16 @@ export default {
     },
 
     async quickAddToWatchlist(item) {
-      this.loadingStates[item.tmdbId] = true;
+      this.loadingStates[item.tmdbId] = 'watchlist';
       try {
-        const created = await mediaAPI.create({
-          ...item,
-          status: 'want_to_watch',
+        const created = await mediaAPI.create({ 
+          ...item, 
+          media_type: item.mediaType, // Map camelCase to snake_case for the backend
+          status: 'want_to_watch' 
         });
-        this.userCollection.push(created);
+        this.$emit('media-added', created);
         this.showMessage(`Added ${item.title} to Watchlist`);
-      } catch {
+      } catch (err) {
         this.showMessage('Failed to add to watchlist', 'error');
       } finally {
         delete this.loadingStates[item.tmdbId];
