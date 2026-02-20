@@ -149,7 +149,7 @@
 
 <script>
 import { recommendationsAPI } from '@/services/recommendations';
-import { mediaAPI } from '@/services/api-production';
+import { mediaAPI, tmdbAPI } from '@/services/api-production';
 import MediaQuickAddCard from '@/components/MediaQuickAddCard.vue';
 
 export default {
@@ -308,22 +308,60 @@ export default {
     },
 
     async saveWithRating() {
+      if (!this.itemToRate || !this.userRating) return;
+
+      // Store all values before async ops — dialog closes mid-flight otherwise
+      const mediaTitle = this.itemToRate.title;
+      const mediaType  = this.itemToRate.mediaType;
+      const tmdbId     = this.itemToRate.tmdbId;
+      const releaseYear = this.itemToRate.releaseYear;
+      const plot       = this.itemToRate.plot;
+      const posterUrl  = this.itemToRate.posterUrl;
+      const backdropUrl = this.itemToRate.backdropUrl;
+      const tmdbRating = this.itemToRate.tmdbRating;
+      const rating     = parseInt(this.userRating);
+      const notes      = this.userNotes;
+
       this.savingRating = true;
+
       try {
+        let castData = [];
+        try {
+          const fullDetails = mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(tmdbId)
+            : await tmdbAPI.getTVDetails(tmdbId);
+          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+        } catch (tmdbError) {
+          console.warn('Could not fetch cast:', tmdbError.message);
+          castData = Array.isArray(this.itemToRate?.cast) ? this.itemToRate.cast : [];
+        }
+
         const mediaData = {
-          ...this.itemToRate,
-          media_type: this.itemToRate.mediaType, // Fix for 400 error
-          rating: parseInt(this.userRating),     // Backend expects an integer 1-5
-          notes: this.userNotes,
-          status: 'watched'
+          title: mediaTitle,
+          media_type: mediaType,
+          tmdb_id: tmdbId,
+          status: 'watched',
+          rating,
+          notes: notes || null,
+          release_year: releaseYear,
+          plot,
+          poster_url: posterUrl,
+          backdrop_url: backdropUrl,
+          tmdb_rating: tmdbRating,
+          cast: castData,
         };
+
         const created = await mediaAPI.create(mediaData);
+        this.userCollection.push(created);
         this.$emit('media-added', created);
-        this.showMessage(`Rated "${this.itemToRate.title}"!`, 'success');
+
+        // Close dialog FIRST, then toast with stored values
         this.closeRatingDialog();
+        this.showMessage(`Rated "${mediaTitle}" — ${rating} stars!`, 'success');
+
       } catch (err) {
-        console.error(err);
-        this.showMessage('Failed to save rating', 'error');
+        console.error('Error saving rating:', err);
+        this.showMessage(`Failed to save: ${err.message || 'Unknown error'}`, 'error');
       } finally {
         this.savingRating = false;
       }
@@ -331,16 +369,41 @@ export default {
 
     async quickAddToWatchlist(item) {
       this.loadingStates[item.tmdbId] = 'watchlist';
+      const mediaTitle = item.title;
+
       try {
-        const created = await mediaAPI.create({ 
-          ...item, 
-          media_type: item.mediaType, // Map camelCase to snake_case for the backend
-          status: 'want_to_watch' 
-        });
+        let castData = [];
+        try {
+          const fullDetails = item.mediaType === 'movie'
+            ? await tmdbAPI.getMovieDetails(item.tmdbId)
+            : await tmdbAPI.getTVDetails(item.tmdbId);
+          castData = Array.isArray(fullDetails?.cast) ? fullDetails.cast : [];
+        } catch (tmdbError) {
+          console.warn('Could not fetch cast:', tmdbError.message);
+          castData = Array.isArray(item.cast) ? item.cast : [];
+        }
+
+        const mediaData = {
+          title: mediaTitle,
+          media_type: item.mediaType,
+          tmdb_id: item.tmdbId,
+          status: 'want_to_watch',
+          release_year: item.releaseYear,
+          plot: item.plot,
+          poster_url: item.posterUrl,
+          backdrop_url: item.backdropUrl,
+          tmdb_rating: item.tmdbRating,
+          cast: castData,
+        };
+
+        const created = await mediaAPI.create(mediaData);
+        this.userCollection.push(created);
         this.$emit('media-added', created);
-        this.showMessage(`Added ${item.title} to Watchlist`);
+        this.showMessage(`Added "${mediaTitle}" to watchlist!`, 'success');
+
       } catch (err) {
-        this.showMessage('Failed to add to watchlist', 'error');
+        console.error('Error adding to watchlist:', err);
+        this.showMessage(`Failed to add: ${err.message || 'Unknown error'}`, 'error');
       } finally {
         delete this.loadingStates[item.tmdbId];
       }
