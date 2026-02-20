@@ -1,10 +1,8 @@
 <template>
   <div class="activity-feed">
-    <!-- Feed Header -->
     <div class="feed-header mb-4">
       <h2 class="text-h5 font-weight-bold">Activity Feed</h2>
       
-      <!-- Filter Buttons -->
       <v-btn-toggle
         v-model="currentFilter"
         mandatory
@@ -27,13 +25,11 @@
       </v-btn-toggle>
     </div>
 
-    <!-- Loading State -->
     <div v-if="loading && activities.length === 0" class="text-center py-12">
       <v-progress-circular indeterminate color="primary" size="64" />
       <p class="text-body-1 mt-4 text-medium-emphasis">Loading activities...</p>
     </div>
 
-    <!-- Error State -->
     <v-alert
       v-else-if="error"
       type="error"
@@ -46,7 +42,6 @@
       </template>
     </v-alert>
 
-    <!-- Empty State -->
     <v-empty-state
       v-else-if="!loading && activities.length === 0"
       icon="mdi-rss"
@@ -76,30 +71,31 @@
       </template>
     </v-empty-state>
 
-    <!-- Activity List -->
     <div v-else class="activity-list">
-      <activity-card
-        v-for="activity in displayedActivities"
-        :key="activity.activityId"
-        :activity="activity"
-      />
+      <transition-group name="list" tag="div" class="activity-container">
+        <activity-card
+          v-for="activity in displayedActivities"
+          :key="activity.activityId"
+          :activity="activity"
+        />
+      </transition-group>
 
-      <!-- Show More Button (if more than 10) -->
-      <div v-if="!showAll && activities.length > 10" class="text-center mt-6">
+      <div class="d-flex flex-column align-center mt-6 gap-3">
         <v-btn
+          v-if="displayCount < activities.length || hasMore"
           color="primary"
           variant="outlined"
           size="large"
-          @click="showAll = true"
+          :loading="loadingMore"
+          @click="handleShowMore"
           prepend-icon="mdi-chevron-down"
+          class="mb-2"
         >
-          Show {{ activities.length - 10 }} More
+          Show More
         </v-btn>
-      </div>
 
-      <!-- Show Less Button (if showing all) -->
-      <div v-if="showAll && activities.length > 10" class="text-center mt-6">
         <v-btn
+          v-if="displayCount > 3"
           variant="text"
           @click="scrollToTopAndCollapse"
           prepend-icon="mdi-chevron-up"
@@ -131,8 +127,9 @@ export default {
       loading: false,
       loadingMore: false,
       error: null,
-      limit: 50,       // FIXED: Fetch 50 activities (was 10)
-      showAll: false,  // Show only 10 initially
+      limit: 50,       
+      displayCount: 3, 
+      increment: 10,   
       offset: 0,
       hasMore: true
     };
@@ -141,39 +138,31 @@ export default {
   computed: {
     emptyStateTitle() {
       switch (this.currentFilter) {
-        case 'me':
-          return 'No Activity Yet';
-        case 'friends':
-          return 'No Friend Activity';
-        default:
-          return 'Activity Feed Empty';
+        case 'me': return 'No Activity Yet';
+        case 'friends': return 'No Friend Activity';
+        default: return 'Activity Feed Empty';
       }
     },
 
     emptyStateText() {
       switch (this.currentFilter) {
-        case 'me':
-          return 'Start rating movies and TV shows to see your activity here!';
-        case 'friends':
-          return 'Add friends to see their activity in your feed.';
-        default:
-          return 'Your activity feed will show your ratings and friend updates.';
+        case 'me': return 'Start rating movies and TV shows to see your activity here!';
+        case 'friends': return 'Add friends to see their activity in your feed.';
+        default: return 'Your activity feed will show your ratings and friend updates.';
       }
     },
 
-    // FIXED: Display first 10 unless showAll is true
     displayedActivities() {
-      return this.showAll ? this.activities : this.activities.slice(0, 10);
+      return this.activities.slice(0, this.displayCount);
     }
   },
 
   watch: {
     currentFilter() {
-      // Reset and reload when filter changes
       this.activities = [];
       this.offset = 0;
       this.hasMore = true;
-      this.showAll = false;  // Reset showAll on filter change
+      this.displayCount = 3;  
       this.loadActivities();
     }
   },
@@ -202,16 +191,10 @@ export default {
 
     async loadMore() {
       if (!this.hasMore || this.loadingMore) return;
-
       this.loadingMore = true;
 
       try {
-        const data = await activityAPI.getFeed(
-          this.currentFilter,
-          this.limit,
-          this.offset
-        );
-
+        const data = await activityAPI.getFeed(this.currentFilter, this.limit, this.offset);
         this.activities.push(...data);
         this.offset += data.length;
         this.hasMore = data.length >= this.limit;
@@ -223,19 +206,23 @@ export default {
       }
     },
 
-    // NEW: Scroll to top and collapse
+    async handleShowMore() {
+      if (this.displayCount + this.increment >= this.activities.length && this.hasMore) {
+        await this.loadMore();
+      }
+      this.displayCount += this.increment;
+    },
+
     scrollToTopAndCollapse() {
-      this.showAll = false;
-      // Scroll to top of activity feed
+      this.displayCount = 3; 
       this.$el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
-    // Public method to refresh feed (can be called from parent)
     async refresh() {
       this.activities = [];
       this.offset = 0;
       this.hasMore = true;
-      this.showAll = false;
+      this.displayCount = 3; 
       await this.loadActivities();
     }
   }
@@ -259,23 +246,50 @@ export default {
   max-width: 100%;
 }
 
-/* Mobile: Stack header */
+.gap-3 {
+  gap: 12px;
+}
+
+/* CHANGED: Transition Animations */
+/* list-enter-active: Items appearing */
+.list-enter-active {
+  transition: all 0.4s ease-out;
+}
+
+/* list-leave-active: Items disappearing (when clicking Show Less) */
+.list-leave-active {
+  transition: all 0.3s ease-in;
+  position: absolute; /* Keep items from "jumping" during exit */
+  width: 100%;
+}
+
+/* Initial/End states */
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Ensure smooth movement of items already in the list */
+.list-move {
+  transition: transform 0.4s ease;
+}
+
+.activity-container {
+  position: relative; /* Necessary for absolute children during leave */
+}
+
 @media (max-width: 600px) {
   .feed-header {
     flex-direction: column;
     align-items: stretch;
   }
-
-  .feed-header h2 {
-    text-align: center;
-  }
-
-  .feed-header .v-btn-toggle {
-    width: 100%;
-  }
-
-  .feed-header .v-btn-toggle .v-btn {
-    flex: 1;
-  }
+  .feed-header h2 { text-align: center; }
+  .feed-header .v-btn-toggle { width: 100%; }
+  .feed-header .v-btn-toggle .v-btn { flex: 1; }
 }
 </style>
