@@ -87,20 +87,32 @@
         <div class="new-user-empty__glow" />
         <v-icon size="64" color="primary" class="mb-4" style="opacity:0.7">mdi-movie-open-star-outline</v-icon>
         <h2 class="text-h4 font-weight-black mb-3">Your collection is empty</h2>
-        <p class="text-body-1 text-medium-emphasis mb-6" style="max-width:440px; margin-inline: auto;">
-          Add your first movie or show to get started. Your ratings, watchlist, and stats will appear here.
+        <p class="text-body-1 text-medium-emphasis mb-5" style="max-width:440px; margin-inline: auto;">
+          Start by logging something you've already seen, or let us help you find your next watch.
         </p>
-        <v-btn
-          size="x-large"
-          color="primary"
-          variant="flat"
-          prepend-icon="mdi-plus"
-          class="font-weight-bold px-8"
-          elevation="6"
-          @click="openAddDialog"
-        >
-          Add Your First Title
-        </v-btn>
+        <div class="start-paths">
+          <button class="start-path start-path--log" @click="openAddDialog">
+            <span class="start-path__icon">
+              <i class="mdi mdi-pencil-plus-outline"></i>
+            </span>
+            <span class="start-path__text">
+              <span class="start-path__label">Log Something I've Seen</span>
+              <span class="start-path__sub">Search by title, rate it, and build your history</span>
+            </span>
+            <span class="start-path__arrow"><i class="mdi mdi-arrow-right"></i></span>
+          </button>
+          <div class="start-paths__divider"><span>or</span></div>
+          <button class="start-path start-path--discover" @click="$router.push('/discover')">
+            <span class="start-path__icon">
+              <i class="mdi mdi-compass-outline"></i>
+            </span>
+            <span class="start-path__text">
+              <span class="start-path__label">Find My Next Watch</span>
+              <span class="start-path__sub">Browse curated picks, trending titles, and hidden gems</span>
+            </span>
+            <span class="start-path__arrow"><i class="mdi mdi-arrow-right"></i></span>
+          </button>
+        </div>
       </div>
 
       <!-- RETURNING USER CONTENT -->
@@ -276,7 +288,7 @@ export default {
     },
 
     openAddDialog() {
-      window.dispatchEvent(new CustomEvent('open-add-media-dialog'));
+      this.$root.$emit('open-add-media-dialog');
     },
 
     refreshFeed() {
@@ -453,7 +465,7 @@ export default {
 .new-user-empty {
   position: relative;
   text-align: center;
-  padding: 100px 20px;
+  padding: 80px 20px 100px;
   border-radius: 24px;
   background: rgba(var(--v-theme-surface-variant), 0.2);
   border: 1px dashed rgba(var(--v-theme-on-surface), 0.1);
@@ -466,6 +478,122 @@ export default {
   background: radial-gradient(ellipse at center, rgba(var(--v-theme-primary), 0.07) 0%, transparent 65%);
   pointer-events: none;
 }
+
+/* Two-path start buttons */
+.start-paths {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.start-path {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(var(--v-theme-on-surface), 0.1);
+  background: rgba(var(--v-theme-surface), 0.7);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.start-path:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.start-path--log:hover {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 8px 28px rgba(var(--v-theme-primary), 0.15);
+}
+
+.start-path--discover:hover {
+  border-color: #7C4DFF;
+  box-shadow: 0 8px 28px rgba(124, 77, 255, 0.15);
+}
+
+.start-path__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.start-path--log .start-path__icon {
+  background: rgba(var(--v-theme-primary), 0.12);
+  color: rgb(var(--v-theme-primary));
+}
+
+.start-path--discover .start-path__icon {
+  background: rgba(124, 77, 255, 0.12);
+  color: #7C4DFF;
+}
+
+.start-path__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.start-path__label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(var(--v-theme-on-surface), 0.9);
+  line-height: 1.2;
+}
+
+.start-path__sub {
+  font-size: 0.8rem;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  line-height: 1.4;
+}
+
+.start-path__arrow {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: rgba(var(--v-theme-on-surface), 0.3);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.start-path:hover .start-path__arrow {
+  transform: translateX(4px);
+  color: rgba(var(--v-theme-on-surface), 0.7);
+}
+
+.start-paths__divider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+  padding: 10px 0;
+  color: rgba(var(--v-theme-on-surface), 0.3);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.start-paths__divider::before,
+.start-paths__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
+}
+
+
 
 /* ─── Feature Section (Explore) ──────────────────────── */
 .feature-section__label {

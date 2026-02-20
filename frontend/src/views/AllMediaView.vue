@@ -81,13 +81,23 @@
 
           <v-spacer v-if="!isMobile" />
 
-          <!-- View toggle & count -->
+          <!-- View toggle, count & Add button -->
           <div class="view-controls">
             <span class="text-caption text-grey mr-3">{{ filteredMedia.length }} items</span>
-            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary">
+            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary" class="mr-3">
               <v-btn value="grid" icon="mdi-view-grid-outline" size="small" />
               <v-btn value="list" icon="mdi-view-list" size="small" />
             </v-btn-toggle>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-plus"
+              class="font-weight-bold text-none add-media-btn"
+              @click="openAddDialog"
+            >
+              <span class="d-none d-sm-inline">Add</span>
+            </v-btn>
           </div>
         </div>
       </v-col>
@@ -106,23 +116,20 @@
     
     <!-- GRAND EMPTY STATE -->
     <div v-else-if="mediaList.length === 0" class="grand-empty">
-      <!-- Ambient background glow -->
       <div class="grand-empty__bg" />
 
-      <!-- Animated film strip across top -->
+      <!-- Film strip top -->
       <div class="filmstrip filmstrip--top" aria-hidden="true">
-        <span v-for="n in 18" :key="'t'+n" class="filmstrip__frame" />
+        <span v-for="n in 20" :key="'t'+n" class="filmstrip__frame" />
       </div>
 
-      <!-- Main content -->
       <div class="grand-empty__content">
-        <!-- Spinning reel SVG -->
+        <!-- Spinning reel -->
         <div class="reel-wrap">
           <svg class="reel-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="46" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.2"/>
             <circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1" fill="none" opacity="0.15"/>
             <circle cx="50" cy="50" r="6" fill="currentColor" opacity="0.6"/>
-            <!-- Sprocket holes -->
             <circle cx="50" cy="16" r="5" fill="currentColor" opacity="0.35"/>
             <circle cx="50" cy="84" r="5" fill="currentColor" opacity="0.35"/>
             <circle cx="16" cy="50" r="5" fill="currentColor" opacity="0.35"/>
@@ -135,39 +142,56 @@
         </div>
 
         <p class="grand-empty__overline">EST. TODAY</p>
-
         <h1 class="grand-empty__headline">
           Nothing to see here.<br />
           <span class="grand-empty__headline--dim">Literally.</span>
         </h1>
-
         <p class="grand-empty__body">
-          Your collection has fewer titles than a silent film.<br />
-          Fix that. Your future self will thank you.
+          Your library has fewer titles than a silent film.<br />
+          Time to fix that — where do you want to start?
         </p>
 
-        <!-- Creative CTA — clapperboard button -->
-        <button class="clapper-btn" @click="openAddDialog">
-          <span class="clapper-btn__top">
-            <span class="clapper-btn__stripes" aria-hidden="true">
-              <span v-for="n in 8" :key="n" class="clapper-btn__stripe" />
+        <!-- Two-path choice -->
+        <div class="grand-paths">
+          <!-- Path 1: Log something -->
+          <button class="grand-path grand-path--log" @click="openAddDialog">
+            <span class="grand-path__stripe-bar" aria-hidden="true">
+              <span v-for="n in 6" :key="n" class="grand-path__stripe" />
             </span>
-            <span class="clapper-btn__label-top">ACTION!</span>
-          </span>
-          <span class="clapper-btn__body">
-            <span class="clapper-btn__icon">🎬</span>
-            <span class="clapper-btn__text">Add Your First Title</span>
-          </span>
-        </button>
+            <span class="grand-path__inner">
+              <span class="grand-path__emoji">🎬</span>
+              <span class="grand-path__text">
+                <span class="grand-path__label">Log Something I've Seen</span>
+                <span class="grand-path__sub">Search by title, rate it, add your review</span>
+              </span>
+              <span class="grand-path__arrow"><i class="mdi mdi-arrow-right"></i></span>
+            </span>
+          </button>
 
-        <p class="grand-empty__footnote">
-          No popcorn required, but recommended.
-        </p>
+          <div class="grand-paths__or"><span>or</span></div>
+
+          <!-- Path 2: Discover -->
+          <button class="grand-path grand-path--discover" @click="$router.push('/discover')">
+            <span class="grand-path__stripe-bar" aria-hidden="true">
+              <span v-for="n in 6" :key="n" class="grand-path__stripe" />
+            </span>
+            <span class="grand-path__inner">
+              <span class="grand-path__emoji">🧭</span>
+              <span class="grand-path__text">
+                <span class="grand-path__label">Find My Next Watch</span>
+                <span class="grand-path__sub">Curated picks, genres, trending & hidden gems</span>
+              </span>
+              <span class="grand-path__arrow"><i class="mdi mdi-arrow-right"></i></span>
+            </span>
+          </button>
+        </div>
+
+        <p class="grand-empty__footnote">No popcorn required, but recommended.</p>
       </div>
 
-      <!-- Animated film strip across bottom -->
+      <!-- Film strip bottom -->
       <div class="filmstrip filmstrip--bottom" aria-hidden="true">
-        <span v-for="n in 18" :key="'b'+n" class="filmstrip__frame" />
+        <span v-for="n in 20" :key="'b'+n" class="filmstrip__frame" />
       </div>
     </div>
 
@@ -681,6 +705,10 @@ export default {
   flex-shrink: 0;
 }
 
+.add-media-btn {
+  flex-shrink: 0;
+}
+
 .filter-reset {
   flex-shrink: 0;
 }
@@ -710,12 +738,12 @@ export default {
   padding-bottom: 10px !important;
 }
 
-/* ═══════════════════════════════════════════════════════
+/* ═══════════════════════════════════════
    GRAND EMPTY STATE
-═══════════════════════════════════════════════════════ */
+═══════════════════════════════════════ */
 .grand-empty {
   position: relative;
-  min-height: 70vh;
+  min-height: 72vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -729,7 +757,7 @@ export default {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(var(--v-theme-primary), 0.1) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(var(--v-theme-primary), 0.08) 0%, transparent 70%),
     repeating-linear-gradient(
       0deg,
       transparent,
@@ -744,14 +772,13 @@ export default {
 /* Film strip bars */
 .filmstrip {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
   height: 48px;
   display: flex;
   z-index: 1;
-  background: rgba(var(--v-theme-on-surface), 0.06);
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  background: rgba(var(--v-theme-on-surface), 0.05);
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.07);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.07);
   overflow: hidden;
 }
 
@@ -761,17 +788,17 @@ export default {
 .filmstrip__frame {
   flex: 1;
   display: block;
-  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   margin: 8px 0;
-  position: relative;
 }
 
 .filmstrip__frame::before {
   content: '';
-  position: absolute;
-  inset: 2px 4px;
+  display: block;
+  margin: 2px 4px;
+  height: calc(100% - 4px);
   border-radius: 2px;
-  background: rgba(var(--v-theme-on-surface), 0.05);
+  background: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 /* Main content */
@@ -779,27 +806,27 @@ export default {
   position: relative;
   z-index: 2;
   text-align: center;
-  padding: 80px 32px;
-  max-width: 580px;
+  padding: 72px 32px;
+  max-width: 560px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
 }
 
 /* Spinning reel */
 .reel-wrap {
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   color: rgb(var(--v-theme-primary));
   margin-bottom: 24px;
-  filter: drop-shadow(0 0 20px rgba(var(--v-theme-primary), 0.3));
+  filter: drop-shadow(0 0 18px rgba(var(--v-theme-primary), 0.3));
 }
 
 .reel-svg {
   width: 100%;
   height: 100%;
-  animation: spinReel 12s linear infinite;
+  animation: spinReel 14s linear infinite;
 }
 
 @keyframes spinReel {
@@ -808,153 +835,195 @@ export default {
 }
 
 .grand-empty__overline {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgb(var(--v-theme-primary));
   margin: 0 0 12px;
 }
 
 .grand-empty__headline {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: clamp(1.9rem, 4.5vw, 2.8rem);
   font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.02em;
-  margin: 0 0 16px;
+  margin: 0 0 14px;
 }
 
 .grand-empty__headline--dim {
-  opacity: 0.35;
+  opacity: 0.3;
   font-style: italic;
 }
 
 .grand-empty__body {
-  font-size: 1rem;
-  color: rgba(var(--v-theme-on-surface), 0.55);
+  font-size: 0.95rem;
+  color: rgba(var(--v-theme-on-surface), 0.5);
   line-height: 1.65;
-  margin: 0 0 36px;
+  margin: 0 0 32px;
 }
 
-/* ── Clapperboard button ── */
-.clapper-btn {
-  display: inline-flex;
+/* ── Two-path grand buttons ── */
+.grand-paths {
+  display: flex;
   flex-direction: column;
-  align-items: stretch;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  transform-origin: top center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  background: none;
+  width: 100%;
+  gap: 0;
   margin-bottom: 24px;
 }
 
-.clapper-btn:hover {
-  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
-  transform: scale(1.04);
+.grand-path {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.clapper-btn:active {
-  transform: scale(0.97);
+.grand-path:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-/* Top "flap" — striped clapperboard slate */
-.clapper-btn__top {
+.grand-path:active {
+  transform: scale(0.98);
+}
+
+/* Clapperboard-style stripe bar on each button */
+.grand-path__stripe-bar {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-bottom: 1.5px solid rgba(0,0,0,0.3);
+}
+
+.grand-path__stripe {
+  flex: 1;
+}
+
+.grand-path--log .grand-path__stripe-bar {
+  background: #1a1a1a;
+}
+
+.grand-path--log .grand-path__stripe:nth-child(odd)  { background: #fff; opacity: 0.9; }
+.grand-path--log .grand-path__stripe:nth-child(even) { background: #1a1a1a; }
+
+.grand-path--discover .grand-path__stripe-bar {
+  background: #1a1a1a;
+}
+
+.grand-path--discover .grand-path__stripe:nth-child(odd)  { background: #7C4DFF; opacity: 0.85; }
+.grand-path--discover .grand-path__stripe:nth-child(even) { background: #1a1a1a; }
+
+/* Inner content row */
+.grand-path__inner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 18px 8px 10px;
-  background: #1a1a1a;
-  border-bottom: 2px solid #000;
-  gap: 12px;
-  transform-origin: top;
-  animation: clapFlap 4s ease-in-out infinite;
+  gap: 14px;
+  padding: 16px 20px;
 }
 
-@keyframes clapFlap {
-  0%, 85%, 100% { transform: rotateX(0deg); }
-  90%            { transform: rotateX(-25deg); }
-  95%            { transform: rotateX(0deg); }
+.grand-path--log .grand-path__inner {
+  background: rgb(var(--v-theme-primary));
 }
 
-.clapper-btn__stripes {
-  display: flex;
-  gap: 4px;
+.grand-path--discover .grand-path__inner {
+  background: #5E35B1;
+}
+
+.grand-path__emoji {
+  font-size: 1.6rem;
+  line-height: 1;
   flex-shrink: 0;
 }
 
-.clapper-btn__stripe {
-  display: block;
-  width: 10px;
-  height: 20px;
-  border-radius: 2px;
-}
-
-.clapper-btn__stripe:nth-child(odd)  { background: #ffffff; }
-.clapper-btn__stripe:nth-child(even) { background: #1a1a1a; }
-
-.clapper-btn__label-top {
-  font-size: 0.65rem;
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  color: rgba(255,255,255,0.5);
-  text-transform: uppercase;
+.grand-path__text {
   flex: 1;
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
 }
 
-/* Bottom body of the clapperboard */
-.clapper-btn__body {
+.grand-path__label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.grand-path__sub {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.3;
+}
+
+.grand-path__arrow {
+  flex-shrink: 0;
+  color: rgba(255,255,255,0.5);
+  font-size: 18px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.grand-path:hover .grand-path__arrow {
+  transform: translateX(4px);
+  color: #fff;
+}
+
+.grand-paths__or {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 16px 32px;
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
+  gap: 12px;
+  padding: 10px 0;
+  color: rgba(var(--v-theme-on-surface), 0.3);
+  font-size: 0.72rem;
+  font-style: italic;
+  letter-spacing: 0.05em;
 }
 
-.clapper-btn__icon {
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.clapper-btn__text {
-  line-height: 1;
+.grand-paths__or::before,
+.grand-paths__or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .grand-empty__footnote {
-  font-size: 0.78rem;
-  color: rgba(var(--v-theme-on-surface), 0.3);
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), 0.25);
   font-style: italic;
   margin: 0;
 }
 
 @media (max-width: 600px) {
   .grand-empty__content {
-    padding: 60px 20px;
+    padding: 56px 16px;
   }
 
   .reel-wrap {
-    width: 90px;
-    height: 90px;
+    width: 84px;
+    height: 84px;
   }
 
   .filmstrip {
     height: 36px;
   }
 
-  .clapper-btn__body {
-    padding: 14px 24px;
-    font-size: 0.9rem;
+  .grand-path__inner {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .grand-path__emoji {
+    font-size: 1.3rem;
   }
 }
 
