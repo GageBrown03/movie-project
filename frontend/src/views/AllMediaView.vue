@@ -81,13 +81,23 @@
 
           <v-spacer v-if="!isMobile" />
 
-          <!-- View toggle & count -->
+          <!-- View toggle, count & Add button -->
           <div class="view-controls">
             <span class="text-caption text-grey mr-3">{{ filteredMedia.length }} items</span>
-            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary">
+            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary" class="mr-3">
               <v-btn value="grid" icon="mdi-view-grid-outline" size="small" />
               <v-btn value="list" icon="mdi-view-list" size="small" />
             </v-btn-toggle>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="small"
+              prepend-icon="mdi-plus"
+              class="font-weight-bold text-none add-media-btn"
+              @click="openAddDialog"
+            >
+              <span class="d-none d-sm-inline">Add</span>
+            </v-btn>
           </div>
         </div>
       </v-col>
@@ -133,7 +143,7 @@
       </template>
 
       <template v-slot:actions>
-        <v-btn color="primary" size="x-large" to="/movies/new" class="mt-4 px-10 font-weight-bold" elevation="8">
+        <v-btn color="primary" size="x-large" class="mt-4 px-10 font-weight-bold" elevation="8" @click="openAddDialog">
           Add Your First Title
         </v-btn>
       </template>
@@ -592,9 +602,13 @@ export default {
     clearFilters() { 
       this.searchQuery = ''; 
       this.filterType = null;
-      this.filterStatus = null; // NEW
+      this.filterStatus = null;
       this.filterRating = null; 
       this.sortBy = 'dateAdded'; 
+    },
+
+    openAddDialog() {
+      this.$root.$emit('open-add-media-dialog');
     }
   },
   
@@ -642,6 +656,10 @@ export default {
 
 .filter-select {
   min-width: 110px;
+  flex-shrink: 0;
+}
+
+.add-media-btn {
   flex-shrink: 0;
 }
 
