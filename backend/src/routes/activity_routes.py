@@ -154,39 +154,38 @@ def get_user_activity(user_id):
 @jwt_required()
 def get_activity_stats():
     """
-    Get activity stats for the current user.
-    Returns counts of activities this week, this month, total.
+    Get current activity stats for the Hero section.
+    Queries direct tables for accurate, real-time totals.
     """
     try:
         current_user_id = int(get_jwt_identity())
         
-        # Get all user's activities
-        all_activities = Activity.query.filter_by(user_id=current_user_id).all()
+        # 1. Total Rated: Count items in Media table where this user has a rating
+        total_rated = Media.query.filter(
+            Media.user_id == current_user_id,
+            Media.rating != None
+        ).count()
         
-        # Calculate stats
-        from datetime import datetime, timedelta
-        now = datetime.utcnow()
-        week_ago = now - timedelta(days=7)
-        month_ago = now - timedelta(days=30)
+        # 2. Total Watchlist: Count items with 'want_to_watch' status
+        total_watchlist = Media.query.filter(
+            Media.user_id == current_user_id,
+            Media.status == MediaStatus.WANT_TO_WATCH
+        ).count()
         
-        total_count = len(all_activities)
-        week_count = len([a for a in all_activities if a.created_at >= week_ago])
-        month_count = len([a for a in all_activities if a.created_at >= month_ago])
+        # 3. Total Friends: Count accepted friendships where user is participant 1 or 2
+        total_friends = Friendship.query.filter(
+            or_(
+                Friendship.user_id_1 == current_user_id, 
+                Friendship.user_id_2 == current_user_id
+            ),
+            Friendship.status == FriendshipStatus.ACCEPTED
+        ).count()
         
-        # Count by type
-        ratings_count = len([a for a in all_activities if a.activity_type == 'rating'])
-        watchlist_count = len([a for a in all_activities if a.activity_type == 'watchlist'])
-        friends_count = len([a for a in all_activities if a.activity_type == 'friend_added'])
-        
+        # Return the keys exactly as HomeView.vue expects them
         return jsonify({
-            'total': total_count,
-            'thisWeek': week_count,
-            'thisMonth': month_count,
-            'byType': {
-                'ratings': ratings_count,
-                'watchlist': watchlist_count,
-                'friends': friends_count
-            }
+            'totalRated': total_rated,
+            'totalWatchlist': total_watchlist,
+            'totalFriends': total_friends
         }), 200
         
     except Exception as e:

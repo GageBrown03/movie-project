@@ -129,7 +129,7 @@
 
         <!-- ─── Feature Cards ─── -->
         <div class="feature-section mt-10 mb-8">
-          <h2 class="text-overline text-medium-emphasis mb-5 feature-section__label">Explore</h2>
+          
           <div class="feature-grid">
             <a
               v-for="feat in userFeatures"
