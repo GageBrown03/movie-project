@@ -150,6 +150,12 @@ export default {
       }, 60000);
     }
 
+    // Listen for global open-add-media-dialog event (fired by child views)
+    this._openAddDialogHandler = () => {
+      if (this.isLoggedIn) this.showAddDialog = true;
+    };
+    window.addEventListener('open-add-media-dialog', this._openAddDialogHandler);
+
     // PHASE 2: Listen for keyboard shortcut (Ctrl/Cmd + K)
     window.addEventListener('keydown', this.handleKeyboardShortcut);
   },
@@ -158,6 +164,7 @@ export default {
     if (this.pendingRequestsInterval) {
       clearInterval(this.pendingRequestsInterval);
     }
+    window.removeEventListener('open-add-media-dialog', this._openAddDialogHandler);
     window.removeEventListener('keydown', this.handleKeyboardShortcut);
   },
   

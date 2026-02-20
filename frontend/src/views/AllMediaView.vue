@@ -81,23 +81,13 @@
 
           <v-spacer v-if="!isMobile" />
 
-          <!-- View toggle, count & Add button -->
+          <!-- View toggle & count -->
           <div class="view-controls">
             <span class="text-caption text-grey mr-3">{{ filteredMedia.length }} items</span>
-            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary" class="mr-3">
+            <v-btn-toggle v-model="viewMode" mandatory density="compact" color="primary">
               <v-btn value="grid" icon="mdi-view-grid-outline" size="small" />
               <v-btn value="list" icon="mdi-view-list" size="small" />
             </v-btn-toggle>
-            <v-btn
-              color="primary"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-plus"
-              class="font-weight-bold text-none add-media-btn"
-              @click="openAddDialog"
-            >
-              <span class="d-none d-sm-inline">Add</span>
-            </v-btn>
           </div>
         </div>
       </v-col>
@@ -114,40 +104,72 @@
       </template>
     </v-alert>
     
-    <v-empty-state
-      v-else-if="mediaList.length === 0"
-      class="empty-state-cinematic"
-    >
-      <template v-slot:media>
-        <div class="empty-icon-wrapper">
-          <svg width="180" height="180" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="film-reel-svg">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1" />
-            <circle cx="12" cy="12" r="2" fill="currentColor" />
-            <circle cx="12" cy="6" r="1.5" fill="currentColor" opacity="0.5" />
-            <circle cx="12" cy="18" r="1.5" fill="currentColor" opacity="0.5" />
-            <circle cx="6" cy="12" r="1.5" fill="currentColor" opacity="0.5" />
-            <circle cx="18" cy="12" r="1.5" fill="currentColor" opacity="0.5" />
-            <path d="M19 12C19 12 21 13 22 16" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2" />
+    <!-- GRAND EMPTY STATE -->
+    <div v-else-if="mediaList.length === 0" class="grand-empty">
+      <!-- Ambient background glow -->
+      <div class="grand-empty__bg" />
+
+      <!-- Animated film strip across top -->
+      <div class="filmstrip filmstrip--top" aria-hidden="true">
+        <span v-for="n in 18" :key="'t'+n" class="filmstrip__frame" />
+      </div>
+
+      <!-- Main content -->
+      <div class="grand-empty__content">
+        <!-- Spinning reel SVG -->
+        <div class="reel-wrap">
+          <svg class="reel-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="46" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.2"/>
+            <circle cx="50" cy="50" r="30" stroke="currentColor" stroke-width="1" fill="none" opacity="0.15"/>
+            <circle cx="50" cy="50" r="6" fill="currentColor" opacity="0.6"/>
+            <!-- Sprocket holes -->
+            <circle cx="50" cy="16" r="5" fill="currentColor" opacity="0.35"/>
+            <circle cx="50" cy="84" r="5" fill="currentColor" opacity="0.35"/>
+            <circle cx="16" cy="50" r="5" fill="currentColor" opacity="0.35"/>
+            <circle cx="84" cy="50" r="5" fill="currentColor" opacity="0.35"/>
+            <circle cx="26" cy="26" r="4" fill="currentColor" opacity="0.25"/>
+            <circle cx="74" cy="26" r="4" fill="currentColor" opacity="0.25"/>
+            <circle cx="26" cy="74" r="4" fill="currentColor" opacity="0.25"/>
+            <circle cx="74" cy="74" r="4" fill="currentColor" opacity="0.25"/>
           </svg>
         </div>
-      </template>
 
-      <template v-slot:title>
-        <h2 class="text-h4 font-weight-black text-white mt-6">Your Premiere Awaits</h2>
-      </template>
+        <p class="grand-empty__overline">EST. TODAY</p>
 
-      <template v-slot:text>
-        <p class="text-body-1 text-grey-lighten-1 mx-auto" style="max-width: 500px;">
-          Your collection is currently a blank script. Start adding movies and shows to build your personal library.
+        <h1 class="grand-empty__headline">
+          Nothing to see here.<br />
+          <span class="grand-empty__headline--dim">Literally.</span>
+        </h1>
+
+        <p class="grand-empty__body">
+          Your collection has fewer titles than a silent film.<br />
+          Fix that. Your future self will thank you.
         </p>
-      </template>
 
-      <template v-slot:actions>
-        <v-btn color="primary" size="x-large" class="mt-4 px-10 font-weight-bold" elevation="8" @click="openAddDialog">
-          Add Your First Title
-        </v-btn>
-      </template>
-    </v-empty-state>
+        <!-- Creative CTA — clapperboard button -->
+        <button class="clapper-btn" @click="openAddDialog">
+          <span class="clapper-btn__top">
+            <span class="clapper-btn__stripes" aria-hidden="true">
+              <span v-for="n in 8" :key="n" class="clapper-btn__stripe" />
+            </span>
+            <span class="clapper-btn__label-top">ACTION!</span>
+          </span>
+          <span class="clapper-btn__body">
+            <span class="clapper-btn__icon">🎬</span>
+            <span class="clapper-btn__text">Add Your First Title</span>
+          </span>
+        </button>
+
+        <p class="grand-empty__footnote">
+          No popcorn required, but recommended.
+        </p>
+      </div>
+
+      <!-- Animated film strip across bottom -->
+      <div class="filmstrip filmstrip--bottom" aria-hidden="true">
+        <span v-for="n in 18" :key="'b'+n" class="filmstrip__frame" />
+      </div>
+    </div>
 
     <div v-else>
       <!-- Grid View -->
@@ -608,7 +630,7 @@ export default {
     },
 
     openAddDialog() {
-      this.$root.$emit('open-add-media-dialog');
+      window.dispatchEvent(new CustomEvent('open-add-media-dialog'));
     }
   },
   
@@ -659,10 +681,6 @@ export default {
   flex-shrink: 0;
 }
 
-.add-media-btn {
-  flex-shrink: 0;
-}
-
 .filter-reset {
   flex-shrink: 0;
 }
@@ -692,28 +710,252 @@ export default {
   padding-bottom: 10px !important;
 }
 
-/* === EMPTY STATE === */
-.empty-state-cinematic {
-  background: radial-gradient(circle at center, rgba(var(--v-theme-primary), 0.08) 0%, transparent 75%);
-  padding: 100px 0;
-  border-radius: 24px;
+/* ═══════════════════════════════════════════════════════
+   GRAND EMPTY STATE
+═══════════════════════════════════════════════════════ */
+.grand-empty {
+  position: relative;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 20px;
+  margin-top: 8px;
 }
 
-.film-reel-svg {
+.grand-empty__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(var(--v-theme-primary), 0.1) 0%, transparent 70%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(var(--v-theme-on-surface), 0.02) 39px,
+      rgba(var(--v-theme-on-surface), 0.02) 40px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Film strip bars */
+.filmstrip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 48px;
+  display: flex;
+  z-index: 1;
+  background: rgba(var(--v-theme-on-surface), 0.06);
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  overflow: hidden;
+}
+
+.filmstrip--top { top: 0; }
+.filmstrip--bottom { bottom: 0; }
+
+.filmstrip__frame {
+  flex: 1;
+  display: block;
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  margin: 8px 0;
+  position: relative;
+}
+
+.filmstrip__frame::before {
+  content: '';
+  position: absolute;
+  inset: 2px 4px;
+  border-radius: 2px;
+  background: rgba(var(--v-theme-on-surface), 0.05);
+}
+
+/* Main content */
+.grand-empty__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 80px 32px;
+  max-width: 580px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Spinning reel */
+.reel-wrap {
+  width: 120px;
+  height: 120px;
   color: rgb(var(--v-theme-primary));
-  filter: drop-shadow(0 0 15px rgba(var(--v-theme-primary), 0.4));
-  animation: rotateReel 20s linear infinite;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 0 20px rgba(var(--v-theme-primary), 0.3));
 }
 
-@keyframes rotateReel { 
-  from { transform: rotate(0deg); } 
-  to { transform: rotate(360deg); } 
+.reel-svg {
+  width: 100%;
+  height: 100%;
+  animation: spinReel 12s linear infinite;
 }
 
-.empty-icon-wrapper { 
-  perspective: 1000px; 
-  display: flex; 
-  justify-content: center; 
+@keyframes spinReel {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.grand-empty__overline {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgb(var(--v-theme-primary));
+  margin: 0 0 12px;
+}
+
+.grand-empty__headline {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+}
+
+.grand-empty__headline--dim {
+  opacity: 0.35;
+  font-style: italic;
+}
+
+.grand-empty__body {
+  font-size: 1rem;
+  color: rgba(var(--v-theme-on-surface), 0.55);
+  line-height: 1.65;
+  margin: 0 0 36px;
+}
+
+/* ── Clapperboard button ── */
+.clapper-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  transform-origin: top center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: none;
+  margin-bottom: 24px;
+}
+
+.clapper-btn:hover {
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5);
+  transform: scale(1.04);
+}
+
+.clapper-btn:active {
+  transform: scale(0.97);
+}
+
+/* Top "flap" — striped clapperboard slate */
+.clapper-btn__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px 8px 10px;
+  background: #1a1a1a;
+  border-bottom: 2px solid #000;
+  gap: 12px;
+  transform-origin: top;
+  animation: clapFlap 4s ease-in-out infinite;
+}
+
+@keyframes clapFlap {
+  0%, 85%, 100% { transform: rotateX(0deg); }
+  90%            { transform: rotateX(-25deg); }
+  95%            { transform: rotateX(0deg); }
+}
+
+.clapper-btn__stripes {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.clapper-btn__stripe {
+  display: block;
+  width: 10px;
+  height: 20px;
+  border-radius: 2px;
+}
+
+.clapper-btn__stripe:nth-child(odd)  { background: #ffffff; }
+.clapper-btn__stripe:nth-child(even) { background: #1a1a1a; }
+
+.clapper-btn__label-top {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  flex: 1;
+  text-align: right;
+}
+
+/* Bottom body of the clapperboard */
+.clapper-btn__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.clapper-btn__icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.clapper-btn__text {
+  line-height: 1;
+}
+
+.grand-empty__footnote {
+  font-size: 0.78rem;
+  color: rgba(var(--v-theme-on-surface), 0.3);
+  font-style: italic;
+  margin: 0;
+}
+
+@media (max-width: 600px) {
+  .grand-empty__content {
+    padding: 60px 20px;
+  }
+
+  .reel-wrap {
+    width: 90px;
+    height: 90px;
+  }
+
+  .filmstrip {
+    height: 36px;
+  }
+
+  .clapper-btn__body {
+    padding: 14px 24px;
+    font-size: 0.9rem;
+  }
 }
 
 /* === GRID VIEW === */
