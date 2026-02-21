@@ -4,7 +4,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
     location="right"
     temporary
-    width="420"
+    :width="drawerWidth"
   >
     <!-- Header -->
     <div class="afd-header">
@@ -52,6 +52,20 @@
           />
         </v-tab>
       </v-tabs>
+
+      <!-- Sort control -->
+      <div class="d-flex align-center gap-2 px-4 py-2">
+        <span class="text-caption text-medium-emphasis">Sort:</span>
+        <v-btn-toggle v-model="sortBy" density="compact" variant="tonal" mandatory color="primary">
+          <v-btn value="score" size="x-small">Best</v-btn>
+          <v-btn value="rating" size="x-small">Rating</v-btn>
+          <v-btn value="year" size="x-small">Year</v-btn>
+        </v-btn-toggle>
+        <span class="text-caption text-medium-emphasis ml-auto">
+          {{ filteredCredits.length }} title{{ filteredCredits.length !== 1 ? 's' : '' }}
+        </span>
+      </div>
+
       <v-divider />
     </div>
 
@@ -158,18 +172,42 @@ export default {
       error: null,
       credits: [],
       filterTab: 'all',
-      // cache so reopening same actor doesn't re-fetch
+      sortBy: 'score',       // 'score' | 'rating' | 'year'
       cachedActorId: null,
     };
   },
 
   computed: {
+    drawerWidth() {
+      // Responsive width: generous on desktop, full-ish on mobile
+      if (typeof window === 'undefined') return 560;
+      if (window.innerWidth >= 1280) return 640;
+      if (window.innerWidth >= 960)  return 560;
+      return Math.min(window.innerWidth - 32, 480);
+    },
+
     filteredCredits() {
-      const { credits, filterTab } = this;
-      if (filterTab === 'movie')     return credits.filter(c => c.mediaType === 'movie');
-      if (filterTab === 'tv')        return credits.filter(c => c.mediaType === 'tv');
-      if (filterTab === 'inLibrary') return credits.filter(c => !!this.getLibraryEntry(c.tmdbId));
-      return credits; // 'all'
+      let list = this.credits;
+
+      // Filter
+      if (this.filterTab === 'movie')     list = list.filter(c => c.mediaType === 'movie');
+      else if (this.filterTab === 'tv')   list = list.filter(c => c.mediaType === 'tv');
+      else if (this.filterTab === 'inLibrary') list = list.filter(c => !!this.getLibraryEntry(c.tmdbId));
+
+      // Sort
+      const sorted = [...list];
+      if (this.sortBy === 'rating') {
+        sorted.sort((a, b) => (b.tmdbRating || 0) - (a.tmdbRating || 0));
+      } else if (this.sortBy === 'year') {
+        sorted.sort((a, b) => {
+          if (!a.releaseYear) return 1;
+          if (!b.releaseYear) return -1;
+          return b.releaseYear - a.releaseYear;
+        });
+      }
+      // 'score' keeps the order from getByActor (already quality-sorted)
+
+      return sorted;
     },
 
     inLibraryCount() {
@@ -201,6 +239,7 @@ export default {
       this.error = null;
       this.credits = [];
       this.filterTab = 'all';
+      this.sortBy = 'score';
 
       try {
         const raw = await recommendationsAPI.getByActor(this.actor.tmdbActorId);
@@ -262,8 +301,8 @@ export default {
 /* ── Credits grid ────────────────────────── */
 .afd-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
   padding-top: 12px;
   align-content: start;
 }

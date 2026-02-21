@@ -313,53 +313,84 @@ export const recommendationsAPI = {
       }));
   },
 
-  async getByActor(actorId, page = 1) {
-    const movieResponse = await fetch(
-      `${TMDB_BASE_URL}/person/${actorId}/movie_credits?api_key=${TMDB_API_KEY}`
-    );
-    
-    const tvResponse = await fetch(
-      `${TMDB_BASE_URL}/person/${actorId}/tv_credits?api_key=${TMDB_API_KEY}`
-    );
-    
+  async getByActor(actorId) {
+    const [movieResponse, tvResponse] = await Promise.all([
+      fetch(`${TMDB_BASE_URL}/person/${actorId}/movie_credits?api_key=${TMDB_API_KEY}`),
+      fetch(`${TMDB_BASE_URL}/person/${actorId}/tv_credits?api_key=${TMDB_API_KEY}`),
+    ]);
+
     if (!movieResponse.ok || !tvResponse.ok) {
       throw new Error('Failed to fetch actor credits');
     }
-    
-    const movieData = await movieResponse.json();
-    const tvData = await tvResponse.json();
-    
+
+    const [movieData, tvData] = await Promise.all([
+      movieResponse.json(),
+      tvResponse.json(),
+    ]);
+
+    // ── Movies ──────────────────────────────────────────────────────────────
+    // Filter out: no poster, very low vote count (cameos/uncredited), adult
     const movies = (movieData.cast || [])
-      .filter(item => item.poster_path)
+      .filter(item =>
+        item.poster_path &&
+        (item.vote_count || 0) >= 25 &&   // enough votes to be a real credit
+        !item.adult
+      )
       .map(item => ({
         tmdbId: item.id,
         title: item.title,
         mediaType: 'movie',
         posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
-        releaseYear: item.release_date 
-          ? new Date(item.release_date).getFullYear()
-          : null,
-        tmdbRating: item.vote_average,
-        popularity: item.popularity,
+        releaseYear: item.release_date ? new Date(item.release_date).getFullYear() : null,
+        tmdbRating: item.vote_average || 0,
+        voteCount: item.vote_count || 0,
+        popularity: item.popularity || 0,
       }));
-    
+
+    // ── TV shows ─────────────────────────────────────────────────────────────
+    // episode_count = how many episodes this actor appeared in for this show.
+    // Late night / talk shows typically appear as 1–2 episode credits.
+    // A real recurring role is usually 3+ episodes.
     const tvShows = (tvData.cast || [])
-      .filter(item => item.poster_path)
+      .filter(item =>
+        item.poster_path &&
+        (item.vote_count || 0) >= 25 &&
+        (item.episode_count || 0) >= 3    // eliminate single-appearance cameos
+      )
       .map(item => ({
         tmdbId: item.id,
         title: item.name,
         mediaType: 'tv',
         posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
-        releaseYear: item.first_air_date 
-          ? new Date(item.first_air_date).getFullYear()
-          : null,
-        tmdbRating: item.vote_average,
-        popularity: item.popularity,
+        releaseYear: item.first_air_date ? new Date(item.first_air_date).getFullYear() : null,
+        tmdbRating: item.vote_average || 0,
+        voteCount: item.vote_count || 0,
+        popularity: item.popularity || 0,
+        episodeCount: item.episode_count || 0,
       }));
-    
-    return [...movies, ...tvShows]
-      .sort((a, b) => b.popularity - a.popularity)
-      .slice(0, 20);
+
+    // ── Quality sort ─────────────────────────────────────────────────────────
+    // Raw popularity rewards late-night shows with thousands of episodes.
+    // Instead: blend rating (signal of quality) with a log-scaled popularity
+    // (signal of cultural reach), both normalised to 0–1.
+    const all = [...movies, ...tvShows];
+
+    if (all.length === 0) return [];
+
+    const maxPop = Math.max(...all.map(i => i.popularity), 1);
+
+    const scored = all.map(item => ({
+      ...item,
+      _score:
+        (item.tmdbRating / 10) * 0.55 +          // 55% weight on rating (0–10 → 0–1)
+        (Math.log1p(item.popularity) /
+          Math.log1p(maxPop)) * 0.45,             // 45% weight on log-popularity
+    }));
+
+    return scored
+      .sort((a, b) => b._score - a._score)
+      .slice(0, 40)   // keep a larger pool so filters (Movies/TV/In Library) have enough items
+      .map(({ _score, ...item }) => item); // strip internal score before returning
   },
 
   async getTrending(mediaType = 'all', timeWindow = 'week') {
