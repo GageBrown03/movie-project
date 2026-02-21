@@ -29,14 +29,11 @@
             :key="actor.id"
             @click="filterByActor(actor)"
             link
+            class="actor-row"
           >
             <template v-slot:prepend>
               <v-avatar size="56" class="mr-3">
-                <v-img 
-                  v-if="actor.photo" 
-                  :src="actor.photo" 
-                  cover
-                />
+                <v-img v-if="actor.photo" :src="actor.photo" cover />
                 <v-icon v-else size="32">mdi-account</v-icon>
               </v-avatar>
             </template>
@@ -46,12 +43,16 @@
             </v-list-item-title>
 
             <v-list-item-subtitle>
-              {{ actor.count }} {{ actor.count === 1 ? 'movie' : 'movies' }}
+              {{ actor.count }} {{ actor.count === 1 ? 'title' : 'titles' }} in your library
+              <span class="actor-row__hint ml-2">
+                <v-icon size="11" color="primary">mdi-play-circle-outline</v-icon>
+                View filmography
+              </span>
             </v-list-item-subtitle>
 
             <template v-slot:append>
-              <v-chip 
-                :color="getRankColor(index)" 
+              <v-chip
+                :color="getRankColor(index)"
                 size="small"
                 variant="tonal"
               >
@@ -216,5 +217,17 @@ export default {
 
 .v-list-item:hover {
   transform: translateX(4px);
+}
+
+.actor-row__hint {
+  opacity: 0;
+  font-size: 0.68rem;
+  color: rgb(var(--v-theme-primary));
+  transition: opacity 0.18s ease;
+  vertical-align: middle;
+}
+
+.actor-row:hover .actor-row__hint {
+  opacity: 1;
 }
 </style>

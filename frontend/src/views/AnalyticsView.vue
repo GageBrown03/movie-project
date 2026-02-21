@@ -316,6 +316,14 @@
       </v-row>
     </div>
   </div>
+
+  <!-- Actor Filmography Drawer -->
+  <actor-filmography-drawer
+    v-model="actorDrawerOpen"
+    :actor="actorDrawerActor"
+    :user-collection="userCollection"
+    @navigate-to-media="id => $router.push(`/media/${id}`)"
+  />
 </template>
 
 <script>
@@ -325,6 +333,7 @@ import TopPeople from '@/components/TopPeople.vue';
 import DecadePreferences from '@/components/DecadePreferences.vue';
 import AllTimeRecords from '@/components/AllTimeRecords.vue';
 import CollectionCard from '@/components/CollectionCard.vue';
+import ActorFilmographyDrawer from '@/components/ActorFilmographyDrawer.vue';
 
 export default {
   name: 'AnalyticsView',
@@ -333,7 +342,8 @@ export default {
     TopPeople,
     DecadePreferences,
     AllTimeRecords,
-    CollectionCard
+    CollectionCard,
+    ActorFilmographyDrawer,
   },
   
   data() {
@@ -355,6 +365,11 @@ export default {
       loadingDecades: false,
       loadingRecords: false,
       loadingCollectionCard: false,
+
+      // Actor filmography drawer
+      actorDrawerOpen: false,
+      actorDrawerActor: null,
+      userCollection: [],
     };
   },
   
@@ -445,6 +460,7 @@ export default {
   created() {
     this.loadMedia();
     this.loadAnalytics();
+    this.loadUserCollection();
   },
   
   methods: {
@@ -517,22 +533,30 @@ export default {
       }
     },
     
-    // NEW: Filter by actor
-    filterByActor(actor) {
-      console.log('Filter by actor:', actor.name);
-      // Navigate to library with actor filter
-      this.$router.push({
-        path: '/library',
-        query: { actor: actor.name }
-      });
+    async loadUserCollection() {
+      try {
+        this.userCollection = await mediaAPI.getAll();
+      } catch (err) {
+        console.warn('Could not load user collection for actor drawer:', err);
+      }
     },
-    
-    // NEW: Filter by director
+
+    // Opens the filmography drawer.
+    // analytics.py returns actor.id = TMDB person ID, actor.photo already fetched.
+    filterByActor(actor) {
+      this.actorDrawerActor = {
+        tmdbActorId: actor.id,  // already TMDB person ID from analytics backend
+        name: actor.name,
+        character: null,        // no character context from analytics
+        photo: actor.photo || null,
+      };
+      this.actorDrawerOpen = true;
+    },
+
+    // Directors don't have filmography — keep as-is but fix the broken route
     filterByDirector(director) {
-      console.log('Filter by director:', director.name);
-      // Navigate to library with director filter
       this.$router.push({
-        path: '/library',
+        path: '/media',
         query: { director: director.name }
       });
     },

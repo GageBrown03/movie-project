@@ -309,6 +309,7 @@ class Media(db.Model):
             result['cast'] = [
                 {
                     'actorId': c.actor.actor_id,
+                    'tmdbActorId': c.actor.tmdb_id,  # TMDB person ID — needed for /person/{id}/credits
                     'name': c.actor.name,
                     'character': c.character,
                     'profileUrl': c.actor.profile_url,
