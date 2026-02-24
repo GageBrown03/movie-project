@@ -220,6 +220,32 @@
       :heading="pickerHeading"
       @selected="onPicked"
     />
+    
+<!-- ⭐ NEW: Quick Rate Dialog -->
+    <v-dialog v-model="quickRateOpen" max-width="480px">
+      <v-card>
+        <v-card-title class="text-h6">
+          Rate {{ quickRateItem?.title }}
+        </v-card-title>
+
+        <v-card-text>
+          <v-rating v-model="quickRateValue" hover size="36" color="amber" />
+
+          <v-textarea
+            v-model="quickRateNotes"
+            label="Why do you like it?"
+            auto-grow
+            class="mt-3"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-btn variant="text" @click="cancelQuickRate">Cancel</v-btn>
+          <v-spacer />
+          <v-btn color="primary" @click="confirmQuickRate">Save Rating</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
@@ -351,26 +377,36 @@ export default {
 
     // Find an existing media in library by tmdbId; if not present, create it
     async ensureInLibrary(tmdbItem) {
+      // 1. See if media already exists in the user’s library
       const existing =
         this.userCollection.find(
-          m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
+          m =>
+            m.tmdbId === tmdbItem.tmdbId &&
+            m.mediaType === tmdbItem.mediaType
         ) || null;
 
-      if (existing) return existing;
+      if (existing) {
+        this.toast(`Using your existing library entry for "${existing.title}".`, 'success');
+        return existing;
+      }
+
+      this.toast(`Adding "${tmdbItem.title}" to your library…`, 'info');
 
       try {
-        // For better metadata (e.g., collection for movies), try to fetch full details
+        // 2. Try to fetch full TMDB details (to capture collection/franchise info)
         let details = null;
+
         try {
           details =
             tmdbItem.mediaType === 'movie'
               ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId)
               : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
-        } catch {
-          // fallback to search result
+        } catch (error) {
+          console.warn('Failed to fetch TMDB details; using search result only.');
           details = tmdbItem;
         }
 
+        // 3. Build the backend create payload
         const payload = {
           title: tmdbItem.title,
           media_type: tmdbItem.mediaType,
@@ -380,17 +416,24 @@ export default {
           poster_url: tmdbItem.posterUrl,
           backdrop_url: tmdbItem.backdropUrl,
           tmdb_rating: tmdbItem.tmdbRating,
-          // If details include collection, the backend Media model will store it
-          tmdb_collection_id: details.tmdbCollectionId || details.tmdb_collection_id || null,
-          tmdb_collection_name: details.tmdbCollectionName || details.tmdb_collection_name || null,
-          // Let backend default status to WATCHED
+          tmdb_collection_id:
+            details.tmdbCollectionId || details.tmdb_collection_id || null,
+          tmdb_collection_name:
+            details.tmdbCollectionName || details.tmdb_collection_name || null,
         };
 
+        // 4. Create Media entry
         const created = await mediaAPI.create(payload);
+
+        // 5. Update local cache
         this.userCollection.push(created);
+
+        this.toast(`Added "${created.title}" to your library ✨`, 'success');
+
         return created;
       } catch (e) {
-        console.error('Failed creating media for showcase link', e);
+        console.error('Failed creating media for showcase:', e);
+        this.toast('Something went wrong adding to your library.', 'error');
         return null;
       }
     },
@@ -412,6 +455,17 @@ export default {
 
     close() {
       this.$emit('update:modelValue', false);
+    },
+
+    toast(message, color = 'success') {
+      if (!this.$root) return;
+      if (this.$root.$refs?.globalSnackbar) {
+        // if you have a global snackbar component
+        this.$root.$refs.globalSnackbar.show(message, color);
+      } else {
+        // fallback: use Vuetify local snackbar
+        this.$emit('toast', { message, color });
+      }
     },
 
     buildPayload() {
