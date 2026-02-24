@@ -16,7 +16,7 @@
         color="primary"
         size="small"
         prepend-icon="mdi-pencil"
-        @click="$emit('edit')"
+        @click="editorOpen = true"
       >
         Edit Showcase
       </v-btn>
@@ -27,12 +27,12 @@
       <div class="showcase__empty-icon">🎬</div>
       <p class="showcase__empty-title">Your showcase is empty</p>
       <p class="showcase__empty-sub">Pin your all-time favourites so friends can see what defines your taste.</p>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="$emit('edit')">
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="editorOpen = true">
         Build My Showcase
       </v-btn>
     </div>
 
-    <template v-else>
+    <template v-if="hasAnyContent">
       <!-- TOP MOVIES & TOP TV side by side -->
       <div class="showcase__row">
         <showcase-list
@@ -100,10 +100,21 @@
         </div>
       </div>
     </template>
+  <!-- Showcase Editor — lives here, opened by buttons above -->
+  <showcase-editor
+    v-if="isOwn"
+    v-model="editorOpen"
+    :current-showcase="showcase"
+    :media-list="mediaList"
+    @saved="onShowcaseSaved"
+  />
+
   </div>
 </template>
 
 <script>
+import ShowcaseEditor from '@/components/ShowcaseEditor.vue';
+
 const ShowcaseList = {
   name: 'ShowcaseList',
   props: {
@@ -164,7 +175,7 @@ const ShowcaseList = {
 export default {
   name: 'ShowcaseSection',
 
-  components: { ShowcaseList },
+  components: { ShowcaseList, ShowcaseEditor },
 
   props: {
     showcase: {
@@ -178,9 +189,16 @@ export default {
     },
     isOwn: { type: Boolean, default: false },
     username: { type: String, default: '' },
+    mediaList: { type: Array, default: () => [] },
   },
 
-  emits: ['edit', 'navigate'],
+  emits: ['navigate', 'showcase-saved'],
+
+  data() {
+    return {
+      editorOpen: false,
+    };
+  },
 
   computed: {
     hasAnyContent() {
@@ -199,6 +217,10 @@ export default {
       if (entry?.mediaId) {
         this.$emit('navigate', entry.mediaId);
       }
+    },
+    onShowcaseSaved(newShowcase) {
+      this.$emit('showcase-saved', newShowcase);
+      this.editorOpen = false;
     },
   },
 };

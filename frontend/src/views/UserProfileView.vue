@@ -87,21 +87,14 @@
       <showcase-section
         v-if="profile.privacy.canViewRatings || isOwnProfile"
         :showcase="showcase"
-        :is-own="!!isOwnProfile"
+        :is-own="isOwnProfile"
         :username="profile.username"
+        :media-list="profile.media || []"
         class="mb-4"
-        @edit="showcaseEditorOpen = true"
+        @showcase-saved="showcase = $event"
         @navigate="id => $router.push('/media/' + id)"
       />
 
-      <!-- Showcase Editor (own profile only) -->
-      <showcase-editor
-        v-if="isOwnProfile"
-        v-model="showcaseEditorOpen"
-        :current-showcase="showcase"
-        :media-list="profile.media || []"
-        @saved="showcase = $event"
-      />
 
       <!-- Privacy Message (if limited access) -->
       <v-alert
@@ -187,7 +180,6 @@ import UserActivityFeed from '@/components/UserActivityFeed.vue';
 import TopRatedMovies from '@/components/TopRatedMovies.vue';
 import UserCollection from '@/components/UserCollection.vue';
 import ShowcaseSection from '@/components/ShowcaseSection.vue';
-import ShowcaseEditor from '@/components/ShowcaseEditor.vue';
 import { showcaseAPI } from '@/services/showcase-api';
 
 const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
@@ -201,7 +193,6 @@ export default {
     TopRatedMovies,
     UserCollection,
     ShowcaseSection,
-    ShowcaseEditor,
   },
 
   data() {
@@ -211,7 +202,6 @@ export default {
       profile: null,
       currentTab: 'analytics',
       showcase: null,
-      showcaseEditorOpen: false,
     };
   },
 
