@@ -3,6 +3,7 @@
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="820px"
+    :fullscreen="$vuetify?.display?.mobile || false"
     persistent
   >
     <v-card>
@@ -14,30 +15,47 @@
         </v-chip>
       </v-card-title>
 
-      <v-card-text>
+      <!-- Scrollable content with bottom padding so sticky bar doesn't overlap -->
+      <v-card-text class="editor-scroll">
         <!-- ACTIONS -->
         <div class="d-flex flex-wrap gap-2 mb-4">
-          <v-btn color="primary" variant="tonal" prepend-icon="mdi-crown"
-                 @click="openPicker('movie', 'Crown a Top Movie 👑🎬')"
-                 :disabled="draft.topMovies.length >= 4">
+          <v-btn
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-crown"
+            @click="openPicker('movie', 'Crown a Top Movie 👑🎬')"
+            :disabled="draft.topMovies.length >= 4"
+          >
             Crown a Top Movie
           </v-btn>
 
-          <v-btn color="primary" variant="tonal" prepend-icon="mdi-television"
-                 @click="openPicker('tv', 'Add a Top TV Pick 📺✨')"
-                 :disabled="draft.topTv.length >= 4">
+          <v-btn
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-television"
+            @click="openPicker('tv', 'Add a Top TV Pick 📺✨')"
+            :disabled="draft.topTv.length >= 4"
+          >
             Add a Top TV Pick
           </v-btn>
 
-          <v-btn color="secondary" variant="tonal" prepend-icon="mdi-movie-roll"
-                 @click="openPicker('movie', 'Add a Legendary Movie Series 🎞️🌟')"
-                 :disabled="draft.favSeries.length >= 4">
+          <v-btn
+            color="secondary"
+            variant="tonal"
+            prepend-icon="mdi-movie-roll"
+            @click="openPicker('movie', 'Add a Legendary Movie Series 🎞️🌟')"
+            :disabled="draft.favSeries.length >= 4"
+          >
             Add a Legendary Series
           </v-btn>
 
-          <v-btn color="amber" variant="tonal" prepend-icon="mdi-diamond-stone"
-                 @click="openPicker('any', 'Choose Your Hidden Gem 💎')"
-                 :disabled="!!draft.hiddenGem.mediaId">
+          <v-btn
+            color="amber"
+            variant="tonal"
+            prepend-icon="mdi-diamond-stone"
+            @click="openPicker('any', 'Choose Your Hidden Gem 💎')"
+            :disabled="!!draft.hiddenGem.mediaId"
+          >
             Choose Your Hidden Gem
           </v-btn>
         </div>
@@ -128,7 +146,7 @@
           </div>
         </section>
 
-        <!-- FAV SERIES (Movie franchises) -->
+        <!-- FAV SERIES -->
         <section class="editor-section mt-6">
           <div class="d-flex align-center mb-2">
             <h3 class="section-title">Favourite Series</h3>
@@ -175,7 +193,7 @@
           </div>
         </section>
 
-        <!-- HIDDEN GEM (single) -->
+        <!-- HIDDEN GEM -->
         <section class="editor-section mt-6">
           <div class="d-flex align-center mb-2">
             <h3 class="section-title">Hidden Gem</h3>
@@ -218,9 +236,8 @@
         </section>
       </v-card-text>
 
-      <v-divider />
-
-      <v-card-actions class="pa-4">
+      <!-- Sticky Save Bar -->
+      <v-card-actions class="save-bar">
         <v-btn variant="text" @click="close" :disabled="saving">Cancel</v-btn>
         <v-spacer />
         <v-btn color="primary" @click="save" :loading="saving">Save Showcase</v-btn>
@@ -259,17 +276,13 @@
         <v-card-actions>
           <v-btn variant="text" @click="cancelQuickRate">Cancel</v-btn>
           <v-spacer />
-          <v-btn color="secondary" variant="tonal" @click="skipAndAdd">
-            Skip & Add
-          </v-btn>
-          <v-btn color="primary" @click="confirmQuickRate">
-            Save Rating & Add
-          </v-btn>
+          <v-btn color="secondary" variant="tonal" @click="skipAndAdd">Skip & Add</v-btn>
+          <v-btn color="primary" @click="confirmQuickRate">Save Rating & Add</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Local Snackbar (toast) -->
+    <!-- Local Snackbar -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
       {{ snackbar.text }}
       <template #actions>
@@ -341,7 +354,6 @@ export default {
   },
 
   methods: {
-    // ---- UI helpers ----
     toast(text, color = 'success') {
       this.snackbar.text = text;
       this.snackbar.color = color;
@@ -351,7 +363,6 @@ export default {
       this.$emit('update:modelValue', false);
     },
 
-    // ---- normalize existing showcase for editing ----
     normalizeDraft(showcase) {
       const safe = {
         topMovies: Array.isArray(showcase?.topMovies) ? [...showcase.topMovies] : [],
@@ -362,7 +373,7 @@ export default {
           : { mediaId: null, media: null, note: '' },
       };
       for (const listName of ['topMovies', 'topTv', 'favSeries']) {
-        safe[listName] = safe[listName].map(e => ({
+        safe[listName] = safe[listName].map((e) => ({
           mediaId: e.mediaId ?? e.media?.mediaId ?? e.media_id ?? null,
           tmdbCollectionId: e.tmdbCollectionId ?? e.tmdb_collection_id ?? null,
           tmdbCollectionName: e.tmdbCollectionName ?? e.tmdb_collection_name ?? null,
@@ -379,7 +390,6 @@ export default {
       return safe;
     },
 
-    // ---- load user's library on open ----
     async loadUserCollection() {
       try {
         this.userCollection = await mediaAPI.getAll();
@@ -389,20 +399,17 @@ export default {
       }
     },
 
-    // ---- search picker ----
     openPicker(mode, heading) {
       this.pickerMode = mode;
       this.pickerHeading = heading;
       this.pickerOpen = true;
     },
 
-    // ---- selection flow ----
     async onPicked(tmdbItem) {
       this.pickerOpen = false;
 
-      // If already in library → add immediately
       const existing = this.userCollection.find(
-        m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
+        (m) => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
       );
       if (existing) {
         this.toast(`Using your existing "${existing.title}".`);
@@ -410,7 +417,6 @@ export default {
         return;
       }
 
-      // Otherwise → quick rate first
       this.quickRateItem = tmdbItem;
       this.quickRateValue = null;
       this.quickRateNotes = '';
@@ -451,7 +457,6 @@ export default {
       this.cancelQuickRate();
     },
 
-    // ---- create media WITH rating (now includes cast) ----
     async createRatedMedia(tmdbItem, rating, notes) {
       try {
         let details;
@@ -479,7 +484,6 @@ export default {
             details.tmdbCollectionId || details.tmdb_collection_id || null,
           tmdb_collection_name:
             details.tmdbCollectionName || details.tmdb_collection_name || null,
-          // ⭐ Include cast (matches AddMediaDialog behavior)
           cast: details.cast || [],
         };
 
@@ -493,10 +497,9 @@ export default {
       }
     },
 
-    // ---- ensure media exists WITHOUT rating (now includes cast) ----
     async ensureInLibrary(tmdbItem) {
       const existing = this.userCollection.find(
-        m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
+        (m) => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
       );
       if (existing) return existing;
 
@@ -524,7 +527,6 @@ export default {
             details.tmdbCollectionId || details.tmdb_collection_id || null,
           tmdb_collection_name:
             details.tmdbCollectionName || details.tmdb_collection_name || null,
-          // ⭐ Include cast (matches AddMediaDialog behavior)
           cast: details.cast || [],
         };
 
@@ -538,7 +540,6 @@ export default {
       }
     },
 
-    // ---- add to proper section ----
     finishAdd(media) {
       if (this.pickerHeading.includes('Top Movie')) {
         if (this.draft.topMovies.length < 4) {
@@ -565,7 +566,6 @@ export default {
       }
     },
 
-    // ---- list utilities ----
     moveUp(list, i) {
       if (i <= 0) return;
       [list[i - 1], list[i]] = [list[i], list[i - 1]];
@@ -581,7 +581,6 @@ export default {
       this.draft.hiddenGem = { mediaId: null, media: null, note: '' };
     },
 
-    // ---- save to backend ----
     async save() {
       this.saving = true;
       try {
@@ -605,12 +604,11 @@ export default {
 
         await showcaseAPI.save(payload);
 
-        // Optionally refresh the full showcase
         let updated;
         try {
           updated = await showcaseAPI.getMine();
         } catch {
-          updated = { showcase: this.draft }; // fallback
+          updated = { showcase: this.draft };
         }
 
         this.$emit('saved', updated.showcase || this.draft);
@@ -628,6 +626,22 @@ export default {
 </script>
 
 <style scoped>
+/* Scroll padding so sticky bar doesn’t overlap content */
+.editor-scroll {
+  padding-bottom: 84px; /* room for sticky save bar */
+}
+
+/* Sticky Save Bar */
+.save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: rgb(var(--v-theme-surface));
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  padding: 12px;
+}
+
+/* Section visuals */
 .section-title { font-weight: 800; font-size: 1rem; margin: 0; }
 .empty-row {
   padding: 12px;
@@ -646,5 +660,10 @@ export default {
 .item-title { font-weight: 700; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item-sub { font-size: .72rem; opacity: .7; }
 .item-actions { display: flex; gap: 4px; }
-.gap-2 { gap: 8px; }
+
+/* Mobile polish: reduce gaps a bit */
+@media (max-width: 600px) {
+  .row-item { padding: 6px; gap: 8px; }
+  .editor-scroll { padding-bottom: 92px; }
+}
 </style>

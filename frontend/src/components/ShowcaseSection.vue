@@ -1,7 +1,5 @@
-
 <template>
   <div class="showcase" v-if="isOwn || hasAnyContent">
-
     <!-- Header -->
     <div class="showcase__header">
       <div class="showcase__title-group">
@@ -24,106 +22,85 @@
       </v-btn>
     </div>
 
-    <!-- If completely empty & viewer is owner -->
-    <div
-      v-if="isOwn && !hasAnyContent"
-      class="showcase__empty-own"
-    >
+    <!-- Empty own showcase CTA -->
+    <div v-if="isOwn && !hasAnyContent" class="showcase__empty-own">
       <div class="showcase__empty-icon">🎬</div>
       <p class="showcase__empty-title">Your showcase is empty</p>
       <p class="showcase__empty-sub">
         Pin your all‑time favourites so friends can see what defines your taste.
       </p>
-
-      <v-btn
-        color="primary"
-        prepend-icon="mdi-plus"
-        @click="editorOpen = true"
-      >
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="editorOpen = true">
         Build My Showcase
       </v-btn>
     </div>
 
     <!-- MAIN CONTENT -->
     <template v-if="hasAnyContent">
-
       <!-- TOP MOVIES + TOP TV -->
       <div class="showcase__row">
         <showcase-list
-          v-if="showcase.topMovies?.length > 0"
+          v-if="norm.topMovies.length > 0"
           title="Top Movies"
           icon="mdi-movie"
           accent="#E8A838"
-          :items="showcase.topMovies"
+          :items="norm.topMovies"
           @item-click="navigateTo"
         />
 
         <showcase-list
-          v-if="showcase.topTv?.length > 0"
+          v-if="norm.topTv.length > 0"
           title="Top TV"
           icon="mdi-television-play"
           accent="#5C9EFF"
-          :items="showcase.topTv"
+          :items="norm.topTv"
           @item-click="navigateTo"
         />
       </div>
 
       <!-- SERIES -->
       <showcase-list
-        v-if="showcase.favSeries?.length > 0"
+        v-if="norm.favSeries.length > 0"
         title="Favourite Series"
         icon="mdi-film-strip"
         accent="#A78BFA"
-        :items="showcase.favSeries"
+        :items="norm.favSeries"
         layout="series"
         class="mt-6"
         @item-click="navigateTo"
       />
 
       <!-- HIDDEN GEM -->
-      <div
-        v-if="showcase.hiddenGem && showcase.hiddenGem.mediaId"
-        class="showcase__gem mt-6"
-      >
+      <div v-if="norm.hiddenGem && norm.hiddenGem.mediaId" class="showcase__gem mt-6">
         <div class="showcase__gem-label">
           <v-icon size="14" color="amber">mdi-diamond-stone</v-icon>
           Hidden Gem
         </div>
 
-        <div class="showcase__gem-inner"
-             @click="navigateTo(showcase.hiddenGem)"
-        >
+        <div class="showcase__gem-inner" @click="navigateTo(norm.hiddenGem)">
           <v-img
-            v-if="showcase.hiddenGem.media?.backdropUrl"
-            :src="showcase.hiddenGem.media.backdropUrl"
+            v-if="norm.hiddenGem.media?.backdropUrl"
+            :src="norm.hiddenGem.media.backdropUrl"
             cover
             class="showcase__gem-backdrop"
           />
-          <div
-            v-else
-            class="showcase__gem-backdrop showcase__gem-backdrop--fallback"
-          />
+          <div v-else class="showcase__gem-backdrop showcase__gem-backdrop--fallback" />
 
           <div class="showcase__gem-overlay" />
 
           <div class="showcase__gem-content">
             <v-img
-              v-if="showcase.hiddenGem.media?.posterUrl"
-              :src="showcase.hiddenGem.media.posterUrl"
+              v-if="norm.hiddenGem.media?.posterUrl"
+              :src="norm.hiddenGem.media.posterUrl"
               width="72"
               class="showcase__gem-poster rounded elevation-4"
             />
             <div class="showcase__gem-text">
-              <p class="showcase__gem-title">
-                {{ showcase.hiddenGem.media?.title }}
-              </p>
-              <p class="showcase__gem-year">
-                {{ showcase.hiddenGem.media?.releaseYear }}
-              </p>
+              <p class="showcase__gem-title">{{ norm.hiddenGem.media?.title }}</p>
+              <p class="showcase__gem-year">{{ norm.hiddenGem.media?.releaseYear }}</p>
 
-              <p v-if="showcase.hiddenGem.note" class="showcase__gem-note">
+              <p v-if="norm.hiddenGem.note" class="showcase__gem-note">
                 <v-icon size="12" class="mr-1">mdi-format-quote-open</v-icon>
-                {{ showcase.hiddenGem.note }}
+                {{ norm.hiddenGem.note }}
               </p>
             </div>
           </div>
@@ -135,7 +112,7 @@
     <showcase-editor
       v-if="isOwn"
       v-model="editorOpen"
-      :current-showcase="showcase"
+      :current-showcase="norm"      
       :media-list="mediaList"
       @saved="onShowcaseSaved"
     />
@@ -161,13 +138,15 @@ const ShowcaseList = {
         <v-icon :color="accent" size="16" class="mr-1">{{ icon }}</v-icon>
         <span class="sclist__title" :style="{ color: accent }">{{ title }}</span>
       </div>
+
       <div class="sclist__items" :class="'sclist__items--' + layout">
         <div
           v-for="(entry, i) in items"
-          :key="entry.mediaId || i"
+          :key="entry.mediaId || entry.media_id || i"
           class="sclist__item"
           :class="{ 'sclist__item--top': i === 0 }"
           @click="$emit('item-click', entry)"
+          :title="entry.media?.title || entry.tmdbCollectionName"
         >
           <div class="sclist__rank" :style="i === 0 ? { color: accent } : {}">
             {{ i === 0 ? '★' : i + 1 }}
@@ -179,6 +158,7 @@ const ShowcaseList = {
               :src="entry.media.posterUrl"
               cover
               class="sclist__poster"
+              aspect-ratio="0.667"
             />
             <div v-else class="sclist__poster sclist__poster--empty">
               <v-icon color="grey" size="20">mdi-movie-outline</v-icon>
@@ -195,9 +175,7 @@ const ShowcaseList = {
                 ? (entry.tmdbCollectionName || entry.media?.title)
                 : entry.media?.title }}
             </p>
-            <p class="sclist__year">
-              {{ entry.media?.releaseYear || '—' }}
-            </p>
+            <p class="sclist__year">{{ entry.media?.releaseYear || '—' }}</p>
           </div>
         </div>
       </div>
@@ -210,10 +188,10 @@ export default {
   components: { ShowcaseList, ShowcaseEditor },
 
   props: {
-    showcase: Object,
-    isOwn: Boolean,
-    username: String,
-    mediaList: Array,
+    showcase: { type: Object, default: () => ({}) },
+    isOwn: { type: Boolean, default: false },
+    username: { type: String, default: '' },
+    mediaList: { type: Array, default: () => [] },
   },
 
   emits: ['navigate', 'showcase-saved'],
@@ -225,33 +203,72 @@ export default {
   },
 
   computed: {
-    hasAnyContent() {
-      const s = this.showcase;
-      if (!s) return false;
+    /** Normalize both camelCase and snake_case keys from API or local draft */
+    norm() {
+      const s = this.showcase || {};
+      const topMovies = s.topMovies || s.top_movies || [];
+      const topTv = s.topTv || s.top_tv || [];
+      const favSeries = s.favSeries || s.fav_series || [];
+      const hiddenGem = s.hiddenGem || s.hidden_gem || null;
 
+      // ensure each entry has { mediaId, media?, tmdbCollectionName? }
+      const mapEntry = (e) => ({
+        mediaId: e.mediaId ?? e.media_id ?? e.media?.mediaId ?? null,
+        tmdbCollectionId: e.tmdbCollectionId ?? e.tmdb_collection_id ?? null,
+        tmdbCollectionName: e.tmdbCollectionName ?? e.tmdb_collection_name ?? null,
+        rank: e.rank ?? e.order ?? null,
+        media: e.media || null,
+      });
+
+      return {
+        topMovies: Array.isArray(topMovies) ? topMovies.map(mapEntry) : [],
+        topTv: Array.isArray(topTv) ? topTv.map(mapEntry) : [],
+        favSeries: Array.isArray(favSeries) ? favSeries.map(mapEntry) : [],
+        hiddenGem:
+          hiddenGem && typeof hiddenGem === 'object'
+            ? {
+                mediaId:
+                  hiddenGem.mediaId ??
+                  hiddenGem.media_id ??
+                  hiddenGem.media?.mediaId ??
+                  null,
+                media: hiddenGem.media || null,
+                note: hiddenGem.note || '',
+              }
+            : null,
+      };
+    },
+
+    hasAnyContent() {
+      const s = this.norm;
       return (
-        (s.topMovies && s.topMovies.length > 0) ||
-        (s.topTv && s.topTv.length > 0) ||
-        (s.favSeries && s.favSeries.length > 0) ||
-        (s.hiddenGem && s.hiddenGem.mediaId) // must have real pick
+        s.topMovies.length > 0 ||
+        s.topTv.length > 0 ||
+        s.favSeries.length > 0 ||
+        (s.hiddenGem && s.hiddenGem.mediaId)
       );
     },
   },
 
   methods: {
     navigateTo(entry) {
-      if (entry?.mediaId) {
-        this.$emit('navigate', entry.mediaId);
+      const id =
+        entry?.mediaId ??
+        entry?.media_id ??
+        entry?.media?.mediaId ??
+        entry?.media?.media_id;
+      if (id) {
+        this.$emit('navigate', id);
       }
     },
     onShowcaseSaved(newShowcase) {
+      // Bubble up the normalized object so parent can set profile.showcase
       this.$emit('showcase-saved', newShowcase);
       this.editorOpen = false;
     },
   },
 };
 </script>
-
 
 <style scoped>
 /* ── Section shell ───────────────────────────────────────── */
@@ -312,11 +329,19 @@ export default {
   margin-right: auto;
 }
 
-/* ── Row layout for Movies + TV ──────────────────────────── */
+/* ── Row layout for Movies + TV ─────────────────────────── */
 .showcase__row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
+}
+
+/* Mobile: stack one on top */
+@media (max-width: 600px) {
+  .showcase__row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 }
 
 /* ── Showcase list sub-component ─────────────────────────── */
@@ -344,6 +369,18 @@ export default {
   flex-direction: column;
   gap: 10px;
 }
+
+/* On very small screens, allow horizontal scroll if you prefer a rail:
+   Uncomment to switch to horizontal chips instead of column list
+:deep(.sclist__items) {
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 12px;
+}
+:deep(.sclist__item) {
+  min-width: 220px;
+}
+*/
 
 :deep(.sclist__items--series) {
   flex-direction: row;
@@ -454,7 +491,7 @@ export default {
   margin: 1px 0 0;
 }
 
-/* ── Hidden Gem ──────────────────────────────────────────── */
+/* ── Hidden Gem ─────────────────────────────────────────── */
 .showcase__gem-label {
   display: flex;
   align-items: center;
