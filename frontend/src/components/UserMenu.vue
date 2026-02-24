@@ -27,8 +27,12 @@
       <v-divider />
       
       <!-- Menu Items -->
+      <v-list-item :to="`/user/${username}`" prepend-icon="mdi-account-circle">
+        <v-list-item-title>My Profile & Showcase</v-list-item-title>
+      </v-list-item>
+
       <v-list-item to="/settings/privacy" prepend-icon="mdi-shield-account">
-        <v-list-item-title>Profile</v-list-item-title>
+        <v-list-item-title>Settings</v-list-item-title>
       </v-list-item>
       
       <v-divider />
