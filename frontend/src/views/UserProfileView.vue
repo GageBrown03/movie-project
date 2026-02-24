@@ -61,7 +61,7 @@
             </div>
 
             <!-- Actions (if not viewing own profile) -->
-            <div v-if="!profile.isMe" class="d-flex flex-column gap-2">
+            <div v-if="!isOwnProfile" class="d-flex flex-column gap-2">
               <v-btn
                 v-if="profile.areFriends && profile.privacy.canViewRatings"
                 color="primary"
@@ -85,9 +85,9 @@
 
       <!-- Showcase Section -->
       <showcase-section
-        v-if="profile.privacy.canViewRatings || profile.isMe"
+        v-if="profile.privacy.canViewRatings || isOwnProfile"
         :showcase="showcase"
-        :is-own="!!profile.isMe"
+        :is-own="!!isOwnProfile"
         :username="profile.username"
         class="mb-4"
         @edit="showcaseEditorOpen = true"
@@ -96,7 +96,7 @@
 
       <!-- Showcase Editor (own profile only) -->
       <showcase-editor
-        v-if="profile.isMe"
+        v-if="isOwnProfile"
         v-model="showcaseEditorOpen"
         :current-showcase="showcase"
         :media-list="profile.media || []"
@@ -218,7 +218,12 @@ export default {
   computed: {
     username() {
       return this.$route.params.username;
-    }
+    },
+    // Computed locally — don't trust isOwnProfile alone since backend may not set it
+    isOwnProfile() {
+      const stored = localStorage.getItem('username');
+      return !!(this.profile?.isMe || (stored && stored === this.username));
+    },
   },
 
   watch: {
@@ -253,7 +258,7 @@ export default {
         this.profile = await response.json();
 
         // Load showcase if viewer has ratings access
-        if (this.profile.privacy.canViewRatings || this.profile.isMe) {
+        if (this.profile.privacy.canViewRatings || this.isOwnProfile) {
           this.loadShowcase();
         }
 
