@@ -15,67 +15,31 @@
         </v-chip>
       </v-card-title>
 
-      <!-- Scrollable content with bottom padding so sticky bar doesn't overlap -->
       <v-card-text class="editor-scroll">
-        <!-- ACTIONS -->
-        <div class="d-flex flex-wrap gap-2 mb-4">
-          <v-btn
-            color="primary"
-            variant="tonal"
-            prepend-icon="mdi-crown"
-            @click="openPicker('movie', 'Crown a Top Movie 👑🎬')"
-            :disabled="draft.topMovies.length >= 4"
-          >
-            Crown a Top Movie
-          </v-btn>
-
-          <v-btn
-            color="primary"
-            variant="tonal"
-            prepend-icon="mdi-television"
-            @click="openPicker('tv', 'Add a Top TV Pick 📺✨')"
-            :disabled="draft.topTv.length >= 4"
-          >
-            Add a Top TV Pick
-          </v-btn>
-
-          <v-btn
-            color="secondary"
-            variant="tonal"
-            prepend-icon="mdi-movie-roll"
-            @click="openPicker('movie', 'Add a Legendary Movie Series 🎞️🌟')"
-            :disabled="draft.favSeries.length >= 4"
-          >
-            Add a Legendary Series
-          </v-btn>
-
-          <v-btn
-            color="amber"
-            variant="tonal"
-            prepend-icon="mdi-diamond-stone"
-            @click="openPicker('any', 'Choose Your Hidden Gem 💎')"
-            :disabled="!!draft.hiddenGem.mediaId"
-          >
-            Choose Your Hidden Gem
-          </v-btn>
-        </div>
-
         <!-- TOP MOVIES -->
         <section class="editor-section">
-          <div class="d-flex align-center mb-2">
-            <h3 class="section-title">Top Movies</h3>
-            <v-spacer />
-            <span class="text-caption text-medium-emphasis">{{ draft.topMovies.length }}/4</span>
+          <div class="section-head">
+            <h3 class="section-title" @click="openPicker('movie','Crown a Top Movie 👑🎬')">Top Movies</h3>
+            <div class="section-actions">
+              <span class="count">{{ draft.topMovies.length }}/4</span>
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-plus"
+                @click="openPicker('movie','Crown a Top Movie 👑🎬')"
+                :disabled="draft.topMovies.length >= 4"
+              >
+                Add
+              </v-btn>
+            </div>
           </div>
+
           <div v-if="!draft.topMovies.length" class="empty-row">
             Pick up to 4 all‑time favourites.
           </div>
           <div v-else class="row-list">
-            <div
-              v-for="(item, i) in draft.topMovies"
-              :key="item.mediaId || i"
-              class="row-item"
-            >
+            <div v-for="(item, i) in draft.topMovies" :key="item.mediaId || i" class="row-item">
               <v-img
                 v-if="item.media?.posterUrl"
                 :src="item.media.posterUrl"
@@ -105,20 +69,28 @@
 
         <!-- TOP TV -->
         <section class="editor-section mt-6">
-          <div class="d-flex align-center mb-2">
-            <h3 class="section-title">Top TV</h3>
-            <v-spacer />
-            <span class="text-caption text-medium-emphasis">{{ draft.topTv.length }}/4</span>
+          <div class="section-head">
+            <h3 class="section-title" @click="openPicker('tv','Add a Top TV Pick 📺✨')">Top TV</h3>
+            <div class="section-actions">
+              <span class="count">{{ draft.topTv.length }}/4</span>
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-plus"
+                @click="openPicker('tv','Add a Top TV Pick 📺✨')"
+                :disabled="draft.topTv.length >= 4"
+              >
+                Add
+              </v-btn>
+            </div>
           </div>
+
           <div v-if="!draft.topTv.length" class="empty-row">
             Pick up to 4 TV shows that define your taste.
           </div>
           <div v-else class="row-list">
-            <div
-              v-for="(item, i) in draft.topTv"
-              :key="item.mediaId || i"
-              class="row-item"
-            >
+            <div v-for="(item, i) in draft.topTv" :key="item.mediaId || i" class="row-item">
               <v-img
                 v-if="item.media?.posterUrl"
                 :src="item.media.posterUrl"
@@ -148,20 +120,28 @@
 
         <!-- FAV SERIES -->
         <section class="editor-section mt-6">
-          <div class="d-flex align-center mb-2">
-            <h3 class="section-title">Favourite Series</h3>
-            <v-spacer />
-            <span class="text-caption text-medium-emphasis">{{ draft.favSeries.length }}/4</span>
+          <div class="section-head">
+            <h3 class="section-title" @click="openPicker('movie','Add a Legendary Movie Series 🎞️🌟')">Favourite Series</h3>
+            <div class="section-actions">
+              <span class="count">{{ draft.favSeries.length }}/4</span>
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="secondary"
+                prepend-icon="mdi-plus"
+                @click="openPicker('movie','Add a Legendary Movie Series 🎞️🌟')"
+                :disabled="draft.favSeries.length >= 4"
+              >
+                Add
+              </v-btn>
+            </div>
           </div>
+
           <div v-if="!draft.favSeries.length" class="empty-row">
             Choose up to 4 movie franchises (or a representative film).
           </div>
           <div v-else class="row-list">
-            <div
-              v-for="(item, i) in draft.favSeries"
-              :key="item.mediaId || item.tmdbCollectionId || i"
-              class="row-item"
-            >
+            <div v-for="(item, i) in draft.favSeries" :key="item.mediaId || item.tmdbCollectionId || i" class="row-item">
               <v-img
                 v-if="item.media?.posterUrl"
                 :src="item.media.posterUrl"
@@ -171,12 +151,8 @@
                 cover
               />
               <div class="item-info">
-                <div class="item-title">
-                  {{ item.tmdbCollectionName || item.media?.title }}
-                </div>
-                <div class="item-sub">
-                  {{ item.media?.releaseYear || '—' }}
-                </div>
+                <div class="item-title">{{ item.tmdbCollectionName || item.media?.title }}</div>
+                <div class="item-sub">{{ item.media?.releaseYear || '—' }}</div>
               </div>
               <div class="item-actions">
                 <v-btn icon size="x-small" :disabled="i===0" @click="moveUp(draft.favSeries, i)">
@@ -195,16 +171,26 @@
 
         <!-- HIDDEN GEM -->
         <section class="editor-section mt-6">
-          <div class="d-flex align-center mb-2">
-            <h3 class="section-title">Hidden Gem</h3>
-            <v-spacer />
-            <span class="text-caption text-medium-emphasis">{{ draft.hiddenGem.mediaId ? '1/1' : '0/1' }}</span>
+          <div class="section-head">
+            <h3 class="section-title" @click="openPicker('any','Choose Your Hidden Gem 💎')">Hidden Gem</h3>
+            <div class="section-actions">
+              <span class="count">{{ draft.hiddenGem.mediaId ? '1/1' : '0/1' }}</span>
+              <v-btn
+                size="small"
+                variant="tonal"
+                color="amber"
+                prepend-icon="mdi-plus"
+                @click="openPicker('any','Choose Your Hidden Gem 💎')"
+                :disabled="!!draft.hiddenGem.mediaId"
+              >
+                Pick
+              </v-btn>
+            </div>
           </div>
 
           <div v-if="!draft.hiddenGem.mediaId" class="empty-row">
             That one under‑the‑radar pick you want everyone to see.
           </div>
-
           <div v-else class="row-item">
             <v-img
               v-if="draft.hiddenGem.media?.posterUrl"
@@ -265,12 +251,7 @@
 
         <v-card-text>
           <v-rating v-model="quickRateValue" hover size="36" color="amber" />
-          <v-textarea
-            v-model="quickRateNotes"
-            label="Why do you like it?"
-            auto-grow
-            class="mt-3"
-          />
+          <v-textarea v-model="quickRateNotes" label="Why do you like it?" auto-grow class="mt-3" />
         </v-card-text>
 
         <v-card-actions>
@@ -305,14 +286,9 @@ export default {
     modelValue: { type: Boolean, default: false },
     currentShowcase: {
       type: Object,
-      default: () => ({
-        topMovies: [],
-        topTv: [],
-        favSeries: [],
-        hiddenGem: null,
-      }),
+      default: () => ({ topMovies: [], topTv: [], favSeries: [], hiddenGem: null }),
     },
-    mediaList: { type: Array, default: () => [] }, // compatibility
+    mediaList: { type: Array, default: () => [] },
   },
 
   emits: ['update:modelValue', 'saved'],
@@ -320,60 +296,37 @@ export default {
   data() {
     return {
       draft: this.normalizeDraft(this.currentShowcase),
-
-      // picker
       pickerOpen: false,
       pickerMode: 'any',
       pickerHeading: '',
-
-      // quick-rate
       quickRateOpen: false,
       quickRateItem: null,
       quickRateValue: null,
       quickRateNotes: '',
-
-      // library & save
       userCollection: [],
       saving: false,
-
-      // toast
       snackbar: { show: false, text: '', color: 'success' },
     };
   },
 
   watch: {
-    modelValue(val) {
-      if (val) this.loadUserCollection();
-    },
-    currentShowcase: {
-      deep: true,
-      handler(newVal) {
-        this.draft = this.normalizeDraft(newVal);
-      },
-    },
+    modelValue(val) { if (val) this.loadUserCollection(); },
+    currentShowcase: { deep: true, handler(newVal) { this.draft = this.normalizeDraft(newVal); } },
   },
 
   methods: {
-    toast(text, color = 'success') {
-      this.snackbar.text = text;
-      this.snackbar.color = color;
-      this.snackbar.show = true;
-    },
-    close() {
-      this.$emit('update:modelValue', false);
-    },
+    toast(text, color = 'success') { this.snackbar = { show: true, text, color }; },
+    close() { this.$emit('update:modelValue', false); },
 
     normalizeDraft(showcase) {
       const safe = {
         topMovies: Array.isArray(showcase?.topMovies) ? [...showcase.topMovies] : [],
         topTv: Array.isArray(showcase?.topTv) ? [...showcase.topTv] : [],
         favSeries: Array.isArray(showcase?.favSeries) ? [...showcase.favSeries] : [],
-        hiddenGem: showcase?.hiddenGem
-          ? { ...showcase.hiddenGem }
-          : { mediaId: null, media: null, note: '' },
+        hiddenGem: showcase?.hiddenGem ? { ...showcase.hiddenGem } : { mediaId: null, media: null, note: '' },
       };
-      for (const listName of ['topMovies', 'topTv', 'favSeries']) {
-        safe[listName] = safe[listName].map((e) => ({
+      for (const list of ['topMovies','topTv','favSeries']) {
+        safe[list] = safe[list].map(e => ({
           mediaId: e.mediaId ?? e.media?.mediaId ?? e.media_id ?? null,
           tmdbCollectionId: e.tmdbCollectionId ?? e.tmdb_collection_id ?? null,
           tmdbCollectionName: e.tmdbCollectionName ?? e.tmdb_collection_name ?? null,
@@ -391,279 +344,142 @@ export default {
     },
 
     async loadUserCollection() {
-      try {
-        this.userCollection = await mediaAPI.getAll();
-      } catch (e) {
-        console.warn('Could not load user collection', e);
-        this.userCollection = [];
-      }
+      try { this.userCollection = await mediaAPI.getAll(); }
+      catch { this.userCollection = []; }
     },
 
-    openPicker(mode, heading) {
-      this.pickerMode = mode;
-      this.pickerHeading = heading;
-      this.pickerOpen = true;
-    },
+    openPicker(mode, heading) { this.pickerMode = mode; this.pickerHeading = heading; this.pickerOpen = true; },
 
     async onPicked(tmdbItem) {
       this.pickerOpen = false;
-
-      const existing = this.userCollection.find(
-        (m) => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
-      );
-      if (existing) {
-        this.toast(`Using your existing "${existing.title}".`);
-        this.finishAdd(existing);
-        return;
-      }
-
-      this.quickRateItem = tmdbItem;
-      this.quickRateValue = null;
-      this.quickRateNotes = '';
-      this.quickRateOpen = true;
+      const existing = this.userCollection.find(m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType);
+      if (existing) { this.toast(`Using your existing "${existing.title}".`); this.finishAdd(existing); return; }
+      this.quickRateItem = tmdbItem; this.quickRateValue = null; this.quickRateNotes = ''; this.quickRateOpen = true;
     },
 
-    cancelQuickRate() {
-      this.quickRateOpen = false;
-      this.quickRateItem = null;
-      this.quickRateValue = null;
-      this.quickRateNotes = '';
-    },
+    cancelQuickRate() { this.quickRateOpen = false; this.quickRateItem = null; this.quickRateValue = null; this.quickRateNotes = ''; },
 
     async skipAndAdd() {
-      const tmdbItem = this.quickRateItem;
-      this.quickRateOpen = false;
+      const tmdbItem = this.quickRateItem; this.quickRateOpen = false;
       const created = await this.ensureInLibrary(tmdbItem);
-      if (created) {
-        this.toast(`Added "${created.title}" to your library ✨`);
-        this.finishAdd(created);
-      }
+      if (created) { this.toast(`Added "${created.title}" to your library ✨`); this.finishAdd(created); }
       this.cancelQuickRate();
     },
 
     async confirmQuickRate() {
       if (!this.quickRateItem) return;
-      const tmdbItem = this.quickRateItem;
-      const rating = this.quickRateValue;
-      const notes = this.quickRateNotes;
-
+      const created = await this.createRatedMedia(this.quickRateItem, this.quickRateValue, this.quickRateNotes);
       this.quickRateOpen = false;
-
-      const created = await this.createRatedMedia(tmdbItem, rating, notes);
-      if (created) {
-        this.toast(`Rated & added "${created.title}" ✔`);
-        this.finishAdd(created);
-      }
+      if (created) { this.toast(`Rated & added "${created.title}" ✔`); this.finishAdd(created); }
       this.cancelQuickRate();
     },
 
     async createRatedMedia(tmdbItem, rating, notes) {
       try {
-        let details;
-        try {
-          details =
-            tmdbItem.mediaType === 'movie'
-              ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId)
-              : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
-        } catch {
-          details = tmdbItem;
-        }
-
+        let details; try {
+          details = tmdbItem.mediaType === 'movie' ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId) : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
+        } catch { details = tmdbItem; }
         const payload = {
-          title: tmdbItem.title,
-          media_type: tmdbItem.mediaType,
-          tmdb_id: tmdbItem.tmdbId,
-          release_year: tmdbItem.releaseYear,
-          plot: tmdbItem.plot,
-          poster_url: tmdbItem.posterUrl,
-          backdrop_url: tmdbItem.backdropUrl,
-          tmdb_rating: tmdbItem.tmdbRating,
-          rating: rating || null,
-          notes: notes || null,
-          tmdb_collection_id:
-            details.tmdbCollectionId || details.tmdb_collection_id || null,
-          tmdb_collection_name:
-            details.tmdbCollectionName || details.tmdb_collection_name || null,
+          title: tmdbItem.title, media_type: tmdbItem.mediaType, tmdb_id: tmdbItem.tmdbId,
+          release_year: tmdbItem.releaseYear, plot: tmdbItem.plot, poster_url: tmdbItem.posterUrl,
+          backdrop_url: tmdbItem.backdropUrl, tmdb_rating: tmdbItem.tmdbRating,
+          rating: rating || null, notes: notes || null,
+          tmdb_collection_id: details.tmdbCollectionId || details.tmdb_collection_id || null,
+          tmdb_collection_name: details.tmdbCollectionName || details.tmdb_collection_name || null,
           cast: details.cast || [],
         };
-
         const created = await mediaAPI.create(payload);
         this.userCollection.push(created);
         return created;
-      } catch (e) {
-        console.error('Failed to create rated media:', e);
-        this.toast('Failed to save rating.', 'error');
-        return null;
-      }
+      } catch { this.toast('Failed to save rating.', 'error'); return null; }
     },
 
     async ensureInLibrary(tmdbItem) {
-      const existing = this.userCollection.find(
-        (m) => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
-      );
+      const existing = this.userCollection.find(m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType);
       if (existing) return existing;
-
       try {
-        let details;
-        try {
-          details =
-            tmdbItem.mediaType === 'movie'
-              ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId)
-              : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
-        } catch {
-          details = tmdbItem;
-        }
-
+        let details; try {
+          details = tmdbItem.mediaType === 'movie' ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId) : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
+        } catch { details = tmdbItem; }
         const payload = {
-          title: tmdbItem.title,
-          media_type: tmdbItem.mediaType,
-          tmdb_id: tmdbItem.tmdbId,
-          release_year: tmdbItem.releaseYear,
-          plot: tmdbItem.plot,
-          poster_url: tmdbItem.posterUrl,
-          backdrop_url: tmdbItem.backdropUrl,
-          tmdb_rating: tmdbItem.tmdbRating,
-          tmdb_collection_id:
-            details.tmdbCollectionId || details.tmdb_collection_id || null,
-          tmdb_collection_name:
-            details.tmdbCollectionName || details.tmdb_collection_name || null,
+          title: tmdbItem.title, media_type: tmdbItem.mediaType, tmdb_id: tmdbItem.tmdbId,
+          release_year: tmdbItem.releaseYear, plot: tmdbItem.plot, poster_url: tmdbItem.posterUrl,
+          backdrop_url: tmdbItem.backdropUrl, tmdb_rating: tmdbItem.tmdbRating,
+          tmdb_collection_id: details.tmdbCollectionId || details.tmdb_collection_id || null,
+          tmdb_collection_name: details.tmdbCollectionName || details.tmdb_collection_name || null,
           cast: details.cast || [],
         };
-
         const created = await mediaAPI.create(payload);
         this.userCollection.push(created);
         return created;
-      } catch (e) {
-        console.error('Failed creating media for showcase:', e);
-        this.toast('Something went wrong adding to your library.', 'error');
-        return null;
-      }
+      } catch { this.toast('Something went wrong adding to your library.', 'error'); return null; }
     },
 
     finishAdd(media) {
       if (this.pickerHeading.includes('Top Movie')) {
-        if (this.draft.topMovies.length < 4) {
-          this.draft.topMovies.push({ mediaId: media.mediaId, media });
-        }
+        if (this.draft.topMovies.length < 4) this.draft.topMovies.push({ mediaId: media.mediaId, media });
       } else if (this.pickerHeading.includes('Top TV')) {
-        if (this.draft.topTv.length < 4) {
-          this.draft.topTv.push({ mediaId: media.mediaId, media });
-        }
+        if (this.draft.topTv.length < 4) this.draft.topTv.push({ mediaId: media.mediaId, media });
       } else if (this.pickerHeading.includes('Legendary')) {
         if (this.draft.favSeries.length < 4) {
           this.draft.favSeries.push({
-            mediaId: media.mediaId,
-            media,
+            mediaId: media.mediaId, media,
             tmdbCollectionId: media.tmdbCollectionId || null,
             tmdbCollectionName: media.tmdbCollectionName || null,
           });
         }
       } else if (this.pickerHeading.includes('Hidden Gem')) {
-        if (!this.draft.hiddenGem.mediaId) {
-          this.draft.hiddenGem.mediaId = media.mediaId;
-          this.draft.hiddenGem.media = media;
-        }
+        if (!this.draft.hiddenGem.mediaId) { this.draft.hiddenGem.mediaId = media.mediaId; this.draft.hiddenGem.media = media; }
       }
     },
 
-    moveUp(list, i) {
-      if (i <= 0) return;
-      [list[i - 1], list[i]] = [list[i], list[i - 1]];
-    },
-    moveDown(list, i) {
-      if (i >= list.length - 1) return;
-      [list[i + 1], list[i]] = [list[i], list[i + 1]];
-    },
-    removeAt(list, i) {
-      list.splice(i, 1);
-    },
-    clearGem() {
-      this.draft.hiddenGem = { mediaId: null, media: null, note: '' };
-    },
+    moveUp(list, i) { if (i <= 0) return; [list[i - 1], list[i]] = [list[i], list[i - 1]]; },
+    moveDown(list, i) { if (i >= list.length - 1) return; [list[i + 1], list[i]] = [list[i], list[i + 1]]; },
+    removeAt(list, i) { list.splice(i, 1); },
+    clearGem() { this.draft.hiddenGem = { mediaId: null, media: null, note: '' }; },
 
     async save() {
       this.saving = true;
       try {
         const payload = {
-          topMovies: this.draft.topMovies.slice(0, 4).map((e, i) => ({
-            mediaId: e.mediaId, rank: i + 1,
-          })),
-          topTv: this.draft.topTv.slice(0, 4).map((e, i) => ({
-            mediaId: e.mediaId, rank: i + 1,
-          })),
+          topMovies: this.draft.topMovies.slice(0, 4).map((e, i) => ({ mediaId: e.mediaId, rank: i + 1 })),
+          topTv: this.draft.topTv.slice(0, 4).map((e, i) => ({ mediaId: e.mediaId, rank: i + 1 })),
           favSeries: this.draft.favSeries.slice(0, 4).map((e, i) => ({
             mediaId: e.mediaId || null,
             tmdbCollectionId: e.tmdbCollectionId || null,
             tmdbCollectionName: e.tmdbCollectionName || null,
             rank: i + 1,
           })),
-          hiddenGem: this.draft.hiddenGem?.mediaId
-            ? { mediaId: this.draft.hiddenGem.mediaId, note: this.draft.hiddenGem.note || '', rank: 1 }
-            : null,
+          hiddenGem: this.draft.hiddenGem?.mediaId ? { mediaId: this.draft.hiddenGem.mediaId, note: this.draft.hiddenGem.note || '', rank: 1 } : null,
         };
-
         await showcaseAPI.save(payload);
-
-        let updated;
-        try {
-          updated = await showcaseAPI.getMine();
-        } catch {
-          updated = { showcase: this.draft };
-        }
-
+        let updated; try { updated = await showcaseAPI.getMine(); } catch { updated = { showcase: this.draft }; }
         this.$emit('saved', updated.showcase || this.draft);
         this.close();
         this.toast('Showcase saved!', 'success');
       } catch (e) {
-        console.error('Failed to save showcase:', e);
         this.toast('Failed to save showcase', 'error');
-      } finally {
-        this.saving = false;
-      }
+      } finally { this.saving = false; }
     },
   },
 };
 </script>
 
 <style scoped>
-/* Scroll padding so sticky bar doesn’t overlap content */
-.editor-scroll {
-  padding-bottom: 84px; /* room for sticky save bar */
-}
+.editor-scroll { padding-bottom: 84px; }
+.save-bar { position: sticky; bottom: 0; z-index: 5; background: rgb(var(--v-theme-surface)); border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); padding: 12px; }
 
-/* Sticky Save Bar */
-.save-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 5;
-  background: rgb(var(--v-theme-surface));
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  padding: 12px;
-}
+.section-head { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.section-title { font-weight: 800; font-size: 1rem; margin: 0; cursor:pointer; }
+.section-actions { display:flex; align-items:center; gap:8px; }
+.section-actions .count { font-size: .8rem; color: rgba(var(--v-theme-on-surface),.55); }
 
-/* Section visuals */
-.section-title { font-weight: 800; font-size: 1rem; margin: 0; }
-.empty-row {
-  padding: 12px;
-  border: 1px dashed rgba(var(--v-theme-on-surface), 0.15);
-  border-radius: 10px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  font-size: 0.9rem;
-}
+.empty-row { padding: 12px; border: 1px dashed rgba(var(--v-theme-on-surface), 0.15); border-radius: 10px; color: rgba(var(--v-theme-on-surface), 0.6); font-size: 0.9rem; }
 .row-list { display: flex; flex-direction: column; gap: 8px; }
-.row-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px; border-radius: 10px;
-  background: rgba(var(--v-theme-surface-variant), 0.25);
-}
+.row-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; background: rgba(var(--v-theme-surface-variant), 0.25); }
 .item-info { flex: 1; min-width: 0; }
 .item-title { font-weight: 700; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .item-sub { font-size: .72rem; opacity: .7; }
-.item-actions { display: flex; gap: 4px; }
 
-/* Mobile polish: reduce gaps a bit */
-@media (max-width: 600px) {
-  .row-item { padding: 6px; gap: 8px; }
-  .editor-scroll { padding-bottom: 92px; }
-}
+@media (max-width:600px){ .editor-scroll{ padding-bottom: 92px; } }
 </style>
