@@ -1,7 +1,8 @@
-<template>
-  <div class="showcase" v-if="hasAnyContent || isOwn">
 
-    <!-- Section header -->
+<template>
+  <div class="showcase" v-if="isOwn || hasAnyContent">
+
+    <!-- Header -->
     <div class="showcase__header">
       <div class="showcase__title-group">
         <h2 class="showcase__title">
@@ -10,6 +11,7 @@
         </h2>
         <p class="showcase__subtitle">Curated picks</p>
       </div>
+
       <v-btn
         v-if="isOwn"
         variant="tonal"
@@ -22,29 +24,42 @@
       </v-btn>
     </div>
 
-    <!-- Empty own showcase CTA -->
-    <div v-if="isOwn && !hasAnyContent" class="showcase__empty-own">
+    <!-- If completely empty & viewer is owner -->
+    <div
+      v-if="isOwn && !hasAnyContent"
+      class="showcase__empty-own"
+    >
       <div class="showcase__empty-icon">🎬</div>
       <p class="showcase__empty-title">Your showcase is empty</p>
-      <p class="showcase__empty-sub">Pin your all-time favourites so friends can see what defines your taste.</p>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="editorOpen = true">
+      <p class="showcase__empty-sub">
+        Pin your all‑time favourites so friends can see what defines your taste.
+      </p>
+
+      <v-btn
+        color="primary"
+        prepend-icon="mdi-plus"
+        @click="editorOpen = true"
+      >
         Build My Showcase
       </v-btn>
     </div>
 
+    <!-- MAIN CONTENT -->
     <template v-if="hasAnyContent">
-      <!-- TOP MOVIES & TOP TV side by side -->
+
+      <!-- TOP MOVIES + TOP TV -->
       <div class="showcase__row">
         <showcase-list
-          v-if="showcase.topMovies?.length"
+          v-if="showcase.topMovies?.length > 0"
           title="Top Movies"
           icon="mdi-movie"
           accent="#E8A838"
           :items="showcase.topMovies"
           @item-click="navigateTo"
         />
+
         <showcase-list
-          v-if="showcase.topTv?.length"
+          v-if="showcase.topTv?.length > 0"
           title="Top TV"
           icon="mdi-television-play"
           accent="#5C9EFF"
@@ -53,34 +68,44 @@
         />
       </div>
 
-      <!-- FAVORITE SERIES -->
+      <!-- SERIES -->
       <showcase-list
-        v-if="showcase.favSeries?.length"
+        v-if="showcase.favSeries?.length > 0"
         title="Favourite Series"
         icon="mdi-film-strip"
         accent="#A78BFA"
         :items="showcase.favSeries"
         layout="series"
-        @item-click="navigateTo"
         class="mt-6"
+        @item-click="navigateTo"
       />
 
       <!-- HIDDEN GEM -->
-      <div v-if="showcase.hiddenGem" class="showcase__gem mt-6">
+      <div
+        v-if="showcase.hiddenGem && showcase.hiddenGem.mediaId"
+        class="showcase__gem mt-6"
+      >
         <div class="showcase__gem-label">
           <v-icon size="14" color="amber">mdi-diamond-stone</v-icon>
           Hidden Gem
         </div>
-        <div class="showcase__gem-inner" @click="navigateTo(showcase.hiddenGem)">
+
+        <div class="showcase__gem-inner"
+             @click="navigateTo(showcase.hiddenGem)"
+        >
           <v-img
             v-if="showcase.hiddenGem.media?.backdropUrl"
             :src="showcase.hiddenGem.media.backdropUrl"
             cover
             class="showcase__gem-backdrop"
           />
-          <div class="showcase__gem-backdrop showcase__gem-backdrop--fallback"
-               v-else />
+          <div
+            v-else
+            class="showcase__gem-backdrop showcase__gem-backdrop--fallback"
+          />
+
           <div class="showcase__gem-overlay" />
+
           <div class="showcase__gem-content">
             <v-img
               v-if="showcase.hiddenGem.media?.posterUrl"
@@ -89,8 +114,13 @@
               class="showcase__gem-poster rounded elevation-4"
             />
             <div class="showcase__gem-text">
-              <p class="showcase__gem-title">{{ showcase.hiddenGem.media?.title }}</p>
-              <p class="showcase__gem-year">{{ showcase.hiddenGem.media?.releaseYear }}</p>
+              <p class="showcase__gem-title">
+                {{ showcase.hiddenGem.media?.title }}
+              </p>
+              <p class="showcase__gem-year">
+                {{ showcase.hiddenGem.media?.releaseYear }}
+              </p>
+
               <p v-if="showcase.hiddenGem.note" class="showcase__gem-note">
                 <v-icon size="12" class="mr-1">mdi-format-quote-open</v-icon>
                 {{ showcase.hiddenGem.note }}
@@ -100,15 +130,15 @@
         </div>
       </div>
     </template>
-  <!-- Showcase Editor — lives here, opened by buttons above -->
-  <showcase-editor
-    v-if="isOwn"
-    v-model="editorOpen"
-    :current-showcase="showcase"
-    :media-list="mediaList"
-    @saved="onShowcaseSaved"
-  />
 
+    <!-- Editor -->
+    <showcase-editor
+      v-if="isOwn"
+      v-model="editorOpen"
+      :current-showcase="showcase"
+      :media-list="mediaList"
+      @saved="onShowcaseSaved"
+    />
   </div>
 </template>
 
@@ -134,37 +164,40 @@ const ShowcaseList = {
       <div class="sclist__items" :class="'sclist__items--' + layout">
         <div
           v-for="(entry, i) in items"
-          :key="entry.id || i"
+          :key="entry.mediaId || i"
           class="sclist__item"
           :class="{ 'sclist__item--top': i === 0 }"
           @click="$emit('item-click', entry)"
-          :title="entry.media?.title || entry.tmdbCollectionName"
         >
           <div class="sclist__rank" :style="i === 0 ? { color: accent } : {}">
             {{ i === 0 ? '★' : i + 1 }}
           </div>
+
           <div class="sclist__poster-wrap">
             <v-img
               v-if="entry.media?.posterUrl"
               :src="entry.media.posterUrl"
               cover
               class="sclist__poster"
-              aspect-ratio="0.667"
             />
             <div v-else class="sclist__poster sclist__poster--empty">
               <v-icon color="grey" size="20">mdi-movie-outline</v-icon>
             </div>
+
             <div v-if="entry.media?.rating" class="sclist__rating">
               {{ entry.media.rating }}★
             </div>
           </div>
+
           <div class="sclist__info">
             <p class="sclist__name">
               {{ layout === 'series'
                 ? (entry.tmdbCollectionName || entry.media?.title)
                 : entry.media?.title }}
             </p>
-            <p class="sclist__year">{{ entry.media?.releaseYear || '—' }}</p>
+            <p class="sclist__year">
+              {{ entry.media?.releaseYear || '—' }}
+            </p>
           </div>
         </div>
       </div>
@@ -174,22 +207,13 @@ const ShowcaseList = {
 
 export default {
   name: 'ShowcaseSection',
-
   components: { ShowcaseList, ShowcaseEditor },
 
   props: {
-    showcase: {
-      type: Object,
-      default: () => ({
-        topMovies: [],
-        topTv: [],
-        favSeries: [],
-        hiddenGem: null,
-      }),
-    },
-    isOwn: { type: Boolean, default: false },
-    username: { type: String, default: '' },
-    mediaList: { type: Array, default: () => [] },
+    showcase: Object,
+    isOwn: Boolean,
+    username: String,
+    mediaList: Array,
   },
 
   emits: ['navigate', 'showcase-saved'],
@@ -202,12 +226,14 @@ export default {
 
   computed: {
     hasAnyContent() {
-      if (!this.showcase) return false;
+      const s = this.showcase;
+      if (!s) return false;
+
       return (
-        this.showcase.topMovies?.length ||
-        this.showcase.topTv?.length ||
-        this.showcase.favSeries?.length ||
-        this.showcase.hiddenGem
+        (s.topMovies && s.topMovies.length > 0) ||
+        (s.topTv && s.topTv.length > 0) ||
+        (s.favSeries && s.favSeries.length > 0) ||
+        (s.hiddenGem && s.hiddenGem.mediaId) // must have real pick
       );
     },
   },
@@ -225,6 +251,7 @@ export default {
   },
 };
 </script>
+
 
 <style scoped>
 /* ── Section shell ───────────────────────────────────────── */
