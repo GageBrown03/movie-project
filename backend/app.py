@@ -86,15 +86,18 @@ from src.routes.analytics import analytics_bp as analytics
 # Phase 3: Activity routes
 from src.routes.activity_routes import activity_bp
 
+from src.routes.showcase_routes import showcase_bp
+
 app.register_blueprint(auth_router)
 app.register_blueprint(media_router)
 app.register_blueprint(tmdb_router)
 app.register_blueprint(friends)
 app.register_blueprint(privacy)
 app.register_blueprint(compare)
-app.register_blueprint(activity_bp)  # NEW
+app.register_blueprint(activity_bp)
 app.register_blueprint(user_profile_bp)
 app.register_blueprint(analytics)
+app.register_blueprint(showcase_bp)
 
 print("✅ Blueprints registered:")
 print("  - auth_router")

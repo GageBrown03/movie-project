@@ -83,6 +83,26 @@
         </v-card-text>
       </v-card>
 
+      <!-- Showcase Section -->
+      <showcase-section
+        v-if="profile.privacy.canViewRatings || profile.isMe"
+        :showcase="showcase"
+        :is-own="!!profile.isMe"
+        :username="profile.username"
+        class="mb-4"
+        @edit="showcaseEditorOpen = true"
+        @navigate="id => $router.push('/media/' + id)"
+      />
+
+      <!-- Showcase Editor (own profile only) -->
+      <showcase-editor
+        v-if="profile.isMe"
+        v-model="showcaseEditorOpen"
+        :current-showcase="showcase"
+        :media-list="profile.media || []"
+        @saved="showcase = $event"
+      />
+
       <!-- Privacy Message (if limited access) -->
       <v-alert
         v-if="!profile.privacy.canViewStats && !profile.privacy.canViewCollection"
@@ -166,6 +186,9 @@ import UserAnalytics from '@/components/UserAnalytics.vue';
 import UserActivityFeed from '@/components/UserActivityFeed.vue';
 import TopRatedMovies from '@/components/TopRatedMovies.vue';
 import UserCollection from '@/components/UserCollection.vue';
+import ShowcaseSection from '@/components/ShowcaseSection.vue';
+import ShowcaseEditor from '@/components/ShowcaseEditor.vue';
+import { showcaseAPI } from '@/services/showcase-api';
 
 const API_BASE = process.env.VUE_APP_API_BASE_URL || 'http://localhost:5000';
 
@@ -176,7 +199,9 @@ export default {
     UserAnalytics,
     UserActivityFeed,
     TopRatedMovies,
-    UserCollection
+    UserCollection,
+    ShowcaseSection,
+    ShowcaseEditor,
   },
 
   data() {
@@ -184,7 +209,9 @@ export default {
       loading: false,
       error: null,
       profile: null,
-      currentTab: 'analytics'
+      currentTab: 'analytics',
+      showcase: null,
+      showcaseEditorOpen: false,
     };
   },
 
@@ -225,6 +252,11 @@ export default {
 
         this.profile = await response.json();
 
+        // Load showcase if viewer has ratings access
+        if (this.profile.privacy.canViewRatings || this.profile.isMe) {
+          this.loadShowcase();
+        }
+
         // Set default tab based on what's available
         if (this.profile.privacy.canViewStats) {
           this.currentTab = 'analytics';
@@ -238,6 +270,15 @@ export default {
         this.error = err.message || 'Failed to load profile';
       } finally {
         this.loading = false;
+      }
+    },
+
+    async loadShowcase() {
+      try {
+        const result = await showcaseAPI.getByUsername(this.username);
+        this.showcase = result.showcase;
+      } catch (err) {
+        console.warn('Could not load showcase:', err);
       }
     },
 

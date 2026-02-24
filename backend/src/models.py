@@ -218,6 +218,10 @@ class Media(db.Model):
     tmdb_id = db.Column(db.Integer, index=True)  # Not unique - multiple users can add same media
     poster_url = db.Column(db.String(500))
     backdrop_url = db.Column(db.String(500))
+
+    # Franchise / collection (from TMDB belongs_to_collection)
+    tmdb_collection_id = db.Column(db.Integer, index=True, nullable=True)
+    tmdb_collection_name = db.Column(db.String(300), nullable=True)
     
     # External ratings
     imdb_rating = db.Column(db.Float)  # 0-10 scale
@@ -276,6 +280,8 @@ class Media(db.Model):
             'tmdbId': self.tmdb_id,
             'posterUrl': self.poster_url,
             'backdropUrl': self.backdrop_url,
+            'tmdbCollectionId': self.tmdb_collection_id,
+            'tmdbCollectionName': self.tmdb_collection_name,
             
             # External ratings
             'imdbRating': self.imdb_rating,
@@ -418,4 +424,86 @@ class Activity(db.Model):
                 'username': self.friend.username
             }
         
+        return result
+
+# ─────────────────────────────────────────────────────────────
+# UserShowcase — curated "best of" picks displayed on profile
+# ─────────────────────────────────────────────────────────────
+class ShowcaseCategory(enum.Enum):
+    TOP_MOVIES   = "top_movies"
+    TOP_TV       = "top_tv"
+    FAV_SERIES   = "fav_series"
+    HIDDEN_GEM   = "hidden_gem"
+
+
+class UserShowcase(db.Model):
+    """
+    One row per (user, category, rank) slot.
+    Each category holds up to 5 entries except hidden_gem which holds 1.
+    media_id references the user's library entry (nullable for series entries
+    that use a representative film).
+    tmdb_collection_id / tmdb_collection_name are only populated for fav_series.
+    """
+    __tablename__ = 'user_showcase'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, index=True)
+    category = db.Column(db.Enum(ShowcaseCategory), nullable=False, index=True)
+
+    # rank within category: 1 = top pick
+    rank = db.Column(db.Integer, nullable=False)
+
+    # Link back to user's library entry (for poster / title / rating display)
+    media_id = db.Column(db.Integer, db.ForeignKey('media.media_id'), nullable=True)
+
+    # Franchise-level data (only for fav_series)
+    tmdb_collection_id   = db.Column(db.Integer, nullable=True)
+    tmdb_collection_name = db.Column(db.String(300), nullable=True)
+
+    # Optional personal note (only used by hidden_gem)
+    note = db.Column(db.Text, nullable=True)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
+
+    # Relationships
+    media = db.relationship('Media', lazy='joined')
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'category', 'rank', name='unique_showcase_slot'),
+    )
+
+    def __init__(self, user_id, category, rank, media_id=None,
+                 tmdb_collection_id=None, tmdb_collection_name=None, note=None):
+        self.user_id = user_id
+        self.category = category
+        self.rank = rank
+        self.media_id = media_id
+        self.tmdb_collection_id = tmdb_collection_id
+        self.tmdb_collection_name = tmdb_collection_name
+        self.note = note
+
+    def to_dict(self):
+        result = {
+            'id': self.id,
+            'category': self.category.value,
+            'rank': self.rank,
+            'mediaId': self.media_id,
+            'tmdbCollectionId': self.tmdb_collection_id,
+            'tmdbCollectionName': self.tmdb_collection_name,
+            'note': self.note,
+        }
+        if self.media:
+            result['media'] = {
+                'mediaId': self.media.media_id,
+                'title': self.media.title,
+                'mediaType': self.media.media_type.value,
+                'posterUrl': self.media.poster_url,
+                'backdropUrl': self.media.backdrop_url,
+                'releaseYear': self.media.release_year,
+                'rating': self.media.rating,
+                'tmdbCollectionId': self.media.tmdb_collection_id,
+                'tmdbCollectionName': self.media.tmdb_collection_name,
+            }
         return result
