@@ -1,3 +1,4 @@
+<!-- src/components/ShowcaseSearchPicker.vue -->
 <template>
   <v-dialog
     :model-value="modelValue"
@@ -78,6 +79,7 @@
                 <div v-else class="poster-fallback d-flex flex-column align-center justify-center">
                   <v-icon size="40">mdi-movie-outline</v-icon>
                 </div>
+
                 <v-card-text class="pa-2">
                   <p class="text-caption font-weight-bold text-truncate mb-1" :title="item.title">
                     {{ item.title }}
@@ -91,7 +93,7 @@
           </v-row>
 
           <!-- Mobile list -->
-          <v-list v-else lines="two">
+          <v-list v-else lines="two" class="mobile-results">
             <v-list-item
               v-for="item in filteredResults"
               :key="item.tmdbId"
@@ -163,7 +165,7 @@ export default {
       this.loading = true;
       try {
         const res = await tmdbAPI.search(q);
-        // AddMediaDialog filters out items without poster; do the same for visual consistency
+        // match AddMediaDialog behavior: filter out items without poster
         this.results = (res || []).filter(r => !!r.posterUrl);
       } catch (e) {
         console.error('TMDB search failed:', e);

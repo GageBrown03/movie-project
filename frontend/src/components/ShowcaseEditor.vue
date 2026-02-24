@@ -1,3 +1,4 @@
+<!-- src/components/ShowcaseEditor.vue -->
 <template>
   <v-dialog
     :model-value="modelValue"
@@ -17,16 +18,43 @@
       <v-card-text>
         <!-- ACTIONS -->
         <div class="d-flex flex-wrap gap-2 mb-4">
-          <v-btn color="primary" variant="tonal" prepend-icon="mdi-crown" @click="openPicker('movie', 'Crown a Top Movie 👑🎬')" :disabled="draft.topMovies.length >= 4">
+          <v-btn
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-crown"
+            @click="openPicker('movie', 'Crown a Top Movie 👑🎬')"
+            :disabled="draft.topMovies.length >= 4"
+          >
             Crown a Top Movie
           </v-btn>
-          <v-btn color="primary" variant="tonal" prepend-icon="mdi-television" @click="openPicker('tv', 'Add a Top TV Pick 📺✨')" :disabled="draft.topTv.length >= 4">
+
+          <v-btn
+            color="primary"
+            variant="tonal"
+            prepend-icon="mdi-television"
+            @click="openPicker('tv', 'Add a Top TV Pick 📺✨')"
+            :disabled="draft.topTv.length >= 4"
+          >
             Add a Top TV Pick
           </v-btn>
-          <v-btn color="secondary" variant="tonal" prepend-icon="mdi-movie-roll" @click="openPicker('movie', 'Add a Legendary Movie Series 🎞️🌟')" :disabled="draft.favSeries.length >= 4">
+
+          <v-btn
+            color="secondary"
+            variant="tonal"
+            prepend-icon="mdi-movie-roll"
+            @click="openPicker('movie', 'Add a Legendary Movie Series 🎞️🌟')"
+            :disabled="draft.favSeries.length >= 4"
+          >
             Add a Legendary Series
           </v-btn>
-          <v-btn color="amber" variant="tonal" prepend-icon="mdi-diamond-stone" @click="openPicker('any', 'Choose Your Hidden Gem 💎')" :disabled="!!draft.hiddenGem.mediaId">
+
+          <v-btn
+            color="amber"
+            variant="tonal"
+            prepend-icon="mdi-diamond-stone"
+            @click="openPicker('any', 'Choose Your Hidden Gem 💎')"
+            :disabled="!!draft.hiddenGem.mediaId"
+          >
             Choose Your Hidden Gem
           </v-btn>
         </div>
@@ -38,7 +66,9 @@
             <v-spacer />
             <span class="text-caption text-medium-emphasis">{{ draft.topMovies.length }}/4</span>
           </div>
-          <div v-if="!draft.topMovies.length" class="empty-row">Pick up to 4 all‑time favourites.</div>
+          <div v-if="!draft.topMovies.length" class="empty-row">
+            Pick up to 4 all‑time favourites.
+          </div>
           <div v-else class="row-list">
             <div
               v-for="(item, i) in draft.topMovies"
@@ -79,7 +109,9 @@
             <v-spacer />
             <span class="text-caption text-medium-emphasis">{{ draft.topTv.length }}/4</span>
           </div>
-          <div v-if="!draft.topTv.length" class="empty-row">Pick up to 4 TV shows that define your taste.</div>
+          <div v-if="!draft.topTv.length" class="empty-row">
+            Pick up to 4 TV shows that define your taste.
+          </div>
           <div v-else class="row-list">
             <div
               v-for="(item, i) in draft.topTv"
@@ -220,17 +252,19 @@
       :heading="pickerHeading"
       @selected="onPicked"
     />
-    
-<!-- ⭐ NEW: Quick Rate Dialog -->
+
+    <!-- Quick Rate Dialog -->
     <v-dialog v-model="quickRateOpen" max-width="480px">
       <v-card>
-        <v-card-title class="text-h6">
+        <v-card-title class="text-h6 d-flex align-center">
+          <v-avatar size="40" rounded class="mr-3" v-if="quickRateItem?.posterUrl">
+            <v-img :src="quickRateItem.posterUrl" cover />
+          </v-avatar>
           Rate {{ quickRateItem?.title }}
         </v-card-title>
 
         <v-card-text>
           <v-rating v-model="quickRateValue" hover size="36" color="amber" />
-
           <v-textarea
             v-model="quickRateNotes"
             label="Why do you like it?"
@@ -242,10 +276,23 @@
         <v-card-actions>
           <v-btn variant="text" @click="cancelQuickRate">Cancel</v-btn>
           <v-spacer />
-          <v-btn color="primary" @click="confirmQuickRate">Save Rating</v-btn>
+          <v-btn color="secondary" variant="tonal" @click="skipAndAdd">
+            Skip & Add
+          </v-btn>
+          <v-btn color="primary" @click="confirmQuickRate">
+            Save Rating & Add
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Local Snackbar (toast) -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+      {{ snackbar.text }}
+      <template #actions>
+        <v-btn variant="text" @click="snackbar.show = false">Close</v-btn>
+      </template>
+    </v-snackbar>
   </v-dialog>
 </template>
 
@@ -269,8 +316,7 @@ export default {
         hiddenGem: null,
       }),
     },
-    /** Unused but preserved for compatibility with ShowcaseSection */
-    mediaList: { type: Array, default: () => [] },
+    mediaList: { type: Array, default: () => [] }, // compatibility
   },
 
   emits: ['update:modelValue', 'saved'],
@@ -278,27 +324,51 @@ export default {
   data() {
     return {
       draft: this.normalizeDraft(this.currentShowcase),
+
+      // picker state
       pickerOpen: false,
       pickerMode: 'any',
-      pickerHeading: 'Search',
-      saving: false,
+      pickerHeading: '',
+
+      // quick-rate state
+      quickRateOpen: false,
+      quickRateItem: null,   // TMDB search object
+      quickRateValue: null,  // 1..5
+      quickRateNotes: '',
+
+      // library & save
       userCollection: [],
+      saving: false,
+
+      // toast
+      snackbar: { show: false, text: '', color: 'success' },
     };
   },
 
   watch: {
+    modelValue(val) {
+      if (val) this.loadUserCollection();
+    },
     currentShowcase: {
       deep: true,
       handler(newVal) {
         this.draft = this.normalizeDraft(newVal);
       },
     },
-    modelValue(val) {
-      if (val) this.loadUserCollection();
-    },
   },
 
   methods: {
+    // --------- UI helpers ----------
+    toast(text, color = 'success') {
+      this.snackbar.text = text;
+      this.snackbar.color = color;
+      this.snackbar.show = true;
+    },
+    close() {
+      this.$emit('update:modelValue', false);
+    },
+
+    // --------- normalize existing showcase for editing ----------
     normalizeDraft(showcase) {
       const safe = {
         topMovies: Array.isArray(showcase?.topMovies) ? [...showcase.topMovies] : [],
@@ -308,7 +378,6 @@ export default {
           ? { ...showcase.hiddenGem }
           : { mediaId: null, media: null, note: '' },
       };
-      // Ensure each entry carries embedded media for preview if present
       for (const listName of ['topMovies', 'topTv', 'favSeries']) {
         safe[listName] = safe[listName].map(e => ({
           mediaId: e.mediaId ?? e.media?.mediaId ?? e.media_id ?? null,
@@ -327,9 +396,9 @@ export default {
       return safe;
     },
 
+    // --------- load user's library on open ----------
     async loadUserCollection() {
       try {
-        // Pull the user's library so we can link picks to mediaId
         this.userCollection = await mediaAPI.getAll();
       } catch (e) {
         console.warn('Could not load user collection', e);
@@ -337,76 +406,127 @@ export default {
       }
     },
 
+    // --------- open search picker ----------
     openPicker(mode, heading) {
       this.pickerMode = mode;
       this.pickerHeading = heading;
       this.pickerOpen = true;
     },
 
+    // --------- selection flow ----------
     async onPicked(tmdbItem) {
-      // Ensure the item exists in the user's library and get the media object
-      const media = await this.ensureInLibrary(tmdbItem);
+      this.pickerOpen = false;
 
-      if (!media) return;
-
-      if (this.pickerMode === 'movie') {
-        // Decide which list to push into based on heading
-        if (this.pickerHeading.includes('Top Movie')) {
-          if (this.draft.topMovies.length >= 4) return;
-          this.draft.topMovies.push({ mediaId: media.mediaId, media });
-        } else {
-          // Series uses representative movie; include collection fields if present
-          if (this.draft.favSeries.length >= 4) return;
-          this.draft.favSeries.push({
-            mediaId: media.mediaId,
-            media,
-            tmdbCollectionId: media.tmdbCollectionId || null,
-            tmdbCollectionName: media.tmdbCollectionName || null,
-          });
-        }
-      } else if (this.pickerMode === 'tv') {
-        if (this.draft.topTv.length >= 4) return;
-        this.draft.topTv.push({ mediaId: media.mediaId, media });
-      } else {
-        // Hidden gem accepts either movie or TV
-        if (this.draft.hiddenGem.mediaId) return; // only one allowed by backend
-        this.draft.hiddenGem.mediaId = media.mediaId;
-        this.draft.hiddenGem.media = media;
+      // If item already in library: add immediately
+      const existing = this.userCollection.find(
+        m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
+      );
+      if (existing) {
+        this.toast(`Using your existing "${existing.title}".`);
+        this.finishAdd(existing);
+        return;
       }
+
+      // Otherwise → quick rate first
+      this.quickRateItem = tmdbItem;
+      this.quickRateValue = null;
+      this.quickRateNotes = '';
+      this.quickRateOpen = true;
     },
 
-    // Find an existing media in library by tmdbId; if not present, create it
-    async ensureInLibrary(tmdbItem) {
-      // 1. See if media already exists in the user’s library
-      const existing =
-        this.userCollection.find(
-          m =>
-            m.tmdbId === tmdbItem.tmdbId &&
-            m.mediaType === tmdbItem.mediaType
-        ) || null;
+    cancelQuickRate() {
+      this.quickRateOpen = false;
+      this.quickRateItem = null;
+      this.quickRateValue = null;
+      this.quickRateNotes = '';
+    },
 
-      if (existing) {
-        this.toast(`Using your existing library entry for "${existing.title}".`, 'success');
-        return existing;
+    async skipAndAdd() {
+      // Create without rating, then add
+      const tmdbItem = this.quickRateItem;
+      this.quickRateOpen = false;
+      const created = await this.ensureInLibrary(tmdbItem);
+      if (created) {
+        this.toast(`Added "${created.title}" to your library ✨`);
+        this.finishAdd(created);
       }
+      this.cancelQuickRate();
+    },
 
-      this.toast(`Adding "${tmdbItem.title}" to your library…`, 'info');
+    async confirmQuickRate() {
+      if (!this.quickRateItem) return;
+      const tmdbItem = this.quickRateItem;
+      const rating = this.quickRateValue;
+      const notes = this.quickRateNotes;
 
+      this.quickRateOpen = false;
+
+      const created = await this.createRatedMedia(tmdbItem, rating, notes);
+      if (created) {
+        this.toast(`Rated & added "${created.title}" ✔`);
+        this.finishAdd(created);
+      }
+      this.cancelQuickRate();
+    },
+
+    // --------- create media WITH rating ----------
+    async createRatedMedia(tmdbItem, rating, notes) {
       try {
-        // 2. Try to fetch full TMDB details (to capture collection/franchise info)
-        let details = null;
-
+        let details;
         try {
           details =
             tmdbItem.mediaType === 'movie'
               ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId)
               : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
-        } catch (error) {
-          console.warn('Failed to fetch TMDB details; using search result only.');
+        } catch {
           details = tmdbItem;
         }
 
-        // 3. Build the backend create payload
+        const payload = {
+          title: tmdbItem.title,
+          media_type: tmdbItem.mediaType,
+          tmdb_id: tmdbItem.tmdbId,
+          release_year: tmdbItem.releaseYear,
+          plot: tmdbItem.plot,
+          poster_url: tmdbItem.posterUrl,
+          backdrop_url: tmdbItem.backdropUrl,
+          tmdb_rating: tmdbItem.tmdbRating,
+          rating: rating || null,
+          notes: notes || null,
+          tmdb_collection_id:
+            details.tmdbCollectionId || details.tmdb_collection_id || null,
+          tmdb_collection_name:
+            details.tmdbCollectionName || details.tmdb_collection_name || null,
+        };
+
+        const created = await mediaAPI.create(payload);
+        this.userCollection.push(created);
+        return created;
+      } catch (e) {
+        console.error('Failed to create rated media:', e);
+        this.toast('Failed to save rating.', 'error');
+        return null;
+      }
+    },
+
+    // --------- ensure media exists WITHOUT rating ----------
+    async ensureInLibrary(tmdbItem) {
+      const existing = this.userCollection.find(
+        m => m.tmdbId === tmdbItem.tmdbId && m.mediaType === tmdbItem.mediaType
+      );
+      if (existing) return existing;
+
+      try {
+        let details;
+        try {
+          details =
+            tmdbItem.mediaType === 'movie'
+              ? await tmdbAPI.getMovieDetails(tmdbItem.tmdbId)
+              : await tmdbAPI.getTVDetails(tmdbItem.tmdbId);
+        } catch {
+          details = tmdbItem;
+        }
+
         const payload = {
           title: tmdbItem.title,
           media_type: tmdbItem.mediaType,
@@ -422,19 +542,40 @@ export default {
             details.tmdbCollectionName || details.tmdb_collection_name || null,
         };
 
-        // 4. Create Media entry
         const created = await mediaAPI.create(payload);
-
-        // 5. Update local cache
         this.userCollection.push(created);
-
-        this.toast(`Added "${created.title}" to your library ✨`, 'success');
-
         return created;
       } catch (e) {
         console.error('Failed creating media for showcase:', e);
         this.toast('Something went wrong adding to your library.', 'error');
         return null;
+      }
+    },
+
+    // --------- add to proper section ----------
+    finishAdd(media) {
+      if (this.pickerHeading.includes('Top Movie')) {
+        if (this.draft.topMovies.length < 4) {
+          this.draft.topMovies.push({ mediaId: media.mediaId, media });
+        }
+      } else if (this.pickerHeading.includes('Top TV')) {
+        if (this.draft.topTv.length < 4) {
+          this.draft.topTv.push({ mediaId: media.mediaId, media });
+        }
+      } else if (this.pickerHeading.includes('Legendary')) {
+        if (this.draft.favSeries.length < 4) {
+          this.draft.favSeries.push({
+            mediaId: media.mediaId,
+            media,
+            tmdbCollectionId: media.tmdbCollectionId || null,
+            tmdbCollectionName: media.tmdbCollectionName || null,
+          });
+        }
+      } else if (this.pickerHeading.includes('Hidden Gem')) {
+        if (!this.draft.hiddenGem.mediaId) {
+          this.draft.hiddenGem.mediaId = media.mediaId;
+          this.draft.hiddenGem.media = media;
+        }
       }
     },
 
@@ -453,70 +594,44 @@ export default {
       this.draft.hiddenGem = { mediaId: null, media: null, note: '' };
     },
 
-    close() {
-      this.$emit('update:modelValue', false);
-    },
-
-    toast(message, color = 'success') {
-      if (!this.$root) return;
-      if (this.$root.$refs?.globalSnackbar) {
-        // if you have a global snackbar component
-        this.$root.$refs.globalSnackbar.show(message, color);
-      } else {
-        // fallback: use Vuetify local snackbar
-        this.$emit('toast', { message, color });
-      }
-    },
-
-    buildPayload() {
-      // Map lists to API shape with ranks (1..N)
-      const mapRank = (arr) =>
-        arr.slice(0, 4).map((e, idx) => ({
-          mediaId: e.mediaId,
-          rank: idx + 1,
-        }));
-
-      const payload = {
-        topMovies: mapRank(this.draft.topMovies),
-        topTv: mapRank(this.draft.topTv),
-        favSeries: this.draft.favSeries.slice(0, 4).map((e, idx) => ({
-          mediaId: e.mediaId || null,
-          tmdbCollectionId: e.tmdbCollectionId || null,
-          tmdbCollectionName: e.tmdbCollectionName || null,
-          rank: idx + 1,
-        })),
-        hiddenGem: this.draft.hiddenGem?.mediaId
-          ? {
-            mediaId: this.draft.hiddenGem.mediaId,
-            note: this.draft.hiddenGem.note || null,
-            rank: 1,
-          }
-          : null,
-      };
-
-      return payload;
-    },
-
+    // --------- save to backend ----------
     async save() {
       this.saving = true;
       try {
-        const payload = this.buildPayload();
+        const payload = {
+          topMovies: this.draft.topMovies.slice(0, 4).map((e, i) => ({
+            mediaId: e.mediaId, rank: i + 1,
+          })),
+          topTv: this.draft.topTv.slice(0, 4).map((e, i) => ({
+            mediaId: e.mediaId, rank: i + 1,
+          })),
+          favSeries: this.draft.favSeries.slice(0, 4).map((e, i) => ({
+            mediaId: e.mediaId || null,
+            tmdbCollectionId: e.tmdbCollectionId || null,
+            tmdbCollectionName: e.tmdbCollectionName || null,
+            rank: i + 1,
+          })),
+          hiddenGem: this.draft.hiddenGem?.mediaId
+            ? { mediaId: this.draft.hiddenGem.mediaId, note: this.draft.hiddenGem.note || '', rank: 1 }
+            : null,
+        };
+
         await showcaseAPI.save(payload);
 
-        // After save, fetch the owner’s full editable showcase so UI is in sync
+        // Optionally refresh the full showcase back (owner's mine)
         let updated;
         try {
           updated = await showcaseAPI.getMine();
         } catch {
-          // Fallback to public version if needed
-          updated = await showcaseAPI.getByUsername(localStorage.getItem('username'));
+          updated = { showcase: this.draft }; // fallback
         }
 
-        // Emit updated showcase back to ShowcaseSection
-        this.$emit('saved', updated.showcase || updated);
+        this.$emit('saved', updated.showcase || this.draft);
         this.close();
+        this.toast('Showcase saved!', 'success');
       } catch (e) {
-        console.error('Failed to save showcase', e);
+        console.error('Failed to save showcase:', e);
+        this.toast('Failed to save showcase', 'error');
       } finally {
         this.saving = false;
       }
@@ -526,7 +641,6 @@ export default {
 </script>
 
 <style scoped>
-
 .section-title { font-weight: 800; font-size: 1rem; margin: 0; }
 .empty-row {
   padding: 12px;
