@@ -1,52 +1,93 @@
-# Movie-Ratings
-Movie Rating app using Vue, JS, Flask, PostGresQL hosted using Railway and Vercel
+# myMDB - Personal Movie Database
 
-Users are able to create an account which stores movies they can add by search.
+A comprehensive movie tracking and social discovery platform built with Vue.js, Flask, and PostgreSQL. Hosted on Railway and Vercel.
 
-When adding a movie, it populates many points of information on the movie automatically.
+## 🎬 Core Features
 
-The user is able to rate the movie, add notes, add date watched and more.
+### Personal Movie Library
+- **Smart Movie Search**: Add movies to your collection with automatic metadata population
+- **Rich Rating System**: Rate movies, add personal notes, and track watch dates
+- **Comprehensive Collection Views**: Browse your library with detailed information display
+- **Quick Add Functionality**: Global add dialog accessible via Ctrl+K shortcut
 
-The user is able to view all of their added movies in a list style, with core info shown.
+### Social & Discovery
+- **Friend System**: Send and manage friend requests through dedicated social views
+- **Comparative Ratings**: Compare your ratings with friends on individual movies
+- **Activity Feeds**: Stay updated with your friends' latest ratings and additions
+- **User Profiles**: Customizable profiles with movie showcases and personal analytics
 
-## 🗺️ Movie Vault: Development Roadmap
+### Analytics & Insights
+- **Interactive Dashboard**: Visualize your movie preferences and rating patterns
+- **Genre Analysis**: Track your favorite genres and discover viewing trends
+- **Decade Preferences**: Analyze your taste across different movie eras
+- **All-Time Records**: View your highest-rated films and top discoveries
+- **Director & Actor Insights**: Explore filmographies and track favorite talent
 
-Phase 1: Interactive Analytics & Insights
-Focusing on data-driven reflection and personalized watching habits.
+### Discovery Tools
+- **Random Picker**: Get surprised with movie suggestions from various sources
+- **Discover Feed**: Find new movies through curated recommendations
+- **Similar Content**: Discover movies related to your favorites
+- **Top Lists**: Browse highly-rated movies and popular picks
 
-Dynamic Analytics Dashboard: Integration of interactive visualizations to track genre preferences, rating trends over time, and decade distributions.
+### User Experience
+- **Dark/Light Theme**: Toggle between themes with persistent preferences
+- **Responsive Design**: Optimized for desktop and mobile experiences
+- **Privacy Controls**: Manage your profile visibility and sharing preferences
+- **Real-time Updates**: Live friend request notifications and activity tracking
 
-Behavioral Tracking: Implementation of watching pattern analysis, including "Director Leaderboards" and binge-watching metrics.
+## 🗺️ Development Roadmap
 
-Export Capabilities: Tools to export personal movie statistics and collection summaries for external sharing.
+### Phase 1: Interactive Analytics & Insights ✅
+*Completed - Data-driven reflection and personalized watching habits*
 
-Phase 2: Social Connectivity & Community
-Transitioning the platform from a solo tool to a shared cinematic experience.
+- ✅ Dynamic Analytics Dashboard with interactive visualizations
+- ✅ Genre preferences and rating trend tracking
+- ✅ Decade distribution analysis
+- ✅ Director leaderboards and behavioral insights
+- ✅ Personal statistics and collection summaries
 
-Social Graph Integration: A robust friend system allowing users to send, accept, and manage connections.
+### Phase 2: Social Connectivity & Community ✅
+*Completed - Transforming solo tracking into shared cinematic experiences*
 
-Collaborative Ratings: The "Comparative View" feature, enabling users to see how their scores align or differ with friends on a per-movie basis.
+- ✅ Robust friend system with request management
+- ✅ Comparative ratings view for friend connections
+- ✅ Real-time activity feeds showing community updates
+- ✅ Customizable public profiles with movie showcases
+- ✅ Social discovery through friend recommendations
 
-Activity Feed: A real-time stream of community updates, showing recent ratings and collection additions from the user's network.
+### Phase 3: Intelligent Discovery (AI-Powered)
+*In Development - Leveraging AI for enhanced movie discovery*
 
-Global Public Profiles: Customizable public-facing pages to showcase personal "Top 10" lists and movie taste.
+- 🔄 Semantic Smart Search with natural language queries
+- 🔄 Contextual AI recommendations based on viewing patterns
+- 🔄 Automated review summaries from user notes
+- 🔄 Mood-based movie suggestions
 
-Phase 3: Intelligent Discovery (AI-Powered)
-Leveraging modern Large Language Models (LLMs) to enhance movie discovery.
+### Phase 4: Platform Stability & Enterprise Standards
+*Planned - Infrastructure hardening and performance optimization*
 
-Semantic Smart Search: Beyond title matches—search for movies using natural language and mood-based queries (e.g., "Atmospheric thrillers set in the desert").
+- 📋 Comprehensive automated testing suite
+- 📋 Continuous deployment pipeline
+- 📋 Server-side caching and CDN integration
+- 📋 Real-time error tracking and performance monitoring
 
-Contextual Recommendations: AI-generated "Why you might like this" insights based on historical rating patterns and metadata.
+## 🚀 Getting Started
 
-Automated Review Summaries: Intelligent distillation of user notes into concise, readable movie summaries.
+1. Create an account to start building your personal movie database
+2. Search and add movies to your collection with automatic metadata
+3. Rate movies, add notes, and track your viewing history
+4. Connect with friends to compare tastes and discover new films
+5. Explore analytics to understand your movie preferences
+6. Use discovery tools to find your next great watch
 
-Phase 4: Platform Stability & Enterprise Standards
-Hardening the infrastructure to ensure high availability and performance.
+## 🛠️ Technology Stack
 
-Automated Quality Assurance: Implementation of a comprehensive test suite covering critical user paths.
+- **Frontend**: Vue.js 3 with Vuetify components
+- **Backend**: Flask with RESTful API design
+- **Database**: PostgreSQL with optimized queries
+- **Hosting**: Railway (backend) and Vercel (frontend)
+- **Features**: Real-time updates, responsive design, PWA capabilities
 
-Continuous Deployment: Establishing a seamless CI/CD pipeline for rapid, reliable feature releases.
+---
 
-Performance Optimization: Integration of server-side caching and global CDN support for lightning-fast asset loading.
-
-System Observability: Deployment of real-time error tracking and performance monitoring to proactively address service interruptions.
+*Start your cinematic journey today and discover how myMDB transforms the way you track, share, and discover movies!*
