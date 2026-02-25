@@ -41,7 +41,7 @@
     <v-app-bar app color="primary" dark>
       <v-app-bar-nav-icon @click="drawer = !drawer" />
 
-      <v-app-bar-title class="clickable-title">
+      <v-app-bar-title class="clickable-title mobile-title">
         <router-link to="/" class="title-link" aria-label="Go to Home">
           myMDB
         </router-link>
@@ -55,20 +55,22 @@
         prepend-icon="mdi-plus"
         variant="text"
         @click="showAddDialog = true"
-        class="mr-2"
+        class="mr-2 mobile-add-btn"
+        :size="$vuetify.display.mobile ? 'small' : 'default'"
       >
-        Add
+        <span class="d-none d-sm-inline">Add</span>
       </v-btn>
 
       <!-- Theme Toggle -->
-      <v-btn icon @click="toggleTheme" aria-label="Toggle theme">
+      <v-btn icon @click="toggleTheme" aria-label="Toggle theme" :size="$vuetify.display.mobile ? 'small' : 'default'">
         <v-icon>{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
       <!-- Login or UserMenu -->
-      <v-btn v-if="!isLoggedIn" to="/login" variant="text">
-        <v-icon start>mdi-login</v-icon>
-        Login
+      <v-btn v-if="!isLoggedIn" to="/login" variant="text" :size="$vuetify.display.mobile ? 'small' : 'default'">
+        <v-icon start class="d-none d-sm-inline">mdi-login</v-icon>
+        <span class="d-none d-sm-inline">Login</span>
+        <v-icon class="d-sm-none">mdi-login</v-icon>
       </v-btn>
       
       <user-menu v-else @logout="handleLogout" />
@@ -257,5 +259,29 @@ export default {
 
 .clickable-title {
   cursor: pointer;
+}
+
+/* Mobile-specific navbar styles */
+@media (max-width: 600px) {
+  .mobile-title {
+    font-size: 1.1rem !important;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  
+  .mobile-add-btn {
+    min-width: 40px !important;
+    padding: 0 8px !important;
+  }
+  
+  .v-app-bar {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  
+  .v-app-bar .v-btn {
+    margin-left: 4px;
+    margin-right: 4px;
+  }
 }
 </style>
