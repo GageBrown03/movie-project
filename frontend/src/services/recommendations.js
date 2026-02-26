@@ -329,11 +329,12 @@ export const recommendationsAPI = {
     ]);
 
     // ── Movies ──────────────────────────────────────────────────────────────
-    // Filter out: no poster, very low vote count (cameos/uncredited), adult
+    // Filter for quality content and significant roles
     const movies = (movieData.cast || [])
       .filter(item =>
         item.poster_path &&
-        (item.vote_count || 0) >= 25 &&   // enough votes to be a real credit
+        (item.vote_count || 0) >= 100 &&    // More votes = better filtering
+        (item.vote_average || 0) >= 6.5 &&  // Higher rating threshold
         !item.adult
       )
       .map(item => ({
@@ -348,14 +349,13 @@ export const recommendationsAPI = {
       }));
 
     // ── TV shows ─────────────────────────────────────────────────────────────
-    // episode_count = how many episodes this actor appeared in for this show.
-    // Late night / talk shows typically appear as 1–2 episode credits.
-    // A real recurring role is usually 3+ episodes.
+    // More stringent filtering for TV shows
     const tvShows = (tvData.cast || [])
       .filter(item =>
         item.poster_path &&
-        (item.vote_count || 0) >= 25 &&
-        (item.episode_count || 0) >= 3    // eliminate single-appearance cameos
+        (item.vote_count || 0) >= 100 &&
+        (item.vote_average || 0) >= 6.5 &&  // Higher rating threshold
+        (item.episode_count || 0) >= 5      // Must be more than guest appearance
       )
       .map(item => ({
         tmdbId: item.id,
@@ -369,28 +369,34 @@ export const recommendationsAPI = {
         episodeCount: item.episode_count || 0,
       }));
 
-    // ── Quality sort ─────────────────────────────────────────────────────────
-    // Raw popularity rewards late-night shows with thousands of episodes.
-    // Instead: blend rating (signal of quality) with a log-scaled popularity
-    // (signal of cultural reach), both normalised to 0–1.
+    // ── Enhanced Quality Scoring ─────────────────────────────────────────────
     const all = [...movies, ...tvShows];
-
     if (all.length === 0) return [];
 
+    // Normalize popularity and vote count for better scoring
     const maxPop = Math.max(...all.map(i => i.popularity), 1);
+    const maxVotes = Math.max(...all.map(i => i.voteCount), 1);
 
-    const scored = all.map(item => ({
-      ...item,
-      _score:
-        (item.tmdbRating / 10) * 0.55 +          // 55% weight on rating (0–10 → 0–1)
-        (Math.log1p(item.popularity) /
-          Math.log1p(maxPop)) * 0.45,             // 45% weight on log-popularity
-    }));
+    const scored = all.map(item => {
+      // Rating weight: 40%
+      const ratingScore = (item.tmdbRating / 10) * 0.4;
+      
+      // Vote count (reliability): 30%
+      const voteScore = (Math.log1p(item.voteCount) / Math.log1p(maxVotes)) * 0.3;
+      
+      // Popularity (cultural impact): 30%
+      const popScore = (Math.log1p(item.popularity) / Math.log1p(maxPop)) * 0.3;
+      
+      return {
+        ...item,
+        _score: ratingScore + voteScore + popScore
+      };
+    });
 
     return scored
       .sort((a, b) => b._score - a._score)
-      .slice(0, 40)   // keep a larger pool so filters (Movies/TV/In Library) have enough items
-      .map(({ _score, ...item }) => item); // strip internal score before returning
+      .slice(0, 30)   // Return more results for better filtering
+      .map(({ _score, ...item }) => item);
   },
 
   async getTrending(mediaType = 'all', timeWindow = 'week') {

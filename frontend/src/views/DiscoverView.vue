@@ -83,6 +83,9 @@
             <v-icon color="amber" class="mr-2">mdi-star</v-icon>
             Based on What You Loved
           </h2>
+          <p class="text-caption text-medium-emphasis">
+            Similar to {{ basedOnTitle }}
+          </p>
         </div>
 
         <v-row>
@@ -270,6 +273,7 @@ export default {
       
       fiveStarMedia: [],
       fiveStarRecommendations: [],
+      basedOnTitle: '',
       favoriteGenre: null,
       genreRecommendations: [],
       topActors: [],
@@ -352,7 +356,7 @@ export default {
           m.cast.forEach(actor => {
             if (!actorCounts[actor.actorId]) {
               actorCounts[actor.actorId] = {
-                id: actor.actorId,
+                id: actor.tmdbActorId, // Use TMDB ID for API calls
                 name: actor.name,
                 count: 0
               };
@@ -364,21 +368,24 @@ export default {
       
       this.topActors = Object.values(actorCounts)
         .sort((a, b) => b.count - a.count)
-        .slice(0, 3);
+        .slice(0, 5); // Increased to top 5
     },
     
     async loadFiveStarRecommendations() {
       if (this.fiveStarMedia.length === 0) return;
       
-      const randomFiveStar = this.fiveStarMedia[
-        Math.floor(Math.random() * this.fiveStarMedia.length)
-      ];
+      // Use the most recently rated 5-star item instead of random
+      const sortedFiveStars = this.fiveStarMedia
+        .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
       
-      if (randomFiveStar.tmdbId) {
+      const recentFiveStar = sortedFiveStars[0];
+      this.basedOnTitle = recentFiveStar.title;
+      
+      if (recentFiveStar.tmdbId) {
         try {
           const similar = await recommendationsAPI.getSimilar(
-            randomFiveStar.tmdbId,
-            randomFiveStar.mediaType
+            recentFiveStar.tmdbId,
+            recentFiveStar.mediaType
           );
           
           this.fiveStarRecommendations = similar.filter(
@@ -411,8 +418,8 @@ export default {
       if (this.topActors.length === 0) return;
       
       try {
-        // Use top 3 actors instead of just #1
-        const actorsToUse = this.topActors.slice(0, 3);
+        // Use top 5 actors with weighted approach
+        const actorsToUse = this.topActors.slice(0, 5);
         
         console.log('Loading recommendations for actors:', actorsToUse.map(a => a.name));
         
@@ -426,47 +433,55 @@ export default {
           )
         );
         
-        // Flatten all results
-        const combined = allRecommendations.flat();
-        
-        // Deduplicate by tmdbId
-        const seen = new Set();
-        const unique = combined.filter(item => {
-          const key = `${item.mediaType}-${item.tmdbId}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
+        // Weight recommendations by actor rank
+        const weightedRecommendations = [];
+        allRecommendations.forEach((actorRecs, index) => {
+          const weight = Math.pow(0.7, index); // First actor gets full weight, decreasing
+          actorRecs.forEach(rec => {
+            weightedRecommendations.push({ ...rec, _weight: weight });
+          });
         });
         
-        // Filter out:
-        // 1. Items already in library
-        // 2. Low-rated content (likely guest appearances)
-        // 3. Very old content (unless highly rated)
-        const currentYear = new Date().getFullYear();
+        // Group by tmdbId and sum weights
+        const grouped = {};
+        weightedRecommendations.forEach(rec => {
+          const key = `${rec.mediaType}-${rec.tmdbId}`;
+          if (grouped[key]) {
+            grouped[key]._totalWeight += rec._weight;
+          } else {
+            grouped[key] = { ...rec, _totalWeight: rec._weight };
+          }
+        });
+        
+        // Convert to array and filter
+        const unique = Object.values(grouped);
         
         const filtered = unique.filter(item => {
           // Not in library
           if (this.getLibraryStatus(item.tmdbId)) return false;
           
-          // Require minimum rating (filters out most guest appearances)
-          if (item.tmdbRating < 6.5) return false;
+          // Quality filters
+          if (item.tmdbRating < 6.0) return false;
           
           // For older content, require higher rating
-          if (item.releaseYear && item.releaseYear < currentYear - 20) {
-            return item.tmdbRating >= 7.5;
+          const currentYear = new Date().getFullYear();
+          if (item.releaseYear && item.releaseYear < currentYear - 25) {
+            return item.tmdbRating >= 7.0;
           }
           
           return true;
         });
         
-        // Sort by rating * popularity (best quality + relevance)
-        const sorted = filtered.sort((a, b) => {
-          const scoreA = (a.tmdbRating || 0) * (a.popularity || 1);
-          const scoreB = (b.tmdbRating || 0) * (b.popularity || 1);
-          return scoreB - scoreA;
-        });
+        // Sort by combined score of weight and quality
+        const scored = filtered.map(item => ({
+          ...item,
+          _score: (item._totalWeight * 0.5) + ((item.tmdbRating / 10) * 0.3) + ((item.popularity || 1) / 1000 * 0.2)
+        }));
         
-        this.actorRecommendations = sorted.slice(0, 12);
+        this.actorRecommendations = scored
+          .sort((a, b) => b._score - a._score)
+          .slice(0, 12)
+          .map(({ _weight, _totalWeight, _score, ...item }) => item);
         
         console.log(`Actor recommendations: ${this.actorRecommendations.length} from ${actorsToUse.map(a => a.name).join(', ')}`);
         
